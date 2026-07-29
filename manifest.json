@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "3.5.0",
-  "description": "Human-Level Autonomous Agent for Territorial.io featuring 14-Module Architecture (Vision Pipeline, Occupancy Grid, World Model, Enemy Tracker, FSM Strategy, 8-Factor Utility, Prediction Engine). Last Updated: 2026-07-29 21:36:04 +07:00",
+  "version": "4.0.0",
+  "description": "Human-Level Autonomous Agent for Territorial.io featuring 14 Deep Modules (Morphological Vision Engine, Occupancy Grid, 300-Frame Memory, Enemy Profiles, 12-State FSM, 10-Factor Utility, Threat Heatmap, Pathfinding, Temporal Smoothing). Last Updated: 2026-07-29 21:41:05 +07:00",
   "permissions": [
     "storage",
     "activeTab"
@@ -33,6 +33,7 @@
         "content/grid.js",
         "content/world.js",
         "content/strategy.js",
+        "content/spatial.js",
         "content/controller.js",
         "content/content.js"
       ],

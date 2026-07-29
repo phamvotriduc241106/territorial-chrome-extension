@@ -1,32 +1,32 @@
 /**
- * Territorial.io Autonomous Human-Level Agent v3.5 Master Orchestrator
+ * Territorial.io Autonomous Human-Level Agent v4.0 Master Orchestrator
  * 
- * 14-Module Complete Engine Architecture:
- * - Module 1: Core Engine Orchestrator & Lifecycle Loop (CoreEngine)
- * - Module 2: Phase 1 — Computer Vision Pipeline (VisionEngine)
- * - Module 3: Phase 2 — 2D Occupancy Grid Matrix (OccupancyGrid)
- * - Module 4: Phase 3 — Boundary & Contiguity Extraction (BorderDetector)
- * - Module 5: Phase 5 — BFS Connected Component Clustering (RegionDetector)
- * - Module 6: Phase 5 — Persistent Memory & Frame History (WorldModel)
- * - Module 7: Phase 6 — Per-Opponent Analytics & Aggression Tracking (EnemyTracker)
- * - Module 8: Phase 7 — Compound Interest & Troop Balance Model (EconomyAnalyzer)
- * - Module 9: Phase 8 — Hierarchical Strategy State Machine (StrategyEngine)
- * - Module 10: Phase 9 — 8-Factor Multi-Term Action Scoring (UtilityEvaluator)
- * - Module 11: Phase 10 — Linear Extrapolation & Threat Forecasting (PredictionEngine)
- * - Module 12: Phase 11 — Isolated Virtual Pointer Synthesizer (MouseController)
- * - Module 13: Phase 12 — 14-Metric Real-Time Telemetry Dashboard (HUDManager)
- * - Module 14: Phase 13 — Spatial Hashing & Object Pool Optimization (OptimizationLayer)
+ * 14-Module Deep Architectural Integration:
+ * - Module 1: Phase 1 — Computer Vision Pipeline & Morphological Closing (VisionEngine)
+ * - Module 2: Phase 2 — 2D Occupancy Grid Matrix (OccupancyGrid)
+ * - Module 3: Phase 3 — Perimeter, Compactness & Frontier Extraction (BorderDetector)
+ * - Module 4: Phase 4 — BFS Connected Components & Region Clustering (RegionDetector)
+ * - Module 5: Phase 5 — 300-Frame Sliding RAM Memory & Kinematics (WorldModel)
+ * - Module 6: Phase 6 — Enemy Class Profiling & Aggression Tracking (EnemyTracker)
+ * - Module 7: Phase 7 — Economy Compound Interest & Storage Cap Model (EconomyAnalyzer)
+ * - Module 8: Phase 8 — 12-State FSM Strategy Planner (StrategyEngine)
+ * - Module 9: Phase 9 — 10-Factor Multi-Term Action Scoring (UtilityEvaluator)
+ * - Module 10: Phase 10 — Kinematic Border Extrapolation & Forecasting (PredictionEngine)
+ * - Module 11: Feature 1 — Threat Field Heatmap & 3x3 Gaussian Blur (ThreatHeatmap)
+ * - Module 12: Feature 2 — A* & BFS Reachability Pathfinding Engine (PathfindingEngine)
+ * - Module 13: Feature 3 — Temporal Smoothing & Target Hysteresis (TemporalSmoothing)
+ * - Module 14: Phase 11-13 — Virtual Pointer, HUD Telemetry & Optimization (MouseController, HUDManager, OptimizationLayer)
  * 
- * Update Timestamp: 2026-07-29 21:36:04 +07:00
+ * Update Timestamp: 2026-07-29 21:41:05 +07:00
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_HUMAN_AGENT_MASTER_LOADED__) return;
-  window.__TIO_HUMAN_AGENT_MASTER_LOADED__ = true;
+  if (window.__TIO_HUMAN_AGENT_MASTER_V4_LOADED__) return;
+  window.__TIO_HUMAN_AGENT_MASTER_V4_LOADED__ = true;
 
-  console.log('%c[TIO Human Agent v3.5] Launching Master Autonomous Orchestrator...', 'color: #10b981; font-weight: bold; font-size: 16px;');
+  console.log('%c[TIO Human Agent v4.0] Launching Master Autonomous Orchestrator...', 'color: #10b981; font-weight: bold; font-size: 16px;');
 
   // --- MASTER CORE ENGINE ---
   class CoreEngine {
@@ -41,6 +41,9 @@
       this.strategy = new window.StrategyEngine();
       this.utility = new window.UtilityEvaluator();
       this.prediction = new window.PredictionEngine();
+      this.heatmap = new window.ThreatHeatmap();
+      this.pathfinding = new window.PathfindingEngine();
+      this.smoothing = new window.TemporalSmoothing();
       this.mouse = new window.MouseController();
       this.hud = new window.HUDManager();
       this.optimizer = new window.OptimizationLayer();
@@ -59,7 +62,7 @@
       this.vision.init();
       this.bindEvents();
       this.startMasterLoop();
-      console.log('%c[TIO Human Agent v3.5] All 14 Engine Modules Initialized Successfully!', 'color: #34d399;');
+      console.log('%c[TIO Human Agent v4.0] All 14 Engine Modules Initialized Successfully!', 'color: #34d399;');
     }
 
     bindEvents() {
@@ -69,9 +72,10 @@
           this.spawnPos.y = e.clientY;
 
           if (!this.gameStarted) {
-            console.log(`[TIO Human Agent] Game Match Activated! Spawn set to (${e.clientX}, ${e.clientY})`);
+            console.log(`[TIO Human Agent v4.0] Match Activated! Spawn set to (${e.clientX}, ${e.clientY})`);
             this.gameStarted = true;
             this.worldModel.reset();
+            this.smoothing.reset();
           }
         }
       }, true);
@@ -97,70 +101,78 @@
     }
 
     executeTick(now) {
-      // 1. Phase 1 — Vision Engine Capture
-      const visionResult = this.vision.processFrame();
+      // 1. Phase 1 — Morphological Vision Pipeline
+      const visionResult = this.vision.processFullPipeline();
       if (!visionResult) return;
 
-      // 2. Phase 2-4 — Spatial Analysis (Grid, Borders, Regions)
-      this.occupancyGrid.updateFromVision(visionResult);
-      const borderStats = this.borderDetector.extractBoundaries();
-      const regionStats = this.regionDetector.detectRegions();
-      const perimeterRatio = this.borderDetector.calculatePerimeterCompactness();
+      // 2. Phase 2-4 — Spatial Occupancy Grid, Borders & Regions
+      this.occupancyGrid.updateFromVisionPipeline(visionResult);
+      const borderStats = this.borderDetector.extractPerimeterAndFrontiers();
+      const regionStats = this.regionDetector.detectConnectedComponents();
 
-      // 3. Phase 5 — World Model Persistent Memory
-      this.worldModel.recordFrame({ borderStats, regionStats, perimeterRatio });
+      // 3. Phase 5 — 300-Frame Sliding RAM World Model
+      this.worldModel.recordFrame({ borderStats, regionStats });
 
-      // 4. Phase 6 — Enemy Tracker Analytics
-      this.enemyTracker.updateEnemyClusters(this.regionDetector.enemyClusters);
+      // 4. Phase 6 — Enemy Tracker & Opponent Profiles
+      this.enemyTracker.updateOpponents(this.regionDetector.enemyClusters);
       const enemyAnalytics = this.enemyTracker.getEnemyAnalytics();
 
-      // 5. Phase 7 — Economy Analyzer
-      const myArea = borderStats.interiorCount + borderStats.totalBorderCount;
-      this.economy.updateEconomy(myArea, this.worldModel.lastDelta ? this.worldModel.lastDelta.timeDeltaSec : 1);
+      // 5. Threat Heatmap Generation (Gaussian Blur Pass)
+      this.heatmap.generateHeatmap(this.enemyTracker, this.occupancyGrid);
+
+      // 6. Phase 7 — Economy Analyzer
+      const myArea = borderStats.interiorCount + borderStats.perimeterLength;
+      const dtSec = this.worldModel.lastFrame ? (now - this.worldModel.lastFrame.timestamp) / 1000 : 1;
+      this.economy.updateEconomy(myArea, dtSec);
       const ecoDecisions = this.economy.getEconomicDecisions();
 
-      // 6. Phase 8 — Strategy Engine FSM
+      // 7. Phase 8 — 12-State FSM Strategy Engine
       const gameTimeSec = Math.floor((now - this.worldModel.matchStartTime) / 1000);
       const neutralRatio = regionStats.largestNeutralArea / Math.max(1, (visionResult.width * visionResult.height));
-      const stateConfig = this.strategy.evaluateStateTransitions(gameTimeSec, neutralRatio, this.economy.economicHealth, myArea, enemyAnalytics);
+      const stateConfig = this.strategy.evaluateTransitions(gameTimeSec, neutralRatio, this.economy.economicHealth, myArea, enemyAnalytics);
 
-      // 7. Phase 10 — Threat Prediction Engine
-      const predictions = this.prediction.predictEnemyMovements(this.enemyTracker, this.worldModel);
-      const highThreats = this.prediction.getHighThreatForecasts();
+      // 8. Phase 10 — Kinematic Prediction Engine
+      const predictions = this.prediction.predictFrontierExtrapolation(this.enemyTracker, this.worldModel);
+      const highThreats = this.prediction.getCriticalThreats();
 
-      // 8. Phase 9 — Utility Evaluation & Target Selection
-      let bestTarget = null;
+      // 9. Phase 9 — 10-Factor Utility Scoring & Candidate Evaluation
+      let bestTargetCandidate = null;
       let highestScore = -9999;
 
-      // Evaluate 24-Point Radial Frontier Candidates
-      const candidates = this.borderDetector.neutralBorders.length > 0 ? this.borderDetector.neutralBorders : this.borderDetector.enemyBorders;
+      const candidates = this.borderDetector.expansionFrontier.length > 0 ? this.borderDetector.expansionFrontier : this.borderDetector.borderCells;
       const sampleList = candidates.length > 0 ? candidates : [{ x: this.spawnPos.x, y: this.spawnPos.y }];
 
-      const step = Math.max(1, Math.floor(sampleList.length / 16));
+      const step = Math.max(1, Math.floor(sampleList.length / 24));
       for (let i = 0; i < sampleList.length; i += step) {
         const cand = sampleList[i];
         const cell = this.occupancyGrid.getCell(cand.x, cand.y);
         const cellType = cell ? cell.type : 'NEUTRAL';
 
-        const score = this.utility.evaluateTargetUtility(cand.x, cand.y, this.spawnPos.x, this.spawnPos.y, cellType, ecoDecisions, stateConfig);
+        // Reachability Verification via Pathfinding Engine
+        const reachability = this.pathfinding.verifyReachabilityBFS(this.occupancyGrid, this.spawnPos.x, this.spawnPos.y, cand.x, cand.y);
+        if (!reachability.reachable) continue;
+
+        const score = this.utility.scoreTarget(cand.x, cand.y, this.spawnPos.x, this.spawnPos.y, cellType, ecoDecisions, stateConfig, this.heatmap);
         if (score > highestScore) {
           highestScore = score;
-          bestTarget = cand;
+          bestTargetCandidate = cand;
         }
       }
 
-      // 9. Phase 11 — Mouse Controller Execution
+      // 10. Temporal Smoothing & Target Hysteresis Filter
+      const smoothedTarget = this.smoothing.filterTarget(bestTargetCandidate, highestScore);
+
+      // 11. Phase 11 — Mouse Controller Execution
       if (now - this.lastExecutionTime >= stateConfig.attackPacingMs) {
         this.lastExecutionTime = now;
-        const targetX = bestTarget ? bestTarget.x : this.spawnPos.x + 50;
-        const targetY = bestTarget ? bestTarget.y : this.spawnPos.y + 50;
+        const targetX = smoothedTarget ? smoothedTarget.x : this.spawnPos.x + 50;
+        const targetY = smoothedTarget ? smoothedTarget.y : this.spawnPos.y + 50;
 
         this.economy.recordTroopDispatch(stateConfig.recommendedRatio);
         this.mouse.sendIsolatedAttack(targetX, targetY, stateConfig.recommendedRatio);
       }
 
-      // 10. Phase 12 — Real-Time HUD Telemetry Update
-      const visionMetrics = this.vision.getMetrics();
+      // 12. Phase 12 — Real-Time HUD Telemetry Update
       this.hud.updateTelemetry({
         currentFPS: this.currentFPS,
         statusText: '🔥 MATCH ACTIVE (HUMAN-LEVEL AGENT)',
@@ -169,9 +181,9 @@
         ecoHealth: this.economy.economicHealth,
         bestUtilityScore: highestScore,
         expansionVelocity: this.worldModel.getExpansionVelocity(),
-        trackedEnemiesCount: enemyAnalytics.totalEnemiesTracked,
+        trackedEnemiesCount: enemyAnalytics.totalEnemies,
         threatSeverity: highThreats.length > 0 ? 'HIGH' : 'LOW',
-        visionFPS: visionMetrics.visionFPS
+        visionFPS: visionResult.visionFPS
       });
     }
   }

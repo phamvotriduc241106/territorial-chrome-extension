@@ -1,28 +1,30 @@
 /**
- * Territorial.io Autonomous Human-Level Agent — Execution, Telemetry & Optimization Suite
+ * Territorial.io Execution, Telemetry & Optimization Suite v4.0.0
  * 
- * Includes:
+ * Comprehensive Execution Pipeline:
  * - Phase 11 — Mouse Controller (Humanized Virtual Pointer Input, Isolated pointerId: 99, Adaptive Frequency, Randomization)
- * - Phase 12 — HUD (Real-Time 14-Metric Telemetry Overlay: FPS, Vision FPS, Enemy count, Expansion rate, Utility, Strategy, Economy, Threat)
+ * - Phase 12 — HUD Telemetry (Real-Time 14-Metric Telemetry Overlay: FPS, Vision FPS, Enemy count, Velocity, Utility, Strategy, Economy, Threat)
  * - Phase 13 — Optimization Layer (Dirty Rectangles, Spatial Hashing, Frame Skipping, Object Pooling & TypedArray Memory Reuse)
+ * 
+ * Target Size: ~500 lines
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_CONTROLLER_ENGINE_LOADED__) return;
-  window.__TIO_CONTROLLER_ENGINE_LOADED__ = true;
+  if (window.__TIO_DEEP_CONTROLLER_LOADED__) return;
+  window.__TIO_DEEP_CONTROLLER_LOADED__ = true;
 
-  console.log('%c[TIO Controller Engine] Initializing Phases 11-13 Execution, Telemetry & Optimization Suite...', 'color: #34d399; font-weight: bold; font-size: 14px;');
+  console.log('%c[TIO Controller Engine v4.0] Initializing Execution, Telemetry & Optimization Suite...', 'color: #34d399; font-weight: bold; font-size: 15px;');
 
   // ==========================================
   // PHASE 11 — MOUSE CONTROLLER
   // ==========================================
   class MouseController {
     constructor() {
-      this.pointerId = 99; // Isolated Virtual Pointer ID to prevent physical hardware cursor conflicts
+      this.pointerId = 99; // Isolated Virtual Pointer ID to prevent hardware cursor conflicts
       this.inputBuffer = [];
-      this.humanJitterRange = 2; // Small humanized micro-jitter in pixels
+      this.humanJitterRange = 2; // Humanized micro-jitter in pixels
       this.lastClickTimestamp = 0;
     }
 
@@ -120,27 +122,27 @@
       container.id = 'tio-master-hud-container';
 
       container.innerHTML = `
-        <div class="tio-hud-card" id="tio-hud-card" style="width:310px; background:rgba(15,23,42,0.88); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:14px; color:#f8fafc; font-family:sans-serif; position:fixed; top:20px; right:20px; z-index:999999; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+        <div class="tio-hud-card" id="tio-hud-card" style="width:320px; background:rgba(15,23,42,0.92); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:14px; color:#f8fafc; font-family:sans-serif; position:fixed; top:20px; right:20px; z-index:999999; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
           <div class="tio-hud-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
             <div style="font-weight:700; font-size:13px; background:linear-gradient(135deg,#10b981,#6366f1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-transform:uppercase;">
-              🤖 Human-Level Agent v3.5
+              🏆 Human-Level Agent v4.0
             </div>
             <div style="font-size:11px; font-weight:700; color:#34d399;" id="mhud-fps">60 FPS</div>
           </div>
           
-          <div style="display:flex; flex-direction:column; gap:5px; font-size:10.5px; color:#cbd5e1;">
+          <div style="display:flex; flex-direction:column; gap:4.5px; font-size:10.5px; color:#cbd5e1;">
             <div style="display:flex; justify-content:space-between;"><span>Status:</span> <span id="mhud-status" style="font-weight:700; color:#34d399;">Waiting for Spawn</span></div>
-            <div style="display:flex; justify-content:space-between;"><span>Strategy State:</span> <span id="mhud-strategy" style="font-weight:700; color:#818cf8;">OPENING</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Strategy State (FSM):</span> <span id="mhud-strategy" style="font-weight:700; color:#818cf8;">OPENING</span></div>
             <div style="display:flex; justify-content:space-between;"><span>Economic Reserve:</span> <span id="mhud-economy" style="font-weight:700; color:#fbbf24;">100%</span></div>
-            <div style="display:flex; justify-content:space-between;"><span>Best Target Utility:</span> <span id="mhud-utility" style="font-weight:700; color:#e2e8f0;">120.5</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>10-Factor Utility:</span> <span id="mhud-utility" style="font-weight:700; color:#e2e8f0;">120.5</span></div>
             <div style="display:flex; justify-content:space-between;"><span>Expansion Velocity:</span> <span id="mhud-velocity" style="font-weight:700; color:#38bdf8;">0.0 px/s</span></div>
-            <div style="display:flex; justify-content:space-between;"><span>Tracked Enemies:</span> <span id="mhud-enemies" style="font-weight:700; color:#f43f5e;">0</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Tracked Opponents:</span> <span id="mhud-enemies" style="font-weight:700; color:#f43f5e;">0</span></div>
             <div style="display:flex; justify-content:space-between;"><span>Threat Severity:</span> <span id="mhud-threat" style="font-weight:700; color:#a855f7;">LOW</span></div>
-            <div style="display:flex; justify-content:space-between;"><span>Vision Pipeline:</span> <span id="mhud-vision-fps" style="font-weight:700; color:#34d399;">60 Hz</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Vision Pipeline FPS:</span> <span id="mhud-vision-fps" style="font-weight:700; color:#34d399;">60 Hz</span></div>
           </div>
 
           <div style="font-size:9px; color:#64748b; margin-top:10px; border-top:1px solid rgba(255,255,255,0.08); padding-top:6px; display:flex; justify-content:space-between;">
-            <span>Architecture: 14 Modules (5,300 LOC)</span>
+            <span>Architecture: 14 Modules (~6,000 LOC)</span>
             <span>Static Spectator</span>
           </div>
         </div>
@@ -202,7 +204,6 @@
 
     shouldSkipFrame(renderIntervalMs) {
       this.frameSkipCounter++;
-      // Adaptive frame skip if rendering latency increases
       if (renderIntervalMs > 25 && this.frameSkipCounter % 2 !== 0) {
         return true;
       }
@@ -220,5 +221,5 @@
   window.HUDManager = HUDManager;
   window.OptimizationLayer = OptimizationLayer;
 
-  console.log('%c[TIO Controller Engine] Phases 11-13 Execution, Telemetry & Optimization Suite Loaded.', 'color: #10b981;');
+  console.log('%c[TIO Controller Engine v4.0] Execution, Telemetry & Optimization Suite Loaded.', 'color: #10b981;');
 })();

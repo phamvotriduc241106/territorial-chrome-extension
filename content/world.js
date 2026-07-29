@@ -1,144 +1,170 @@
 /**
- * Territorial.io Autonomous Human-Level Agent — World & Enemy Intelligence Suite
+ * Territorial.io Deep World & Intelligence Engine v4.0.0
  * 
- * Includes:
- * - Phase 5 — World Model (Persistent Memory & 10-Frame Sliding Window History)
- * - Phase 6 — Enemy Tracker (Per-Opponent Analytics: Position, Area, Growth Rate, Aggression, Threat Index)
- * - Phase 7 — Economy Analyzer (Troop Balance Estimation, Compound Interest Cycles, Economic Decision Rules)
+ * Comprehensive Intelligence Processing Pipeline:
+ * - Phase 5 — World Model (RAM-Like Persistent Memory & 300-Frame Sliding History Window, Velocity & Acceleration)
+ * - Phase 6 — Enemy Tracker (Per-Opponent Profile Class: Growth, Velocity, Aggression, Threat Severity, Target Status)
+ * - Phase 7 — Economy Analyzer (Troop Balance Estimation, Compound Interest Mechanics, Attack ROI & Decision Rules)
+ * 
+ * Target Size: ~1,300 lines
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_WORLD_ENGINE_LOADED__) return;
-  window.__TIO_WORLD_ENGINE_LOADED__ = true;
+  if (window.__TIO_DEEP_WORLD_LOADED__) return;
+  window.__TIO_DEEP_WORLD_LOADED__ = true;
 
-  console.log('%c[TIO World Engine] Initializing Phases 5-7 World Model, Enemy Tracker & Economy Suite...', 'color: #34d399; font-weight: bold; font-size: 14px;');
+  console.log('%c[TIO World Engine v4.0] Initializing Deep World Model, Enemy Tracker & Economy Suite...', 'color: #34d399; font-weight: bold; font-size: 15px;');
 
   // ==========================================
-  // PHASE 5 — WORLD MODEL (PERSISTENT MEMORY)
+  // PHASE 5 — WORLD MODEL (300-FRAME HISTORY RAM)
   // ==========================================
   class WorldModel {
     constructor() {
-      this.frameHistory = []; // Sliding 10-frame window history
-      this.maxHistoryLength = 10;
-      this.myBorderHistory = [];
-      this.neutralAreaHistory = [];
-      this.enemyClustersHistory = [];
-      this.matchStartTime = 0;
-      this.lastDelta = null;
+      this.history300 = []; // Sliding 300-frame history window (~10-15 seconds of game memory)
+      this.maxHistorySize = 300;
+      this.matchStartTime = performance.now();
+      this.currentVelocity = 0; // dA/dt
+      this.currentAcceleration = 0; // d^2A/dt^2
+      this.lastFrame = null;
     }
 
     reset() {
-      this.frameHistory = [];
-      this.myBorderHistory = [];
-      this.neutralAreaHistory = [];
-      this.enemyClustersHistory = [];
+      this.history300 = [];
       this.matchStartTime = performance.now();
-      this.lastDelta = null;
+      this.currentVelocity = 0;
+      this.currentAcceleration = 0;
+      this.lastFrame = null;
     }
 
     recordFrame(spatialData) {
       if (!spatialData) return;
 
-      const frameSnapshot = {
-        timestamp: performance.now(),
-        borderStats: spatialData.borderStats,
-        regionStats: spatialData.regionStats,
-        perimeterRatio: spatialData.perimeterRatio
+      const now = performance.now();
+      const snapshot = {
+        timestamp: now,
+        interiorCount: spatialData.borderStats.interiorCount,
+        borderCount: spatialData.borderStats.perimeterLength,
+        totalArea: spatialData.borderStats.interiorCount + spatialData.borderStats.perimeterLength,
+        compactness: spatialData.borderStats.compactness,
+        largestNeutralArea: spatialData.regionStats.largestNeutralArea,
+        enemyClusterCount: spatialData.regionStats.enemyClusterCount
       };
 
-      this.frameHistory.push(frameSnapshot);
-      if (this.frameHistory.length > this.maxHistoryLength) {
-        this.frameHistory.shift();
+      this.history300.push(snapshot);
+      if (this.history300.length > this.maxHistorySize) {
+        this.history300.shift();
       }
 
-      this.computeFrameDelta();
+      this.calculateKinematics();
+      this.lastFrame = snapshot;
     }
 
-    computeFrameDelta() {
-      if (this.frameHistory.length < 2) return;
+    calculateKinematics() {
+      const len = this.history300.length;
+      if (len < 5) return;
 
-      const latest = this.frameHistory[this.frameHistory.length - 1];
-      const previous = this.frameHistory[this.frameHistory.length - 2];
-      const timeDeltaSec = (latest.timestamp - previous.timestamp) / 1000;
+      const latest = this.history300[len - 1];
+      const prev5 = this.history300[len - 5];
+      const dtSec = (latest.timestamp - prev5.timestamp) / 1000;
 
-      if (timeDeltaSec <= 0) return;
+      if (dtSec <= 0) return;
 
-      const myAreaChange = latest.borderStats.interiorCount - previous.borderStats.interiorCount;
-      const neutralChange = latest.regionStats.largestNeutralArea - previous.regionStats.largestNeutralArea;
+      const prevVelocity = this.currentVelocity;
+      const areaDiff = latest.totalArea - prev5.totalArea;
 
-      this.lastDelta = {
-        timeDeltaSec,
-        myAreaGrowthRate: parseFloat((myAreaChange / timeDeltaSec).toFixed(2)),
-        neutralDepletionRate: parseFloat((neutralChange / timeDeltaSec).toFixed(2)),
-        compactnessDelta: parseFloat((latest.perimeterRatio - previous.perimeterRatio).toFixed(3))
-      };
+      // Velocity: dA/dt (Area growth per second)
+      this.currentVelocity = parseFloat((areaDiff / dtSec).toFixed(2));
+
+      // Acceleration: d^2A/dt^2 (Growth acceleration per second squared)
+      const velDiff = this.currentVelocity - prevVelocity;
+      this.currentAcceleration = parseFloat((velDiff / dtSec).toFixed(2));
     }
 
-    getExpansionVelocity() {
-      return this.lastDelta ? this.lastDelta.myAreaGrowthRate : 0;
+    getForecastedArea(futureSeconds = 5) {
+      if (!this.lastFrame) return 0;
+      // Kinematic forecasting: A_future = A_current + (v * t) + (0.5 * a * t^2)
+      const forecasted = this.lastFrame.totalArea + (this.currentVelocity * futureSeconds) + (0.5 * this.currentAcceleration * futureSeconds * futureSeconds);
+      return Math.max(0, Math.round(forecasted));
     }
   }
 
   // ==========================================
-  // PHASE 6 — ENEMY TRACKER
+  // PHASE 6 — ENEMY TRACKER & ENEMY PROFILE CLASS
   // ==========================================
+  class Enemy {
+    constructor(id, centerX, centerY, area) {
+      this.id = id;
+      this.centerX = centerX;
+      this.centerY = centerY;
+      this.area = area;
+      this.previousArea = area;
+      this.growthRate = 0; // Area / sec
+      this.velocity = { x: 0, y: 0 };
+      this.aggression = 0.5;
+      this.averageAttackRatio = 0.25;
+      this.predictedExpansion = area;
+      this.dangerScore = 0;
+      this.lastSeen = performance.now();
+      this.status = 'FARMING'; // 'FARMING', 'ATTACKING', 'DYING', 'IDLE', 'PRIMARY_THREAT'
+    }
+
+    update(centerX, centerY, area, now) {
+      const dtSec = (now - this.lastSeen) / 1000;
+      if (dtSec > 0) {
+        const dArea = area - this.area;
+        this.growthRate = parseFloat((dArea / dtSec).toFixed(2));
+        this.velocity = {
+          x: parseFloat(((centerX - this.centerX) / dtSec).toFixed(2)),
+          y: parseFloat(((centerY - this.centerY) / dtSec).toFixed(2))
+        };
+      }
+
+      this.previousArea = this.area;
+      this.area = area;
+      this.centerX = centerX;
+      this.centerY = centerY;
+      this.lastSeen = now;
+
+      // Classify Opponent Status
+      if (this.growthRate > 60) this.status = 'ATTACKING';
+      else if (this.growthRate < -15) this.status = 'DYING';
+      else this.status = 'FARMING';
+
+      // Calculate Danger Score: Area / (Distance^2)
+      const dist = Math.hypot(centerX - window.innerWidth / 2, centerY - window.innerHeight / 2);
+      this.dangerScore = parseFloat((this.area / Math.max(10, dist * dist)).toFixed(3));
+      this.predictedExpansion = Math.max(0, Math.round(area + (this.growthRate * 5)));
+    }
+  }
+
   class EnemyTracker {
     constructor() {
-      this.opponents = new Map(); // Key: Enemy Cluster ID / Color, Value: Enemy Profile
+      this.opponents = new Map();
       this.strongestEnemy = null;
       this.weakestEnemy = null;
       this.primaryAttacker = null;
     }
 
-    updateEnemyClusters(enemyClusters) {
+    updateOpponents(enemyClusters) {
       if (!enemyClusters) return;
 
-      const activeIds = new Set();
+      const now = performance.now();
+      const currentIds = new Set();
 
       for (let i = 0; i < enemyClusters.length; i++) {
         const cluster = enemyClusters[i];
-        const clusterId = `enemy_cluster_${i}_${cluster.centerX}_${cluster.centerY}`;
-        activeIds.add(clusterId);
+        const id = `opponent_${cluster.centroid.x}_${cluster.centroid.y}`;
+        currentIds.add(id);
 
-        let profile = this.opponents.get(clusterId);
-        const now = performance.now();
-
-        if (!profile) {
-          profile = {
-            id: clusterId,
-            centerX: cluster.centerX,
-            centerY: cluster.centerY,
-            area: cluster.size,
-            previousArea: cluster.size,
-            growthRate: 0,
-            aggressionScore: 0.5,
-            threatIndex: 0,
-            status: 'FARMING', // 'FARMING', 'ATTACKING', 'DYING', 'IDLE'
-            lastSeen: now
-          };
-          this.opponents.set(clusterId, profile);
+        let enemy = this.opponents.get(id);
+        if (!enemy) {
+          enemy = new Enemy(id, cluster.centroid.x, cluster.centroid.y, cluster.area);
+          this.opponents.set(id, enemy);
         } else {
-          const dtSec = (now - profile.lastSeen) / 1000;
-          if (dtSec > 0) {
-            const areaDiff = cluster.size - profile.area;
-            profile.growthRate = parseFloat((areaDiff / dtSec).toFixed(2));
-          }
-          profile.previousArea = profile.area;
-          profile.area = cluster.size;
-          profile.centerX = cluster.centerX;
-          profile.centerY = cluster.centerY;
-          profile.lastSeen = now;
-
-          // Classify Enemy Status
-          if (profile.growthRate > 50) profile.status = 'ATTACKING';
-          else if (profile.growthRate < -20) profile.status = 'DYING';
-          else profile.status = 'FARMING';
+          enemy.update(cluster.centroid.x, cluster.centroid.y, cluster.area, now);
         }
-
-        // Calculate Threat Index: Area / Distance
-        profile.threatIndex = parseFloat((profile.area / (1 + Math.hypot(cluster.centerX - window.innerWidth / 2, cluster.centerY - window.innerHeight / 2))).toFixed(2));
       }
 
       this.rankOpponents();
@@ -149,24 +175,30 @@
       if (list.length === 0) {
         this.strongestEnemy = null;
         this.weakestEnemy = null;
+        this.primaryAttacker = null;
         return;
       }
 
+      // Rank by area
       list.sort((a, b) => b.area - a.area);
       this.strongestEnemy = list[0];
       this.weakestEnemy = list[list.length - 1];
 
-      // Identify primary threat by highest Threat Index
-      list.sort((a, b) => b.threatIndex - a.threatIndex);
+      // Rank by danger score
+      list.sort((a, b) => b.dangerScore - a.dangerScore);
       this.primaryAttacker = list[0];
+      if (this.primaryAttacker) {
+        this.primaryAttacker.status = 'PRIMARY_THREAT';
+      }
     }
 
     getEnemyAnalytics() {
       return {
-        totalEnemiesTracked: this.opponents.size,
+        totalEnemies: this.opponents.size,
         strongestArea: this.strongestEnemy ? this.strongestEnemy.area : 0,
         weakestArea: this.weakestEnemy ? this.weakestEnemy.area : 0,
-        primaryThreatIndex: this.primaryAttacker ? this.primaryAttacker.threatIndex : 0
+        primaryDangerScore: this.primaryAttacker ? this.primaryAttacker.dangerScore : 0,
+        isUnderAttack: this.primaryAttacker ? (this.primaryAttacker.dangerScore > 5.0) : false
       };
     }
   }
@@ -178,36 +210,41 @@
     constructor() {
       this.estimatedTroopBalance = 1000;
       this.maxTroopCap = 5000;
-      this.compoundInterestRate = 0.12; // 12% interest per tick
+      this.compoundInterestRate = 0.12; // 12% per tick (~1.8s)
       this.lastInterestTickTime = performance.now();
-      this.interestCycleMs = 1800; // ~1.8s interest cycle in Territorial.io
+      this.interestCycleMs = 1800;
       this.economicHealth = 'STRONG'; // 'STRONG', 'MODERATE', 'CRITICAL_DEFICIT'
+      this.growthPerSec = 0;
+      this.lossPerSec = 0;
+      this.attackROI = 1.0;
     }
 
-    updateEconomy(myLandArea, timeSeconds) {
-      // Max interest storage cap scales with total land pixels
+    updateEconomy(myLandArea, dtSec) {
+      // Storage Cap = Land Area * 150
       this.maxTroopCap = Math.max(2000, myLandArea * 150);
 
       const now = performance.now();
       if (now >= this.lastInterestTickTime + this.interestCycleMs) {
         // Compound interest tick
         if (this.estimatedTroopBalance < this.maxTroopCap * 0.95) {
-          this.estimatedTroopBalance += Math.floor(this.estimatedTroopBalance * this.compoundInterestRate);
+          const interestGained = Math.floor(this.estimatedTroopBalance * this.compoundInterestRate);
+          this.estimatedTroopBalance += interestGained;
+          this.growthPerSec = parseFloat((interestGained / (this.interestCycleMs / 1000)).toFixed(1));
         }
         this.lastInterestTickTime = now;
       }
 
       // Classify Economic Health
       const reserveRatio = this.estimatedTroopBalance / this.maxTroopCap;
-      if (reserveRatio > 0.6) this.economicHealth = 'STRONG';
-      else if (reserveRatio > 0.3) this.economicHealth = 'MODERATE';
+      if (reserveRatio > 0.60) this.economicHealth = 'STRONG';
+      else if (reserveRatio > 0.35) this.economicHealth = 'MODERATE';
       else this.economicHealth = 'CRITICAL_DEFICIT';
     }
 
     recordTroopDispatch(ratio) {
-      // Deduct dispatched troops from estimated balance
       const dispatched = Math.floor(this.estimatedTroopBalance * ratio);
-      this.estimatedTroopBalance = Math.max(500, this.estimatedTroopBalance - dispatched);
+      this.estimatedTroopBalance = Math.max(400, this.estimatedTroopBalance - dispatched);
+      this.lossPerSec = dispatched;
     }
 
     getEconomicDecisions() {
@@ -217,16 +254,18 @@
         shouldSave: reserveRatio < 0.35,
         shouldAttack: reserveRatio >= 0.50,
         shouldFarm: reserveRatio >= 0.35 && reserveRatio < 0.50,
-        recommendedRatio: reserveRatio > 0.7 ? 0.25 : 0.125,
-        reserveRatioPercentage: Math.round(reserveRatio * 100)
+        recommendedRatio: reserveRatio > 0.70 ? 0.25 : 0.125,
+        reserveRatioPercentage: Math.round(reserveRatio * 100),
+        health: this.economicHealth
       };
     }
   }
 
   // Export to global scope
   window.WorldModel = WorldModel;
+  window.Enemy = Enemy;
   window.EnemyTracker = EnemyTracker;
   window.EconomyAnalyzer = EconomyAnalyzer;
 
-  console.log('%c[TIO World Engine] Phases 5-7 World, Enemy & Economy Suite Loaded.', 'color: #10b981;');
+  console.log('%c[TIO World Engine v4.0] Deep World, Enemy & Economy Intelligence Suite Loaded.', 'color: #10b981;');
 })();
