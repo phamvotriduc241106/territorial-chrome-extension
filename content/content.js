@@ -1,201 +1,278 @@
 /**
- * Territorial.io Autonomous Human-Level Agent v4.0 Master Orchestrator
+ * Territorial.io Comprehensive Master Orchestrator Core Engine v5.0.0
  * 
- * 14-Module Deep Architectural Integration:
- * - Module 1: Phase 1 — Computer Vision Pipeline & Morphological Closing (VisionEngine)
- * - Module 2: Phase 2 — 2D Occupancy Grid Matrix (OccupancyGrid)
- * - Module 3: Phase 3 — Perimeter, Compactness & Frontier Extraction (BorderDetector)
- * - Module 4: Phase 4 — BFS Connected Components & Region Clustering (RegionDetector)
- * - Module 5: Phase 5 — 300-Frame Sliding RAM Memory & Kinematics (WorldModel)
- * - Module 6: Phase 6 — Enemy Class Profiling & Aggression Tracking (EnemyTracker)
- * - Module 7: Phase 7 — Economy Compound Interest & Storage Cap Model (EconomyAnalyzer)
- * - Module 8: Phase 8 — 12-State FSM Strategy Planner (StrategyEngine)
- * - Module 9: Phase 9 — 10-Factor Multi-Term Action Scoring (UtilityEvaluator)
- * - Module 10: Phase 10 — Kinematic Border Extrapolation & Forecasting (PredictionEngine)
- * - Module 11: Feature 1 — Threat Field Heatmap & 3x3 Gaussian Blur (ThreatHeatmap)
- * - Module 12: Feature 2 — A* & BFS Reachability Pathfinding Engine (PathfindingEngine)
- * - Module 13: Feature 3 — Temporal Smoothing & Target Hysteresis (TemporalSmoothing)
- * - Module 14: Phase 11-13 — Virtual Pointer, HUD Telemetry & Optimization (MouseController, HUDManager, OptimizationLayer)
- * 
- * Update Timestamp: 2026-07-29 21:41:05 +07:00
+ * Production-Grade 16-Module Pipeline Orchestrator (~300 lines):
+ * 1. Coordinates exact data-flow order across all 15 deep analytical modules:
+ *    Vision -> Grid -> Region -> Border -> World -> Enemy -> Economy -> Heatmap ->
+ *    Strategy -> Utility -> Prediction -> Smoothing -> Pathfinding -> HUD -> Controller -> Optimization -> Spatial
+ * 2. Aggressive Core Philosophy:
+ *    - "How do I maximize territory growth while staying alive?"
+ *    - Continuous neutral expansion and dynamic Aggression Meter biasing every target & economy decision
+ * 3. Strict Compliance with User Constraints:
+ *    - Auto-Start Rule: Idles on menu screens; activates automatically when canvas is clicked
+ *    - Hardware Mouse Protection: Blocks hardware movement via pointerId 99
+ *    - Zero Crosshair & YYYY-MM-DD HH:MM:SS +07:00 timestamping enforced in HUD
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_HUMAN_AGENT_MASTER_V4_LOADED__) return;
-  window.__TIO_HUMAN_AGENT_MASTER_V4_LOADED__ = true;
+  if (window.__TIO_MASTER_ORCHESTRATOR_V5_LOADED__) return;
+  window.__TIO_MASTER_ORCHESTRATOR_V5_LOADED__ = true;
 
-  console.log('%c[TIO Human Agent v4.0] Launching Master Autonomous Orchestrator...', 'color: #10b981; font-weight: bold; font-size: 16px;');
+  console.log('%c[TIO Master Orchestrator v5.0] Launching Aggressive Expansionist AI Engine (~5,700+ Total LOC)...', 'color: #38bdf8; font-weight: bold; font-size: 16px;');
 
-  // --- MASTER CORE ENGINE ---
-  class CoreEngine {
+  class TerritorialMasterOrchestrator {
     constructor() {
-      this.vision = new window.VisionEngine();
-      this.occupancyGrid = new window.OccupancyGrid();
-      this.borderDetector = new window.BorderDetector(this.occupancyGrid);
-      this.regionDetector = new window.RegionDetector(this.occupancyGrid);
-      this.worldModel = new window.WorldModel();
-      this.enemyTracker = new window.EnemyTracker();
-      this.economy = new window.EconomyAnalyzer();
-      this.strategy = new window.StrategyEngine();
-      this.utility = new window.UtilityEvaluator();
+      this.vision     = new window.VisionEngine();
+      this.grid       = new window.OccupancyGrid();
+      this.region     = new window.RegionDetector(this.grid);
+      this.border     = new window.BorderDetector(this.grid);
+      this.world      = new window.WorldModel();
+      this.enemy      = new window.EnemyTracker();
+      this.economy    = new window.EconomyAnalyzer();
+      this.heatmap    = new window.HeatmapEngine(120, 120);
+      this.strategy   = new window.StrategyEngine();
+      this.utility    = new window.UtilityEvaluator();
       this.prediction = new window.PredictionEngine();
-      this.heatmap = new window.ThreatHeatmap();
-      this.pathfinding = new window.PathfindingEngine();
-      this.smoothing = new window.TemporalSmoothing();
-      this.mouse = new window.MouseController();
-      this.hud = new window.HUDManager();
-      this.optimizer = new window.OptimizationLayer();
+      this.smoothing  = new window.TemporalSmoothing(1500, 0.15);
+      this.pathfinder = new window.PathfindingEngine(this.grid);
+      this.hud        = new window.HUDEngine();
+      this.controller = new window.MouseController();
+      this.scheduler  = new window.AdaptiveScheduler(15);
 
-      this.gameStarted = false;
-      this.spawnPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-      this.currentFPS = 60;
+      this.isActive = false;
+      this.loopId = null;
       this.frameCount = 0;
-      this.lastFpsTimestamp = performance.now();
-      this.animationFrameId = null;
-      this.lastExecutionTime = 0;
+      this.lastTickTime = performance.now();
+      this.lastAttackDispatchTime = 0;
+
+      this.playerSpawnPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      this.isPlayerSpawnCalibrated = false;
     }
 
     init() {
-      this.hud.create();
-      this.vision.init();
-      this.bindEvents();
-      this.startMasterLoop();
-      console.log('%c[TIO Human Agent v4.0] All 14 Engine Modules Initialized Successfully!', 'color: #34d399;');
+      const attachInterval = setInterval(() => {
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+          clearInterval(attachInterval);
+          this.setupAutoStart(canvas);
+          this.hud.init();
+          console.log('%c[TIO Master Orchestrator v5.0] Ready. Waiting for player canvas click to activate engine.', 'color: #10b981;');
+        }
+      }, 500);
     }
 
-    bindEvents() {
-      document.addEventListener('click', (e) => {
-        if (e.target && e.target.tagName === 'CANVAS') {
-          this.spawnPos.x = e.clientX;
-          this.spawnPos.y = e.clientY;
-
-          if (!this.gameStarted) {
-            console.log(`[TIO Human Agent v4.0] Match Activated! Spawn set to (${e.clientX}, ${e.clientY})`);
-            this.gameStarted = true;
-            this.worldModel.reset();
-            this.smoothing.reset();
-          }
+    setupAutoStart(canvas) {
+      canvas.addEventListener('click', (e) => {
+        if (!this.isActive) {
+          console.log('%c[TIO Master Orchestrator v5.0] Canvas Clicked! Activating autonomous bot loop.', 'color: #34d399; font-weight: bold;');
+          this.playerSpawnPos = { x: e.clientX, y: e.clientY };
+          this.isPlayerSpawnCalibrated = true;
+          this.startLoop();
         }
-      }, true);
+      }, { once: true });
     }
 
-    startMasterLoop() {
-      const loop = (now) => {
-        this.frameCount++;
-        if (now >= this.lastFpsTimestamp + 1000) {
-          this.currentFPS = Math.round((this.frameCount * 1000) / (now - this.lastFpsTimestamp));
-          this.frameCount = 0;
-          this.lastFpsTimestamp = now;
-        }
-
-        if (this.gameStarted) {
-          this.executeTick(now);
-        }
-
-        this.animationFrameId = requestAnimationFrame(loop);
-      };
-
-      this.animationFrameId = requestAnimationFrame(loop);
+    startLoop() {
+      if (this.isActive) return;
+      this.isActive = true;
+      this.lastTickTime = performance.now();
+      this.loop();
     }
 
-    executeTick(now) {
-      // 1. Phase 1 — Morphological Vision Pipeline
-      const visionResult = this.vision.processFullPipeline();
-      if (!visionResult) return;
+    stopLoop() {
+      this.isActive = false;
+      if (this.loopId) cancelAnimationFrame(this.loopId);
+      console.log('%c[TIO Master Orchestrator v5.0] Autonomous loop paused.', 'color: #f87171;');
+    }
 
-      // 2. Phase 2-4 — Spatial Occupancy Grid, Borders & Regions
-      this.occupancyGrid.updateFromVisionPipeline(visionResult);
-      const borderStats = this.borderDetector.extractPerimeterAndFrontiers();
-      const regionStats = this.regionDetector.detectConnectedComponents();
+    loop() {
+      if (!this.isActive) return;
 
-      // 3. Phase 5 — 300-Frame Sliding RAM World Model
-      this.worldModel.recordFrame({ borderStats, regionStats });
+      const now = performance.now();
+      const dtSec = (now - this.lastTickTime) / 1000.0;
 
-      // 4. Phase 6 — Enemy Tracker & Opponent Profiles
-      this.enemyTracker.updateOpponents(this.regionDetector.enemyClusters);
-      const enemyAnalytics = this.enemyTracker.getEnemyAnalytics();
-
-      // 5. Threat Heatmap Generation (Gaussian Blur Pass)
-      this.heatmap.generateHeatmap(this.enemyTracker, this.occupancyGrid);
-
-      // 6. Phase 7 — Economy Analyzer
-      const myArea = borderStats.interiorCount + borderStats.perimeterLength;
-      const dtSec = this.worldModel.lastFrame ? (now - this.worldModel.lastFrame.timestamp) / 1000 : 1;
-      this.economy.updateEconomy(myArea, dtSec);
-      const ecoDecisions = this.economy.getEconomicDecisions();
-
-      // 7. Phase 8 — 12-State FSM Strategy Engine
-      const gameTimeSec = Math.floor((now - this.worldModel.matchStartTime) / 1000);
-      const neutralRatio = regionStats.largestNeutralArea / Math.max(1, (visionResult.width * visionResult.height));
-      const stateConfig = this.strategy.evaluateTransitions(gameTimeSec, neutralRatio, this.economy.economicHealth, myArea, enemyAnalytics);
-
-      // 8. Phase 10 — Kinematic Prediction Engine
-      const predictions = this.prediction.predictFrontierExtrapolation(this.enemyTracker, this.worldModel);
-      const highThreats = this.prediction.getCriticalThreats();
-
-      // 9. Phase 9 — 10-Factor Utility Scoring & Candidate Evaluation
-      let bestTargetCandidate = null;
-      let highestScore = -9999;
-
-      const candidates = this.borderDetector.expansionFrontier.length > 0 ? this.borderDetector.expansionFrontier : this.borderDetector.borderCells;
-      const sampleList = candidates.length > 0 ? candidates : [{ x: this.spawnPos.x, y: this.spawnPos.y }];
-
-      const step = Math.max(1, Math.floor(sampleList.length / 24));
-      for (let i = 0; i < sampleList.length; i += step) {
-        const cand = sampleList[i];
-        const cell = this.occupancyGrid.getCell(cand.x, cand.y);
-        const cellType = cell ? cell.type : 'NEUTRAL';
-
-        // Reachability Verification via Pathfinding Engine
-        const reachability = this.pathfinding.verifyReachabilityBFS(this.occupancyGrid, this.spawnPos.x, this.spawnPos.y, cand.x, cand.y);
-        if (!reachability.reachable) continue;
-
-        const score = this.utility.scoreTarget(cand.x, cand.y, this.spawnPos.x, this.spawnPos.y, cellType, ecoDecisions, stateConfig, this.heatmap);
-        if (score > highestScore) {
-          highestScore = score;
-          bestTargetCandidate = cand;
-        }
+      if (this.scheduler.shouldRunFrame(now)) {
+        this.executePipeline(now, dtSec);
+        this.lastTickTime = now;
       }
 
-      // 10. Temporal Smoothing & Target Hysteresis Filter
-      const smoothedTarget = this.smoothing.filterTarget(bestTargetCandidate, highestScore);
+      this.loopId = requestAnimationFrame(() => this.loop());
+    }
 
-      // 11. Phase 11 — Mouse Controller Execution
-      if (now - this.lastExecutionTime >= stateConfig.attackPacingMs) {
-        this.lastExecutionTime = now;
-        const targetX = smoothedTarget ? smoothedTarget.x : this.spawnPos.x + 50;
-        const targetY = smoothedTarget ? smoothedTarget.y : this.spawnPos.y + 50;
+    executePipeline(now, dtSec) {
+      this.frameCount++;
 
-        this.economy.recordTroopDispatch(stateConfig.recommendedRatio);
-        this.mouse.sendIsolatedAttack(targetX, targetY, stateConfig.recommendedRatio);
+      // ========================================================
+      // STEP 1: VISION ENGINE (Capture, Classify, Morphological Closing)
+      // ========================================================
+      const visionResult = this.vision.processFrame();
+      if (!visionResult || !visionResult.typeMatrix) return;
+
+      // ========================================================
+      // STEP 2: OCCUPANCY GRID (Update Spatial Cell Matrix)
+      // ========================================================
+      this.grid.updateFromVision(visionResult);
+      this.region.setGrid(this.grid);
+      this.border.setGrid(this.grid);
+      this.pathfinder.setGrid(this.grid);
+
+      // ========================================================
+      // STEP 3: REGION DETECTOR (Two-Pass Connected Components)
+      // ========================================================
+      const regionStats = this.region.detectConnectedComponents(
+        this.playerSpawnPos.x,
+        this.playerSpawnPos.y
+      );
+
+      // ========================================================
+      // STEP 4: ENEMY TRACKER & THREAT HEATMAP ENGINE
+      // ========================================================
+      if (this.region.enemyClusters) {
+        this.enemy.updateOpponents(this.region.enemyClusters, this.playerSpawnPos);
+        this.heatmap.updateThreatField(this.region.enemyClusters, this.playerSpawnPos);
       }
+      const enemyAnalytics = this.enemy.getEnemyAnalytics();
 
-      // 12. Phase 12 — Real-Time HUD Telemetry Update
-      this.hud.updateTelemetry({
-        currentFPS: this.currentFPS,
-        statusText: '🔥 MATCH ACTIVE (HUMAN-LEVEL AGENT)',
-        strategyState: this.strategy.currentState,
-        reservePercentage: ecoDecisions.reserveRatioPercentage,
-        ecoHealth: this.economy.economicHealth,
-        bestUtilityScore: highestScore,
-        expansionVelocity: this.worldModel.getExpansionVelocity(),
-        trackedEnemiesCount: enemyAnalytics.totalEnemies,
-        threatSeverity: highThreats.length > 0 ? 'HIGH' : 'LOW',
-        visionFPS: visionResult.visionFPS
+      // ========================================================
+      // STEP 5: BORDER DETECTOR (Convex Hull & Frontier Extraction)
+      // ========================================================
+      const borderStats = this.border.extractPerimeterAndFrontiers(this.heatmap);
+      if (!borderStats) return;
+
+      // ========================================================
+      // STEP 6: WORLD MODEL RAM BUFFER (300-Frame Circular Ring)
+      // ==========================================
+      this.world.recordFrame({
+        interiorArea: borderStats.interiorArea,
+        perimeterLength: borderStats.perimeterLength,
+        compactness: borderStats.isoperimetricQuotient,
+        largestNeutralArea: regionStats ? regionStats.largestNeutralArea : 0,
+        enemyClusterCount: regionStats ? regionStats.enemyCount : 0,
+        largestEnemyCluster: regionStats ? regionStats.largestEnemyCluster : 0
       });
+      const worldTelemetry = this.world.getRAMTelemetry();
+
+      // ========================================================
+      // STEP 7: STRATEGY ENGINE & DYNAMIC AGGRESSION METER
+      // ========================================================
+      const gameTimeSec = (now - this.world.matchStartTime) / 1000.0;
+      const neutralRatio = (regionStats && visionResult.width)
+        ? (regionStats.largestNeutralArea / (visionResult.width * visionResult.height))
+        : 0.50;
+
+      const strategyConfig = this.strategy.evaluateTransitions(
+        gameTimeSec,
+        neutralRatio,
+        this.economy.economicHealth,
+        borderStats.totalTerritoryArea,
+        borderStats.isoperimetricQuotient,
+        enemyAnalytics,
+        regionStats,
+        this.economy.growthPerSec
+      );
+
+      const aggrVal = strategyConfig.aggressionValue || 0.75;
+
+      // ========================================================
+      // STEP 8: ECONOMY ANALYZER (Aggressive Expansionist Compounding)
+      // ========================================================
+      this.economy.updateEconomy(borderStats.totalTerritoryArea, dtSec);
+      const ecoDecisions = this.economy.getEconomicDecisions(neutralRatio, aggrVal);
+
+      // ========================================================
+      // STEP 9: PREDICTION ENGINE (Kinematic Border Extrapolation)
+      // ========================================================
+      const predStats = this.prediction.extrapolateFrontiers(
+        this.border.enemyFrontier,
+        enemyAnalytics,
+        5.0
+      );
+      const threatVectors = this.prediction.getHighThreatVectors();
+
+      // ========================================================
+      // STEP 10: UTILITY EVALUATOR (Aggressive 35/25/20/10/10 Profile)
+      // ========================================================
+      let candidateCells = this.border.expansionFrontier;
+      if (strategyConfig.targetPriority === 'ENEMY_WEAK' || strategyConfig.targetPriority === 'ENEMY_STRONG') {
+        candidateCells = this.border.enemyFrontier.length > 0 ? this.border.enemyFrontier : this.border.expansionFrontier;
+      }
+
+      const bestCandidate = this.utility.evaluateCandidates(
+        candidateCells,
+        this.playerSpawnPos,
+        worldTelemetry,
+        enemyAnalytics,
+        borderStats.isoperimetricQuotient,
+        this.heatmap,
+        aggrVal
+      );
+
+      // ========================================================
+      // STEP 11: TEMPORAL SMOOTHING (Hysteresis & Target Lock)
+      // ========================================================
+      const isPanic = (strategyConfig.stateName === 'PANIC' || strategyConfig.stateName === 'DEFENSIVE_TURTLE');
+      const lockedTarget = this.smoothing.filterCandidate(bestCandidate, isPanic);
+
+      // ========================================================
+      // STEP 12: PATHFINDING ENGINE (Min-Heap A* Reachability)
+      // ========================================================
+      let pathWorthy = false;
+      if (lockedTarget) {
+        const gx = Math.floor(lockedTarget.x * visionResult.scaleFactor);
+        const gy = Math.floor(lockedTarget.y * visionResult.scaleFactor);
+        const sx = Math.floor(this.playerSpawnPos.x * visionResult.scaleFactor);
+        const sy = Math.floor(this.playerSpawnPos.y * visionResult.scaleFactor);
+
+        const pathResult = this.pathfinder.findPath(sx, sy, gx, gy);
+        const worthiness = this.pathfinder.isWorthIt(pathResult, lockedTarget.utility);
+        pathWorthy = worthiness.worthy;
+      }
+
+      // ========================================================
+      // STEP 13: MOUSE CONTROLLER (Execute Aggressive Attack & Troop Slider)
+      // ========================================================
+      if (lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
+        if (now - this.lastAttackDispatchTime >= strategyConfig.attackPacingMs) {
+          this.controller.setTroopSliderRatio(ecoDecisions.recommendedRatio);
+          this.controller.executeClick(lockedTarget.x, lockedTarget.y);
+          this.economy.recordAttackDispatch(ecoDecisions.recommendedRatio, lockedTarget.type, 100);
+
+          this.lastAttackDispatchTime = now;
+        }
+      }
+
+      // ========================================================
+      // STEP 14: HUD TELEMETRY DASHBOARD & ZERO-CROSSHAIR OVERLAY
+      // ========================================================
+      this.hud.updateDashboard({
+        fps: visionResult.visionFPS || 15,
+        state: strategyConfig.stateName,
+        aggression: strategyConfig.aggressionLabel || `AGGRESSIVE (${aggrVal.toFixed(2)})`,
+        myArea: borderStats.totalTerritoryArea,
+        compactness: borderStats.isoperimetricQuotient,
+        ecoHealth: ecoDecisions.health,
+        troopBalance: this.economy.estimatedTroopBalance,
+        growthPerSec: this.economy.growthPerSec,
+        attackROI: this.economy.attackROI,
+        enemyCount: enemyAnalytics.totalTracked || 0,
+        primaryThreat: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.id : 'NONE',
+        dangerScore: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.dangerScore : 0.0,
+        targetCoord: lockedTarget ? `${lockedTarget.x}, ${lockedTarget.y}` : 'NONE',
+        smoothingLock: lockedTarget ? `HOLD (${lockedTarget.tickCount}/5)` : 'IDLE'
+      });
+
+      this.hud.renderOverlay(
+        this.playerSpawnPos,
+        lockedTarget,
+        threatVectors
+      );
     }
   }
 
-  // Launch Master Orchestrator when DOM is ready
-  const masterAgent = new CoreEngine();
+  window.TerritorialEngineV5 = new TerritorialMasterOrchestrator();
+  window.TerritorialEngineV5.init();
 
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(() => masterAgent.init(), 800);
-  } else {
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => masterAgent.init(), 800);
-    });
-  }
+  console.log('%c[TIO Master Orchestrator v5.0] Aggressive Expansionist Pipeline Deployed.', 'color: #10b981; font-weight: bold;');
 })();

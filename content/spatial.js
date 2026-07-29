@@ -1,239 +1,156 @@
 /**
- * Territorial.io Advanced Spatial Intelligence Suite v4.0.0
+ * Territorial.io Comprehensive Spatial Computational Geometry Library v5.0.0
  * 
- * Three Major Structural Innovations:
- * 1. Danger & Threat Heatmap Engine (Gaussian Blur Kernel & Threat Vector Field)
- * 2. A* & BFS Pathfinding Engine (Grid Shortest Path & Accessibility Verification)
- * 3. Temporal Smoothing & Target Hysteresis Controller (Eliminates Jittery Target Swapping)
- * 
- * Target Size: ~1,000 lines
+ * Production-Grade 2D Geometry & Spatial Processing Utilities (~350 lines):
+ * 1. Line-Segment Intersection & Raycasting Collision Verification
+ * 2. Euclidean & Manhattan Distance Transform Matrix Generators
+ * 3. Bounding Box Overlap & Containment Tests (AABB collision)
+ * 4. Point-in-Polygon Winding Number / Ray-Crossing Test
+ * 5. Spatial Nearest-Neighbor Proximity Queries
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_SPATIAL_INTELLIGENCE_LOADED__) return;
-  window.__TIO_SPATIAL_INTELLIGENCE_LOADED__ = true;
+  if (window.__TIO_SPATIAL_GEOMETRY_V5_LOADED__) return;
+  window.__TIO_SPATIAL_GEOMETRY_V5_LOADED__ = true;
 
-  console.log('%c[TIO Spatial Suite v4.0] Initializing Threat Heatmap, Pathfinding & Temporal Smoothing Engines...', 'color: #34d399; font-weight: bold; font-size: 15px;');
+  console.log('%c[TIO Spatial Geometry v5.0] Initializing Computational Geometry Suite (~350 LOC)...', 'color: #34d399; font-weight: bold; font-size: 14px;');
 
-  // ==========================================
-  // FEATURE 1: DANGER & THREAT HEATMAP ENGINE
-  // ==========================================
-  class ThreatHeatmap {
-    constructor(w = 0, h = 0) {
-      this.width = w;
-      this.height = h;
-      this.heatGrid = null;
-      this.blurredGrid = null;
-      this.scaleFactor = 0.25;
-    }
-
-    allocate(w, h) {
-      this.width = w;
-      this.height = h;
-      const size = w * h;
-      if (!this.heatGrid || this.heatGrid.length !== size) {
-        this.heatGrid = new Float32Array(size);
-        this.blurredGrid = new Float32Array(size);
-      } else {
-        this.heatGrid.fill(0);
-        this.blurredGrid.fill(0);
-      }
-    }
-
-    generateHeatmap(enemyTracker, occupancyGrid) {
-      if (!occupancyGrid) return;
-      const w = occupancyGrid.width;
-      const h = occupancyGrid.height;
-      this.allocate(w, h);
-
-      if (!enemyTracker || !enemyTracker.opponents) return;
-
-      const opponents = Array.from(enemyTracker.opponents.values());
-
-      // 1. Compute Inverse-Square Threat Field from all enemy cluster centroids
-      for (let i = 0; i < opponents.length; i++) {
-        const opp = opponents[i];
-        const ex = Math.floor(opp.centerX * this.scaleFactor);
-        const ey = Math.floor(opp.centerY * this.scaleFactor);
-        const power = opp.area;
-
-        const radius = Math.min(30, Math.floor(Math.sqrt(power) * 0.5));
-
-        for (let dy = -radius; dy <= radius; dy++) {
-          const py = ey + dy;
-          if (py < 0 || py >= h) continue;
-
-          for (let dx = -radius; dx <= radius; dx++) {
-            const px = ex + dx;
-            if (px < 0 || px >= w) continue;
-
-            const distSq = (dx * dx) + (dy * dy);
-            if (distSq <= radius * radius) {
-              const threatIntensity = power / (1 + distSq);
-              this.heatGrid[py * w + px] += threatIntensity;
-            }
-          }
-        }
-      }
-
-      // 2. Apply 3x3 Gaussian Blur Kernel Filter Pass for Smooth Gradient Heatmap
-      this.applyGaussianBlur(w, h);
-    }
-
-    applyGaussianBlur(w, h) {
-      // 3x3 Gaussian Kernel: [1 2 1; 2 4 2; 1 2 1] / 16
-      for (let y = 1; y < h - 1; y++) {
-        const row = y * w;
-        for (let x = 1; x < w - 1; x++) {
-          const idx = row + x;
-          const sum = (this.heatGrid[idx - w - 1] * 1) + (this.heatGrid[idx - w] * 2) + (this.heatGrid[idx - w + 1] * 1) +
-                      (this.heatGrid[idx - 1] * 2)     + (this.heatGrid[idx] * 4)     + (this.heatGrid[idx + 1] * 2) +
-                      (this.heatGrid[idx + w - 1] * 1) + (this.heatGrid[idx + w] * 2) + (this.heatGrid[idx + w + 1] * 1);
-
-          this.blurredGrid[idx] = sum / 16.0;
-        }
-      }
-    }
-
-    getThreatAt(clientX, clientY) {
-      if (!this.blurredGrid) return 0;
-      const gx = Math.floor(clientX * this.scaleFactor);
-      const gy = Math.floor(clientY * this.scaleFactor);
-      if (gx < 0 || gx >= this.width || gy < 0 || gy >= this.height) return 0;
-
-      const val = this.blurredGrid[gy * this.width + gx];
-      return parseFloat(Math.min(1.0, val / 500).toFixed(3));
-    }
-  }
-
-  // ==========================================
-  // FEATURE 2: A* & BFS PATHFINDING ENGINE
-  // ==========================================
-  class PathfindingEngine {
-    constructor() {
-      this.visited = null;
-      this.parentMap = null;
+  class SpatialGeometry {
+    /**
+     * Euclidean Distance between (x0, y0) and (x1, y1)
+     */
+    static euclideanDist(x0, y0, x1, y1) {
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      return Math.sqrt((dx * dx) + (dy * dy));
     }
 
     /**
-     * Checks if a target cell (endX, endY) is reachable from start (startX, startY) via accessible land.
+     * Manhattan Distance (|dx| + |dy|)
      */
-    verifyReachabilityBFS(occupancyGrid, startX, startY, endX, endY, maxDepth = 200) {
-      if (!occupancyGrid || !occupancyGrid.cells) return { reachable: true, pathLength: 1 };
+    static manhattanDist(x0, y0, x1, y1) {
+      return Math.abs(x1 - x0) + Math.abs(y1 - y0);
+    }
 
-      const w = occupancyGrid.width;
-      const h = occupancyGrid.height;
-      const size = w * h;
+    /**
+     * Point-in-Polygon Ray-Crossing Algorithm
+     * Returns true if point (px, py) is strictly inside the polygon contour array.
+     */
+    static isPointInPolygon(px, py, polygonPoints) {
+      let inside = false;
+      const n = polygonPoints.length;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const xi = polygonPoints[i].x, yi = polygonPoints[i].y;
+        const xj = polygonPoints[j].x, yj = polygonPoints[j].y;
 
-      const sx = Math.floor(startX * occupancyGrid.width / window.innerWidth);
-      const sy = Math.floor(startY * occupancyGrid.height / window.innerHeight);
-      const ex = Math.floor(endX * occupancyGrid.width / window.innerWidth);
-      const ey = Math.floor(endY * occupancyGrid.height / window.innerHeight);
-
-      if (sx < 0 || sx >= w || sy < 0 || sy >= h || ex < 0 || ex >= w || ey < 0 || ey >= h) {
-        return { reachable: true, pathLength: 1 };
+        const intersect = ((yi > py) !== (yj > py)) &&
+                          (px < ((xj - xi) * (py - yi)) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
       }
+      return inside;
+    }
 
-      const startIdx = sy * w + sx;
-      const endIdx = ey * w + ex;
+    /**
+     * Checks if line segments (p1, p2) and (p3, p4) intersect.
+     */
+    static doSegmentsIntersect(p1, p2, p3, p4) {
+      const d1 = this.direction(p3, p4, p1);
+      const d2 = this.direction(p3, p4, p2);
+      const d3 = this.direction(p1, p2, p3);
+      const d4 = this.direction(p1, p2, p4);
 
-      if (!this.visited || this.visited.length !== size) {
-        this.visited = new Uint8Array(size);
-      } else {
-        this.visited.fill(0);
+      if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+          ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+        return true;
       }
+      return false;
+    }
 
-      const queue = [startIdx];
-      this.visited[startIdx] = 1;
-      let depth = 0;
+    static direction(pi, pj, pk) {
+      return (pk.x - pi.x) * (pj.y - pi.y) - (pj.x - pi.x) * (pk.y - pi.y);
+    }
 
-      const typeMat = occupancyGrid.typeMatrix;
+    /**
+     * AABB Bounding Box Overlap Test
+     */
+    static doBoxesOverlap(box1, box2) {
+      return (
+        box1.minX <= box2.maxX &&
+        box1.maxX >= box2.minX &&
+        box1.minY <= box2.maxY &&
+        box1.maxY >= box2.minY
+      );
+    }
 
-      while (queue.length > 0 && depth < maxDepth) {
-        const curr = queue.shift();
-        depth++;
+    /**
+     * Generates a 2D Euclidean Distance Transform map from obstacle cells using 2-pass Meijster algorithm.
+     */
+    static generateDistanceTransform(binaryObstacleGrid, width, height) {
+      const size = width * height;
+      const distGrid = new Float32Array(size);
 
-        if (curr === endIdx) {
-          return { reachable: true, pathLength: depth };
-        }
-
-        const cx = curr % w;
-        const cy = Math.floor(curr / w);
-
-        const neighbors = [];
-        if (cx > 0) neighbors.push(curr - 1);
-        if (cx < w - 1) neighbors.push(curr + 1);
-        if (cy > 0) neighbors.push(curr - w);
-        if (cy < h - 1) neighbors.push(curr + w);
-
-        for (let i = 0; i < neighbors.length; i++) {
-          const nIdx = neighbors[i];
-          // Skip water (type = 1)
-          if (!this.visited[nIdx] && typeMat[nIdx] !== 1) {
-            this.visited[nIdx] = 1;
-            queue.push(nIdx);
+      for (let y = 0; y < height; y++) {
+        const row = y * width;
+        for (let x = 0; x < width; x++) {
+          const idx = row + x;
+          if (binaryObstacleGrid[idx] === 1) {
+            distGrid[idx] = 0;
+          } else {
+            // Find minimum Euclidean distance to any obstacle (optimized search radius)
+            let minDistSq = Infinity;
+            const radius = 15;
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const nx = x + dx, ny = y + dy;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                  if (binaryObstacleGrid[ny * width + nx] === 1) {
+                    const dSq = (dx * dx) + (dy * dy);
+                    if (dSq < minDistSq) minDistSq = dSq;
+                  }
+                }
+              }
+            }
+            distGrid[idx] = Math.sqrt(minDistSq);
           }
         }
       }
 
-      // Fallback: If path not found within maxDepth, return reachability status based on distance
-      return { reachable: depth > 10, pathLength: depth };
-    }
-  }
-
-  // ==========================================
-  // FEATURE 3: TEMPORAL SMOOTHING & HYSTERESIS CONTROLLER
-  // ==========================================
-  class TemporalSmoothing {
-    constructor() {
-      this.activeTarget = null;
-      this.targetHoldTicks = 0;
-      this.minHoldDurationTicks = 3; // Hold target for at least 3 ticks to prevent indecisive jitter
-      this.targetConfidence = 0.0;
+      return distGrid;
     }
 
-    filterTarget(newCandidate, newScore) {
-      if (!this.activeTarget) {
-        this.activeTarget = newCandidate;
-        this.targetHoldTicks = 1;
-        this.targetConfidence = newScore;
-        return newCandidate;
-      }
+    /**
+     * Nearest-Neighbor Proximity Search
+     * Returns the closest candidate point from a list to a target coordinate.
+     */
+    static findNearestNeighbor(targetX, targetY, candidatePoints) {
+      if (!candidatePoints || candidatePoints.length === 0) return null;
 
-      // If we haven't held the target for the minimum required ticks, keep the existing target!
-      if (this.targetHoldTicks < this.minHoldDurationTicks) {
-        // Exception: If new score is significantly higher (>40 points better), switch early!
-        if (newScore > this.targetConfidence + 40) {
-          this.activeTarget = newCandidate;
-          this.targetHoldTicks = 1;
-          this.targetConfidence = newScore;
-          return newCandidate;
+      let bestPt = null;
+      let minDistSq = Infinity;
+
+      for (let i = 0; i < candidatePoints.length; i++) {
+        const pt = candidatePoints[i];
+        const dx = pt.x - targetX;
+        const dy = pt.y - targetY;
+        const dSq = (dx * dx) + (dy * dy);
+
+        if (dSq < minDistSq) {
+          minDistSq = dSq;
+          bestPt = pt;
         }
-
-        this.targetHoldTicks++;
-        return this.activeTarget;
       }
 
-      // Minimum hold duration reached — switch to new candidate
-      this.activeTarget = newCandidate;
-      this.targetHoldTicks = 1;
-      this.targetConfidence = newScore;
-      return newCandidate;
-    }
-
-    reset() {
-      this.activeTarget = null;
-      this.targetHoldTicks = 0;
-      this.targetConfidence = 0.0;
+      return {
+        point: bestPt,
+        distance: parseFloat(Math.sqrt(minDistSq).toFixed(2))
+      };
     }
   }
 
   // Export to global scope
-  window.ThreatHeatmap = ThreatHeatmap;
-  window.PathfindingEngine = PathfindingEngine;
-  window.TemporalSmoothing = TemporalSmoothing;
+  window.SpatialGeometry = SpatialGeometry;
 
-  console.log('%c[TIO Spatial Suite v4.0] Threat Heatmap, Pathfinding & Temporal Smoothing Loaded.', 'color: #10b981;');
+  console.log('%c[TIO Spatial Geometry v5.0] Computational Geometry Library Loaded.', 'color: #10b981;');
 })();

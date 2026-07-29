@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "4.0.0",
-  "description": "Human-Level Autonomous Agent for Territorial.io featuring 14 Deep Modules (Morphological Vision Engine, Occupancy Grid, 300-Frame Memory, Enemy Profiles, 12-State FSM, 10-Factor Utility, Threat Heatmap, Pathfinding, Temporal Smoothing). Last Updated: 2026-07-29 21:41:05 +07:00",
+  "version": "5.0.0",
+  "description": "Comprehensive Human-Level Autonomous Agent v5.0 for Territorial.io (~5,300+ LOC) featuring 15 Deep Modular Engines (Morphological Vision, Occupancy Grid, Monotone Chain Convex Hull Border Detector, Two-Pass CCL Region Detector, 300-Frame RAM World Model, Enemy Tracker, Exponential Economy, 2D Gaussian Blur Threat Heatmap, 12-State Strategy FSM, 10-Factor Utility Evaluator, Prediction Engine, Hysteresis Temporal Smoothing, Min-Heap A* Pathfinding, Zero-Crosshair 14-Metric HUD, Virtual PointerId 99 Controller, TypedArray Optimization). Last Updated: 2026-07-29 21:55:00 +07:00",
   "permissions": [
     "storage",
     "activeTab"
@@ -31,10 +31,21 @@
       "js": [
         "content/vision.js",
         "content/grid.js",
+        "content/region.js",
+        "content/border.js",
         "content/world.js",
+        "content/enemy.js",
+        "content/economy.js",
+        "content/heatmap.js",
         "content/strategy.js",
+        "content/utility.js",
+        "content/prediction.js",
+        "content/smoothing.js",
+        "content/pathfinding.js",
         "content/spatial.js",
         "content/controller.js",
+        "content/hud.js",
+        "content/optimization.js",
         "content/content.js"
       ],
       "css": ["content/content.css"],

@@ -1,243 +1,592 @@
 /**
- * Territorial.io Deep Strategy & Reasoning Engine v4.0.0
+ * Territorial.io Comprehensive 12-State Strategy Engine v5.0.0
  * 
- * Comprehensive Reasoning Pipeline:
- * - Phase 8 — Strategy Engine (12-State FSM: Opening, Rapid Expansion, Greedy Farming, Eco Recovery, Border Compression, Aggressive Attack, Defensive Turtle, Kill Secure, Endgame, Panic, Opportunistic Strike, Island Capture)
- * - Phase 9 — Utility Evaluator (10-Factor Multi-Term Action Scoring Equation with exact weights)
- * - Phase 10 — Prediction Engine (Velocity, Acceleration, Extrapolated Future Borders & Danger Field)
- * 
- * Target Size: ~1,900 lines
+ * Production-Grade Hierarchical FSM & Aggressive Expansionist Suite (~550 lines):
+ * 1. Aggressive Core Philosophy: "How do I maximize territory growth while staying alive?"
+ * 2. Dedicated Aggression Meter (aggression in [0, 1]) biasing every decision:
+ *    - Increases when larger than nearby opponents, gaining territory quickly, or abundant neutral land
+ *    - Decreases ONLY when multiple enemies are attacking, expansion stalls, or reserves are critically low
+ * 3. Expansion as Default State:
+ *    - Priority Flow: Opening -> Rapid Expansion (DEFAULT) -> Economy Growth -> Aggressive Attack -> Kill Secure
+ * 4. Strict Multi-Condition Check for Defensive Turtling:
+ *    - ONLY enters DEFENSIVE_TURTLE when (myArea < 0.4 * averageEnemyArea && threatLevel > 0.8 && borderPressure > 0.7)
+ * 5. Complete Strategy Audit Log & Historical Transition Telemetry Tracker
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_DEEP_STRATEGY_LOADED__) return;
-  window.__TIO_DEEP_STRATEGY_LOADED__ = true;
+  if (window.__TIO_STRATEGY_ENGINE_V5_LOADED__) return;
+  window.__TIO_STRATEGY_ENGINE_V5_LOADED__ = true;
 
-  console.log('%c[TIO Strategy Engine v4.0] Initializing 12-State Machine & 10-Factor Utility Suite...', 'color: #34d399; font-weight: bold; font-size: 15px;');
+  console.log('%c[TIO Strategy Engine v5.0] Initializing Aggression Meter & Expansionist FSM (~550 LOC)...', 'color: #34d399; font-weight: bold; font-size: 14px;');
 
   // ==========================================
-  // PHASE 8 — STRATEGY ENGINE (12-STATE FSM)
+  // CLASS 1: DYNAMIC AGGRESSION METER
   // ==========================================
-  class StrategyEngine {
-    constructor() {
-      // 12 Hierarchical States
-      this.states = [
-        'OPENING',
-        'RAPID_EXPANSION',
-        'GREEDY_FARMING',
-        'ECO_RECOVERY',
-        'BORDER_COMPRESSION',
-        'AGGRESSIVE_ATTACK',
-        'DEFENSIVE_TURTLE',
-        'KILL_SECURE',
-        'ENDGAME',
-        'PANIC',
-        'OPPORTUNISTIC_STRIKE',
-        'ISLAND_CAPTURE'
-      ];
-
-      this.currentState = 'OPENING';
-      this.previousState = null;
-      this.stateStartTime = performance.now();
-      this.stateTransitions = 0;
+  class AggressionMeter {
+    constructor(initialValue = 0.75) {
+      this.value = initialValue; // Default to high aggression (0.75)
+      this.lastUpdateTime = performance.now();
+      this.trend = 'RISING';
     }
 
-    evaluateTransitions(gameTimeSec, neutralRatio, ecoHealth, myArea, enemyAnalytics) {
-      const prevState = this.currentState;
+    update(context, dtSec) {
+      if (dtSec <= 0) return this.value;
 
-      // 12-State Transition Rules
-      if (enemyAnalytics.isUnderAttack && ecoHealth === 'CRITICAL_DEFICIT') {
-        this.currentState = 'PANIC';
-      } else if (ecoHealth === 'CRITICAL_DEFICIT') {
-        this.currentState = 'ECO_RECOVERY';
-      } else if (enemyAnalytics.isUnderAttack) {
-        this.currentState = 'DEFENSIVE_TURTLE';
-      } else if (gameTimeSec < 20 && neutralRatio > 0.40) {
-        this.currentState = 'OPENING';
-      } else if (neutralRatio > 0.20) {
-        this.currentState = 'RAPID_EXPANSION';
-      } else if (neutralRatio > 0.05 && ecoHealth === 'STRONG') {
-        this.currentState = 'GREEDY_FARMING';
-      } else if (enemyAnalytics.weakestArea > 0 && enemyAnalytics.weakestArea < myArea * 0.25) {
-        this.currentState = 'KILL_SECURE';
-      } else if (neutralRatio <= 0.02 && ecoHealth === 'STRONG') {
-        this.currentState = 'AGGRESSIVE_ATTACK';
-      } else if (gameTimeSec > 180 || neutralRatio <= 0.01) {
-        this.currentState = 'ENDGAME';
+      let delta = 0.0;
+
+      // 1. INCREASE CONDITIONS (Aggressive Growth Drivers)
+      // Larger than nearby opponents
+      if (context.myArea > context.averageEnemyArea) {
+        delta += 0.06 * dtSec;
+      }
+      // Gaining territory quickly
+      if (context.growthPerSec > 25.0) {
+        delta += 0.08 * dtSec;
+      }
+      // Abundant neutral land available
+      if (context.neutralRatio > 0.10) {
+        delta += 0.05 * dtSec;
+      }
+
+      // 2. DECREASE CONDITIONS (Strict Survival Dampeners)
+      // Multiple enemies actively attacking
+      if (context.attackingEnemyCount >= 2) {
+        delta -= 0.12 * dtSec;
+      }
+      // Expansion stalls completely with no neutral land
+      if (context.growthPerSec <= 0.0 && context.neutralRatio < 0.03) {
+        delta -= 0.04 * dtSec;
+      }
+      // Troop reserves become critically low
+      if (context.ecoHealth === 'CRITICAL_DEFICIT') {
+        delta -= 0.08 * dtSec;
+      }
+
+      const oldValue = this.value;
+      this.value = parseFloat(Math.min(1.0, Math.max(0.10, this.value + delta)).toFixed(3));
+
+      if (this.value > oldValue + 0.005) {
+        this.trend = 'RISING';
+      } else if (this.value < oldValue - 0.005) {
+        this.trend = 'FALLING';
       } else {
-        this.currentState = 'BORDER_COMPRESSION';
+        this.trend = 'STABLE';
       }
 
-      if (this.currentState !== prevState) {
-        this.previousState = prevState;
-        this.stateStartTime = performance.now();
-        this.stateTransitions++;
-        console.log(`[TIO Strategy FSM v4.0] State Change: ${prevState} ---> ${this.currentState}`);
-      }
-
-      return this.getStatePlannerConfig();
+      return this.value;
     }
 
-    getStatePlannerConfig() {
-      switch (this.currentState) {
-        case 'OPENING':
-          return { recommendedRatio: 0.25, attackPacingMs: 150, targetPriority: 'NEUTRAL_FAST', maxDistance: 120 };
-        case 'RAPID_EXPANSION':
-          return { recommendedRatio: 0.25, attackPacingMs: 180, targetPriority: 'NEUTRAL_FRONTIER', maxDistance: 180 };
-        case 'GREEDY_FARMING':
-          return { recommendedRatio: 0.125, attackPacingMs: 220, targetPriority: 'NEUTRAL_SAFE', maxDistance: 140 };
-        case 'ECO_RECOVERY':
-          return { recommendedRatio: 0.125, attackPacingMs: 400, targetPriority: 'REST_CONSERVATION', maxDistance: 80 };
-        case 'BORDER_COMPRESSION':
-          return { recommendedRatio: 0.25, attackPacingMs: 200, targetPriority: 'CONVEX_SHELL', maxDistance: 150 };
-        case 'AGGRESSIVE_ATTACK':
-          return { recommendedRatio: 0.50, attackPacingMs: 160, targetPriority: 'ENEMY_STRONG', maxDistance: 220 };
-        case 'DEFENSIVE_TURTLE':
-          return { recommendedRatio: 0.125, attackPacingMs: 450, targetPriority: 'DEFENSIVE_WALL', maxDistance: 70 };
-        case 'KILL_SECURE':
-          return { recommendedRatio: 0.50, attackPacingMs: 140, targetPriority: 'ENEMY_WEAK', maxDistance: 250 };
-        case 'ENDGAME':
-          return { recommendedRatio: 0.375, attackPacingMs: 200, targetPriority: 'BREAKTHROUGH', maxDistance: 300 };
-        case 'PANIC':
-          return { recommendedRatio: 0.125, attackPacingMs: 500, targetPriority: 'SAFE_RETREAT', maxDistance: 50 };
-        case 'OPPORTUNISTIC_STRIKE':
-          return { recommendedRatio: 0.375, attackPacingMs: 170, targetPriority: 'ISOLATED_ENEMY', maxDistance: 190 };
-        case 'ISLAND_CAPTURE':
-          return { recommendedRatio: 0.25, attackPacingMs: 210, targetPriority: 'ISLAND', maxDistance: 160 };
-        default:
-          return { recommendedRatio: 0.25, attackPacingMs: 200, targetPriority: 'BALANCED', maxDistance: 150 };
-      }
+    getAggressionLabel() {
+      if (this.value >= 0.75) return `AGGRESSIVE (${this.value.toFixed(2)})`;
+      if (this.value >= 0.45) return `BALANCED (${this.value.toFixed(2)})`;
+      return `CAUTIOUS (${this.value.toFixed(2)})`;
     }
   }
 
   // ==========================================
-  // PHASE 9 — UTILITY EVALUATOR (10-FACTOR MATH)
+  // CLASS 2: STRATEGIC TRANSITION RECORD
   // ==========================================
-  class UtilityEvaluator {
-    constructor() {
-      // Exact 10-Factor Weight Coefficients (Sum = 1.00)
-      this.weights = {
-        w_expansion: 0.22,
-        w_economy: 0.18,
-        w_compactness: 0.12,
-        w_borderLength: 0.10,
-        w_enemyWeakness: 0.10,
-        w_futureExpansion: 0.08,
-        w_chokepoint: 0.08,
-        w_threat: 0.05,
-        w_travelDistance: 0.04,
-        w_risk: 0.03
+  class StateTransitionRecord {
+    constructor(id, fromState, toState, timestamp, priorityScore, triggerReason) {
+      this.id = id;
+      this.fromState = fromState;
+      this.toState = toState;
+      this.timestamp = timestamp;
+      this.priorityScore = priorityScore;
+      this.triggerReason = triggerReason;
+    }
+  }
+
+  // ==========================================
+  // CLASS 3: BASE STRATEGIC PLANNER
+  // ==========================================
+  class StrategicPlanner {
+    constructor(stateName, defaultRatio, defaultPacingMs, maxDistance, targetPriority) {
+      this.stateName = stateName;
+      this.defaultRatio = defaultRatio;
+      this.defaultPacingMs = defaultPacingMs;
+      this.maxDistance = maxDistance;
+      this.targetPriority = targetPriority;
+      this.priorityScore = 0.0;
+      this.activationCount = 0;
+      this.totalActiveTimeMs = 0;
+      this.lastActivatedTimestamp = 0;
+    }
+
+    getGoalDescription() {
+      return `Executing ${this.stateName} aggressive expansion plan.`;
+    }
+
+    getExecutionConfig(aggressionValue) {
+      // Scale recommended ratio and attack pacing dynamically by aggression meter
+      const aggrScale = Math.max(0.5, aggressionValue);
+      const scaledRatio = parseFloat(Math.min(0.50, Math.max(0.125, this.defaultRatio * (0.8 + 0.4 * aggrScale))).toFixed(3));
+      const scaledPacing = Math.max(80, Math.floor(this.defaultPacingMs / Math.max(0.6, aggrScale)));
+
+      return {
+        recommendedRatio: scaledRatio,
+        attackPacingMs: scaledPacing,
+        maxTargetDistance: this.maxDistance,
+        targetPriority: this.targetPriority,
+        priorityScore: this.priorityScore
       };
     }
 
-    /**
-     * 10-Factor Multi-Term Action Scoring Equation:
-     * Utility = 0.22*Expansion + 0.18*Economy + 0.12*Compactness + 0.10*BorderLength +
-     *           0.10*EnemyWeakness + 0.08*FutureExpansion + 0.08*Chokepoint +
-     *           0.05*Threat + 0.04*TravelDistance + 0.03*Risk
-     */
-    scoreTarget(candidateX, candidateY, anchorX, anchorY, cellType, ecoDecisions, stateConfig, threatHeatmap) {
-      const distance = Math.hypot(candidateX - anchorX, candidateY - anchorY);
-      
-      // 1. Expansion Value (0.22)
-      const expansionVal = (cellType === 'NEUTRAL') ? 1.0 : (cellType === 'ENEMY' ? 0.6 : 0.0);
+    onActivate(timestamp) {
+      this.activationCount++;
+      this.lastActivatedTimestamp = timestamp;
+    }
 
-      // 2. Economy Factor (0.18)
-      const economyVal = ecoDecisions.shouldSave ? 0.1 : 0.9;
-
-      // 3. Compactness Factor (0.12)
-      const compactnessVal = Math.max(0, 1.0 - (distance / stateConfig.maxDistance));
-
-      // 4. Border Length Factor (0.10)
-      const borderLengthVal = 1.0 - Math.min(1.0, distance / 250);
-
-      // 5. Enemy Weakness Factor (0.10)
-      const enemyWeaknessVal = (cellType === 'ENEMY' && stateConfig.targetPriority === 'ENEMY_WEAK') ? 0.9 : 0.2;
-
-      // 6. Future Expansion Potential (0.08)
-      const futureExpVal = (cellType === 'NEUTRAL') ? 0.85 : 0.40;
-
-      // 7. Chokepoint Value (0.08)
-      const distToEdge = Math.min(candidateX, candidateY, window.innerWidth - candidateX, window.innerHeight - candidateY);
-      const chokepointVal = Math.min(1.0, distToEdge / 80);
-
-      // 8. Threat Factor (0.05)
-      let threatVal = 0.8;
-      if (threatHeatmap) {
-        const threatAtPoint = threatHeatmap.getThreatAt(candidateX, candidateY);
-        threatVal = Math.max(0, 1.0 - threatAtPoint);
+    onDeactivate(timestamp) {
+      if (this.lastActivatedTimestamp > 0) {
+        this.totalActiveTimeMs += (timestamp - this.lastActivatedTimestamp);
       }
+    }
 
-      // 9. Travel Distance Factor (0.04)
-      const travelDistVal = 1.0 - Math.min(1.0, distance / 300);
-
-      // 10. Risk Factor (0.03)
-      const riskVal = (cellType === 'WATER') ? 0.0 : 0.9;
-
-      // Weighted Sum Calculation
-      const finalUtility = (this.weights.w_expansion * expansionVal * 100) +
-                           (this.weights.w_economy * economyVal * 100) +
-                           (this.weights.w_compactness * compactnessVal * 100) +
-                           (this.weights.w_borderLength * borderLengthVal * 100) +
-                           (this.weights.w_enemyWeakness * enemyWeaknessVal * 100) +
-                           (this.weights.w_futureExpansion * futureExpVal * 100) +
-                           (this.weights.w_chokepoint * chokepointVal * 100) +
-                           (this.weights.w_threat * threatVal * 100) +
-                           (this.weights.w_travelDistance * travelDistVal * 100) +
-                           (this.weights.w_risk * riskVal * 100);
-
-      return parseFloat(finalUtility.toFixed(2));
+    evaluatePriorityScore(context) {
+      return 0.0;
     }
   }
 
   // ==========================================
-  // PHASE 10 — PREDICTION ENGINE (FORECASTING)
+  // 12 DEDICATED PLANNER SUBCLASSES
   // ==========================================
-  class PredictionEngine {
+
+  /**
+   * 1. Opening Planner:
+   * Fastest early territorial footprint acquisition around spawn point.
+   */
+  class OpeningPlanner extends StrategicPlanner {
     constructor() {
-      this.forecastedBorders = [];
-      this.dangerMap = null;
+      super('OPENING', 0.25, 120, 140, 'NEUTRAL_FAST');
     }
 
-    predictFrontierExtrapolation(enemyTracker, worldModel) {
-      if (!enemyTracker || !enemyTracker.opponents) return [];
+    getGoalDescription() {
+      return 'Fastest early territorial footprint acquisition around spawn point.';
+    }
 
-      const forecasts = [];
-      const opponents = Array.from(enemyTracker.opponents.values());
+    evaluatePriorityScore(context) {
+      if (context.gameTimeSec > 45 || context.neutralRatio <= 0.15) return 0.0;
+      const timeFactor = Math.max(0, 1.0 - (context.gameTimeSec / 45.0));
+      return parseFloat((95.0 * timeFactor).toFixed(2));
+    }
+  }
 
-      for (let i = 0; i < opponents.length; i++) {
-        const enemy = opponents[i];
-        
-        // Kinematic Forecasting: pos_future = pos + (v * t) + (0.5 * a * t^2)
-        const dt = 3.0; // 3-second lookahead
-        const futureX = Math.max(30, Math.min(window.innerWidth - 30, enemy.centerX + (enemy.velocity.x * dt)));
-        const futureY = Math.max(30, Math.min(window.innerHeight - 30, enemy.centerY + (enemy.velocity.y * dt)));
+  /**
+   * 2. Rapid Expansion Planner (THE DEFAULT AGGRESSIVE STATE):
+   * Aggressive expansion along open neutral frontiers to maximize land compounding.
+   * Remains the default high-priority choice unless survival is at imminent risk.
+   */
+  class RapidExpansionPlanner extends StrategicPlanner {
+    constructor() {
+      super('RAPID_EXPANSION', 0.28, 140, 200, 'NEUTRAL_FRONTIER');
+    }
 
-        const isThreat = (enemy.dangerScore > 2.0);
+    getGoalDescription() {
+      return 'Default aggressive expansion along open neutral frontiers to maximize land compounding.';
+    }
 
-        forecasts.push({
-          enemyId: enemy.id,
-          currentPosition: { x: enemy.centerX, y: enemy.centerY },
-          futurePosition: { x: futureX, y: futureY },
-          threatSeverity: isThreat ? 'CRITICAL' : 'LOW'
-        });
+    evaluatePriorityScore(context) {
+      if (context.neutralRatio <= 0.02) return 0.0;
+      // High default base score (85.0) that scales up with available neutral land and aggression
+      const aggrBonus = context.aggression * 10.0;
+      const neutralBonus = Math.min(15.0, context.neutralRatio * 30.0);
+      return parseFloat((85.0 + aggrBonus + neutralBonus).toFixed(2));
+    }
+  }
+
+  /**
+   * 3. Greedy Farming Planner (ECONOMY GROWTH THROUGH EXPANSION):
+   * Early-game economy in Territorial.io is built through fast, efficient expansion into neutral land.
+   */
+  class GreedyFarmingPlanner extends StrategicPlanner {
+    constructor() {
+      super('GREEDY_FARMING', 0.20, 170, 160, 'NEUTRAL_SAFE');
+    }
+
+    getGoalDescription() {
+      return 'Economy growth through efficient continuous neutral land acquisition.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.neutralRatio <= 0.02) return 0.0;
+      // Secondary choice to Rapid Expansion when troop reserves are moderate
+      const reserveScore = (context.ecoHealth === 'MODERATE') ? 88.0 : 75.0;
+      return parseFloat(reserveScore.toFixed(2));
+    }
+  }
+
+  /**
+   * 4. Aggressive Attack Planner:
+   * Proactive offensive against weaker or threatening enemy borders to maintain dominance.
+   */
+  class AggressiveAttackPlanner extends StrategicPlanner {
+    constructor() {
+      super('AGGRESSIVE_ATTACK', 0.40, 140, 240, 'ENEMY_STRONG');
+    }
+
+    getGoalDescription() {
+      return 'Proactive offensive against weaker or threatening enemy borders to maintain dominance.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.neutralRatio > 0.05 || context.myArea < 800) return 0.0;
+      // High score once neutral land is depleted and we have strong territory
+      const dominanceBonus = (context.myArea > context.averageEnemyArea * 1.2) ? 12.0 : 0.0;
+      return parseFloat((84.0 + dominanceBonus + (context.aggression * 8.0)).toFixed(2));
+    }
+  }
+
+  /**
+   * 5. Kill Secure Planner:
+   * Rapid surgical elimination of weak dying opponent before other players claim spoils.
+   */
+  class KillSecurePlanner extends StrategicPlanner {
+    constructor() {
+      super('KILL_SECURE', 0.45, 110, 260, 'ENEMY_WEAK');
+    }
+
+    getGoalDescription() {
+      return 'Rapid surgical elimination of weak dying opponent before other players claim spoils.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (!context.weakestOpponent || context.weakestOpponent.area >= context.myArea * 0.25 || context.weakestOpponent.area <= 40) {
+        return 0.0;
+      }
+      return 93.0; // Extremely high priority to secure kills quickly
+    }
+  }
+
+  /**
+   * 6. Defensive Turtle Planner (STRICT MULTI-CONDITION COLLAPSE CHECK):
+   * ONLY enters defensive turtle mode when survival is genuinely at imminent risk:
+   * if (myArea < 0.4 * averageEnemyArea && threatLevel > 0.8 && borderPressure > 0.7)
+   */
+  class DefensiveTurtlePlanner extends StrategicPlanner {
+    constructor() {
+      super('DEFENSIVE_TURTLE', 0.125, 500, 70, 'DEFENSIVE_WALL');
+    }
+
+    getGoalDescription() {
+      return 'Emergency survival defense when territory is genuinely close to collapse.';
+    }
+
+    evaluatePriorityScore(context) {
+      // STRICT SURVIVAL MULTI-CONDITION CHECK
+      const isCloseToCollapse = (
+        context.myArea < (0.40 * context.averageEnemyArea) &&
+        context.threatLevel > 0.80 &&
+        context.borderPressure > 0.70
+      );
+
+      if (isCloseToCollapse) {
+        return 96.0; // True collapse danger — turtle to survive
+      }
+      return 0.0; // NEVER turtle prematurely!
+    }
+  }
+
+  /**
+   * 7. Eco Recovery Planner:
+   * Emergency rest pacing ONLY when troop reserves are critically depleted AND no neutral land is left.
+   */
+  class EcoRecoveryPlanner extends StrategicPlanner {
+    constructor() {
+      super('ECO_RECOVERY', 0.125, 400, 80, 'REST_CONSERVATION');
+    }
+
+    getGoalDescription() {
+      return 'Rest pacing to recover from critical troop deficit below 25% reserve.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.ecoHealth === 'CRITICAL_DEFICIT' && context.neutralRatio <= 0.03) {
+        return 89.0;
+      }
+      return 0.0;
+    }
+  }
+
+  /**
+   * 8. Border Compression Planner:
+   * Smoothing jagged single-tile spikes into compact circular perimeters.
+   */
+  class BorderCompressionPlanner extends StrategicPlanner {
+    constructor() {
+      super('BORDER_COMPRESSION', 0.25, 180, 150, 'CONVEX_SHELL');
+    }
+
+    getGoalDescription() {
+      return 'Smoothing jagged single-tile spikes into compact circular perimeters.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.compactness >= 0.65 || context.neutralRatio > 0.08) return 0.0;
+      return parseFloat((78.0 * (1.0 - context.compactness)).toFixed(2));
+    }
+  }
+
+  /**
+   * 9. Endgame Planner:
+   * Final 1v1 or 1v2 endgame domination push across all remaining enemy borders.
+   */
+  class EndgamePlanner extends StrategicPlanner {
+    constructor() {
+      super('ENDGAME', 0.40, 140, 300, 'BREAKTHROUGH');
+    }
+
+    getGoalDescription() {
+      return 'Final 1v1 or 1v2 endgame domination push across all remaining enemy borders.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.gameTimeSec > 180 || (context.neutralRatio <= 0.01 && context.totalOpponents <= 2)) {
+        return 95.0;
+      }
+      return 0.0;
+    }
+  }
+
+  /**
+   * 10. Panic Planner (ULTIMATE LAST-DITCH SURVIVAL):
+   * Halting all attacks only when both territory and troops are near 0.
+   */
+  class PanicPlanner extends StrategicPlanner {
+    constructor() {
+      super('PANIC', 0.10, 800, 40, 'SAFE_RETREAT');
+    }
+
+    getGoalDescription() {
+      return 'Ultimate emergency survival halt when collapse is imminent.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.myArea < 150 && context.threatLevel > 0.90 && context.ecoHealth === 'CRITICAL_DEFICIT') {
+        return 99.0;
+      }
+      return 0.0;
+    }
+  }
+
+  /**
+   * 11. Opportunistic Strike Planner:
+   * Striking exposed opponent flank while they are engaged in war with another player.
+   */
+  class OpportunisticStrikePlanner extends StrategicPlanner {
+    constructor() {
+      super('OPPORTUNISTIC_STRIKE', 0.35, 150, 220, 'ISOLATED_ENEMY');
+    }
+
+    getGoalDescription() {
+      return 'Striking exposed opponent flank while they are engaged in war with another player.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.primaryThreat && context.primaryThreat.status === 'ATTACKING' && context.myArea > 1000) {
+        return 86.0;
+      }
+      return 0.0;
+    }
+  }
+
+  /**
+   * 12. Island Capture Planner:
+   * Securing isolated water-bordered island regions for un-attackable compounding economy.
+   */
+  class IslandCapturePlanner extends StrategicPlanner {
+    constructor() {
+      super('ISLAND_CAPTURE', 0.28, 160, 180, 'ISLAND');
+    }
+
+    getGoalDescription() {
+      return 'Securing isolated water-bordered island regions for un-attackable compounding economy.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.hasIslandTargets && context.neutralRatio > 0.03) {
+        return 82.0;
+      }
+      return 0.0;
+    }
+  }
+
+  // ==========================================
+  // CLASS 4: STRATEGY ENGINE MASTER ORCHESTRATOR
+  // ==========================================
+  class StrategyEngine {
+    constructor() {
+      // Dynamic Aggression Meter
+      this.aggressionMeter = new AggressionMeter(0.75);
+
+      this.planners = {
+        OPENING: new OpeningPlanner(),
+        RAPID_EXPANSION: new RapidExpansionPlanner(),
+        GREEDY_FARMING: new GreedyFarmingPlanner(),
+        AGGRESSIVE_ATTACK: new AggressiveAttackPlanner(),
+        KILL_SECURE: new KillSecurePlanner(),
+        DEFENSIVE_TURTLE: new DefensiveTurtlePlanner(),
+        ECO_RECOVERY: new EcoRecoveryPlanner(),
+        BORDER_COMPRESSION: new BorderCompressionPlanner(),
+        ENDGAME: new EndgamePlanner(),
+        PANIC: new PanicPlanner(),
+        OPPORTUNISTIC_STRIKE: new OpportunisticStrikePlanner(),
+        ISLAND_CAPTURE: new IslandCapturePlanner()
+      };
+
+      this.currentState = 'OPENING';
+      this.activePlanner = this.planners.OPENING;
+      this.previousState = null;
+      this.stateStartTime = performance.now();
+      this.stateTransitionCount = 0;
+
+      this.transitionLog = [];
+      this.maxLogSize = 100;
+      this.lastExecutionTimeMs = 0;
+    }
+
+    evaluateTransitions(gameTimeSec, neutralRatio, ecoHealth, myArea, compactness, enemyAnalytics, regionStats, growthPerSec = 0.0) {
+      const startTime = performance.now();
+      const dtSec = (startTime - (this.lastEvalTime || startTime)) / 1000.0;
+      this.lastEvalTime = startTime;
+
+      // 1. Compute enemy population averages and border pressure
+      const totalOpps = enemyAnalytics.totalTracked || 0;
+      let sumEnemyArea = 0;
+      let attackingOpps = 0;
+      if (enemyAnalytics.opponentsList && enemyAnalytics.opponentsList.length > 0) {
+        for (let i = 0; i < enemyAnalytics.opponentsList.length; i++) {
+          const op = enemyAnalytics.opponentsList[i];
+          sumEnemyArea += op.area;
+          if (op.status === 'ATTACKING') attackingOpps++;
+        }
+      }
+      const avgEnemyArea = totalOpps > 0 ? (sumEnemyArea / totalOpps) : 1000;
+      const threatLevel = enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.dangerScore : 0.0;
+      const borderPressure = parseFloat(Math.min(1.0, threatLevel * 1.5).toFixed(2));
+
+      // 2. Build unified strategic context
+      const context = {
+        gameTimeSec: gameTimeSec,
+        neutralRatio: neutralRatio,
+        ecoHealth: ecoHealth,
+        myArea: myArea,
+        compactness: compactness,
+        growthPerSec: growthPerSec,
+        totalOpponents: totalOpps,
+        averageEnemyArea: avgEnemyArea,
+        attackingEnemyCount: attackingOpps,
+        strongestOpponent: enemyAnalytics.strongest,
+        weakestOpponent: enemyAnalytics.weakest,
+        primaryThreat: enemyAnalytics.primaryThreat,
+        threatLevel: threatLevel,
+        borderPressure: borderPressure,
+        hasIslandTargets: (regionStats.islandCount && regionStats.islandCount > 0),
+        aggression: this.aggressionMeter.value
+      };
+
+      // 3. Update dynamic aggression meter
+      const currentAggression = this.aggressionMeter.update(context, dtSec);
+      context.aggression = currentAggression;
+
+      // 4. Evaluate priority scores across all 12 dedicated planners
+      const prevState = this.currentState;
+      let bestState = 'RAPID_EXPANSION'; // Default fallback state is RAPID EXPANSION!
+      let highestPriority = -1.0;
+
+      for (const [stateName, planner] of Object.entries(this.planners)) {
+        const score = planner.evaluatePriorityScore(context);
+        planner.priorityScore = score;
+        if (score > highestPriority) {
+          highestPriority = score;
+          bestState = stateName;
+        }
       }
 
-      this.forecastedBorders = forecasts;
-      return forecasts;
+      // Hysteresis check: Require +5.0 margin to switch unless switching into genuine emergency
+      if (bestState !== prevState && this.activePlanner.priorityScore > 0) {
+        if (highestPriority < this.activePlanner.priorityScore + 5.0 &&
+            bestState !== 'DEFENSIVE_TURTLE' && bestState !== 'PANIC') {
+          bestState = prevState;
+        }
+      }
+
+      this.currentState = bestState;
+      this.activePlanner = this.planners[bestState];
+
+      if (this.currentState !== prevState) {
+        this.previousState = prevState;
+        const now = performance.now();
+
+        if (this.planners[prevState]) {
+          this.planners[prevState].onDeactivate(now);
+        }
+        this.activePlanner.onActivate(now);
+
+        this.stateStartTime = now;
+        this.stateTransitionCount++;
+
+        const reason = `Priority Score Advantage: ${highestPriority.toFixed(1)} (Aggr: ${currentAggression})`;
+        this.logTransition(this.stateTransitionCount, prevState, this.currentState, now, highestPriority, reason);
+
+        console.log(`[TIO Strategy FSM v5.0] State Transition (#${this.stateTransitionCount}): ${prevState} ---> ${this.currentState} (${reason})`);
+      }
+
+      this.lastExecutionTimeMs = parseFloat((performance.now() - startTime).toFixed(2));
+
+      const execConfig = this.activePlanner.getExecutionConfig(currentAggression);
+
+      return {
+        ...execConfig,
+        stateName: this.currentState,
+        goalDescription: this.activePlanner.getGoalDescription(),
+        transitionCount: this.stateTransitionCount,
+        aggressionValue: currentAggression,
+        aggressionLabel: this.aggressionMeter.getAggressionLabel(),
+        latencyMs: this.lastExecutionTimeMs
+      };
     }
 
-    getCriticalThreats() {
-      return this.forecastedBorders.filter(f => f.threatSeverity === 'CRITICAL');
+    logTransition(id, fromState, toState, timestamp, priorityScore, triggerReason) {
+      this.transitionLog.push(new StateTransitionRecord(id, fromState, toState, timestamp, priorityScore, triggerReason));
+      if (this.transitionLog.length > this.maxLogSize) {
+        this.transitionLog.shift();
+      }
+    }
+
+    getCurrentState() {
+      return this.currentState;
+    }
+
+    getActivePlanner() {
+      return this.activePlanner;
+    }
+
+    getStrategyTelemetry() {
+      return {
+        currentState: this.currentState,
+        previousState: this.previousState,
+        stateDurationSec: parseFloat(((performance.now() - this.stateStartTime) / 1000.0).toFixed(1)),
+        transitionCount: this.stateTransitionCount,
+        aggression: this.aggressionMeter.value,
+        aggressionLabel: this.aggressionMeter.getAggressionLabel(),
+        planners: Object.entries(this.planners).map(([name, p]) => ({
+          name: name,
+          priorityScore: p.priorityScore,
+          activationCount: p.activationCount
+        })),
+        latencyMs: this.lastExecutionTimeMs
+      };
     }
   }
 
   // Export to global scope
+  window.AggressionMeter = AggressionMeter;
+  window.StateTransitionRecord = StateTransitionRecord;
+  window.StrategicPlanner = StrategicPlanner;
   window.StrategyEngine = StrategyEngine;
-  window.UtilityEvaluator = UtilityEvaluator;
-  window.PredictionEngine = PredictionEngine;
 
-  console.log('%c[TIO Strategy Engine v4.0] 12-State FSM, 10-Factor Utility & Prediction Engine Loaded.', 'color: #10b981;');
+  console.log('%c[TIO Strategy Engine v5.0] Aggressive Expansionist Philosophy & Aggression Meter Loaded.', 'color: #10b981;');
 })();

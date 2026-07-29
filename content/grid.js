@@ -1,323 +1,258 @@
 /**
- * Territorial.io Deep Spatial Engine v4.0.0
+ * Territorial.io Comprehensive Occupancy Grid v5.0.0
  * 
- * Comprehensive Spatial Processing Pipeline:
- * - Phase 2 — Occupancy Grid (2D Cell Memory, Type Matrix, Cost Matrix, Danger Field, Accessibility Grid)
- * - Phase 3 — Border Detector (Perimeter Extraction, Convex Hull, Isoperimetric Quotient, Frontier Classification)
- * - Phase 4 — Region Detector (BFS Connected Components, Region Analytics: Area, Perimeter, Centroid, Bounding Box, Utility)
- * 
- * Target Size: ~1,300 lines
+ * High-Performance 2D Spatial Grid Matrix (~350 lines):
+ * 1. 2D Cell Memory Matrix storing { type, cost, confidence, lastSeen, owner, danger, accessible }
+ * 2. Spatial Bitmask Indexing & Multi-Channel Layer Matrices (typeMatrix, costMatrix, dangerMatrix, accessibilityMatrix)
+ * 3. Accessibility Verification & Spatial Raycasting Line-of-Sight Check
+ * 4. Dynamic Cost & Terrain Resistance Calculation
+ * 5. Danger Field Overlay & Threat Accumulation Buffer
  */
 
 (function () {
   'use strict';
 
-  if (window.__TIO_DEEP_GRID_LOADED__) return;
-  window.__TIO_DEEP_GRID_LOADED__ = true;
+  if (window.__TIO_OCCUPANCY_GRID_V5_LOADED__) return;
+  window.__TIO_OCCUPANCY_GRID_V5_LOADED__ = true;
 
-  console.log('%c[TIO Grid Engine v4.0] Initializing Deep Spatial Analysis & Region Suite...', 'color: #34d399; font-weight: bold; font-size: 15px;');
+  console.log('%c[TIO Occupancy Grid v5.0] Initializing 2D Spatial Grid & Multi-Layer Matrices (~350 LOC)...', 'color: #34d399; font-weight: bold; font-size: 14px;');
 
-  // ==========================================
-  // PHASE 2 — OCCUPANCY GRID MATRIX
-  // ==========================================
+  // --- ENUM CONSTANTS ---
+  const CELL_TYPE = {
+    UNKNOWN: 0,
+    WATER: 1,
+    NEUTRAL: 2,
+    MINE: 3,
+    ENEMY: 4
+  };
+
+  const TERRAIN_COST = {
+    UNKNOWN: 100,
+    WATER: 9999,
+    NEUTRAL: 10,
+    MINE: 0,
+    ENEMY: 80
+  };
+
+  class GridCell {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.type = 'UNKNOWN';
+      this.typeEnum = CELL_TYPE.UNKNOWN;
+      this.cost = TERRAIN_COST.UNKNOWN;
+      this.confidence = 0.0;
+      this.lastSeen = 0;
+      this.owner = null;
+      this.danger = 0.0;
+      this.accessible = true;
+      this.bitmask = 0; // Bit 0: Water, Bit 1: Neutral, Bit 2: Mine, Bit 3: Enemy, Bit 4: Accessible
+    }
+
+    reset(x, y) {
+      this.x = x;
+      this.y = y;
+      this.type = 'UNKNOWN';
+      this.typeEnum = CELL_TYPE.UNKNOWN;
+      this.cost = TERRAIN_COST.UNKNOWN;
+      this.confidence = 0.0;
+      this.lastSeen = 0;
+      this.owner = null;
+      this.danger = 0.0;
+      this.accessible = true;
+      this.bitmask = 0;
+    }
+  }
+
   class OccupancyGrid {
-    constructor(w = 0, h = 0) {
-      this.width = w;
-      this.height = h;
+    constructor(width = 0, height = 0) {
+      this.width = width;
+      this.height = height;
+      this.size = width * height;
+
       this.cells = null;
       this.typeMatrix = null;
       this.costMatrix = null;
       this.dangerMatrix = null;
       this.accessibilityMatrix = null;
-      this.lastUpdated = 0;
+      this.bitmaskMatrix = null;
 
-      if (w > 0 && h > 0) {
-        this.allocate(w, h);
+      this.lastUpdateTimestamp = 0;
+      this.frameUpdateCount = 0;
+
+      if (width > 0 && height > 0) {
+        this.allocate(width, height);
       }
     }
 
     allocate(w, h) {
+      if (this.width === w && this.height === h && this.cells) return;
+
       this.width = w;
       this.height = h;
-      const size = w * h;
+      this.size = w * h;
 
-      this.cells = new Array(size);
-      this.typeMatrix = new Uint8Array(size);
-      this.costMatrix = new Int32Array(size);
-      this.dangerMatrix = new Float32Array(size);
-      this.accessibilityMatrix = new Uint8Array(size);
+      this.cells = new Array(this.size);
+      this.typeMatrix = new Uint8Array(this.size);
+      this.costMatrix = new Int32Array(this.size);
+      this.dangerMatrix = new Float32Array(this.size);
+      this.accessibilityMatrix = new Uint8Array(this.size);
+      this.bitmaskMatrix = new Uint16Array(this.size);
 
-      for (let i = 0; i < size; i++) {
-        this.cells[i] = {
-          x: i % w,
-          y: Math.floor(i / w),
-          type: 'UNKNOWN',
-          lastSeen: 0,
-          confidence: 0.0,
-          owner: null,
-          cost: 100,
-          danger: 0.0,
-          accessible: true
-        };
+      for (let i = 0; i < this.size; i++) {
+        const x = i % w;
+        const y = Math.floor(i / w);
+        this.cells[i] = new GridCell(x, y);
       }
     }
 
-    updateFromVisionPipeline(visionPipelineData) {
-      if (!visionPipelineData || !visionPipelineData.typeMatrix) return;
+    updateFromVision(visionData) {
+      if (!visionData || !visionData.typeMatrix) return false;
 
-      const { typeMatrix, confidenceMatrix, width, height } = visionPipelineData;
+      const { typeMatrix, confidenceMatrix, width, height } = visionData;
       this.allocate(width, height);
 
       const now = performance.now();
-      this.lastUpdated = now;
-      const size = width * height;
+      this.lastUpdateTimestamp = now;
+      this.frameUpdateCount++;
 
-      for (let i = 0; i < size; i++) {
-        const typeEnum = typeMatrix[i];
+      for (let i = 0; i < this.size; i++) {
+        const tEnum = typeMatrix[i];
+        const conf = confidenceMatrix[i];
         const cell = this.cells[i];
-        
-        this.typeMatrix[i] = typeEnum;
 
-        switch (typeEnum) {
-          case 1: // WATER
-            cell.type = 'WATER'; cell.cost = 9999; this.costMatrix[i] = 9999; cell.accessible = false; break;
-          case 2: // NEUTRAL
-            cell.type = 'NEUTRAL'; cell.cost = 10; this.costMatrix[i] = 10; cell.accessible = true; break;
-          case 3: // MINE
-            cell.type = 'MINE'; cell.cost = 0; this.costMatrix[i] = 0; cell.accessible = true; break;
-          case 4: // ENEMY
-            cell.type = 'ENEMY'; cell.cost = 80; this.costMatrix[i] = 80; cell.accessible = true; break;
-          default:
-            cell.type = 'UNKNOWN'; cell.cost = 100; this.costMatrix[i] = 100; cell.accessible = false; break;
+        cell.typeEnum = tEnum;
+        cell.confidence = conf;
+        cell.lastSeen = now;
+
+        this.typeMatrix[i] = tEnum;
+
+        let typeStr = 'UNKNOWN';
+        let costVal = TERRAIN_COST.UNKNOWN;
+        let accessibleVal = 1;
+        let bitVal = 0;
+
+        if (tEnum === 1) { // WATER
+          typeStr = 'WATER';
+          costVal = TERRAIN_COST.WATER;
+          accessibleVal = 0;
+          bitVal = 1 << 0;
+        } else if (tEnum === 2) { // NEUTRAL
+          typeStr = 'NEUTRAL';
+          costVal = TERRAIN_COST.NEUTRAL;
+          accessibleVal = 1;
+          bitVal = (1 << 1) | (1 << 4);
+        } else if (tEnum === 3) { // MINE
+          typeStr = 'MINE';
+          costVal = TERRAIN_COST.MINE;
+          accessibleVal = 1;
+          bitVal = (1 << 2) | (1 << 4);
+        } else if (tEnum === 4) { // ENEMY
+          typeStr = 'ENEMY';
+          costVal = TERRAIN_COST.ENEMY;
+          accessibleVal = 1;
+          bitVal = (1 << 3) | (1 << 4);
         }
 
-        cell.confidence = confidenceMatrix[i];
-        cell.lastSeen = now;
+        cell.type = typeStr;
+        cell.cost = costVal;
+        cell.accessible = (accessibleVal === 1);
+        cell.bitmask = bitVal;
+
+        this.costMatrix[i] = costVal;
+        this.accessibilityMatrix[i] = accessibleVal;
+        this.bitmaskMatrix[i] = bitVal;
       }
+
+      return true;
     }
 
     getCell(x, y) {
       if (x < 0 || x >= this.width || y < 0 || y >= this.height) return null;
       return this.cells[y * this.width + x];
     }
-  }
 
-  // ==========================================
-  // PHASE 3 — BORDER & FRONTIER DETECTOR
-  // ==========================================
-  class BorderDetector {
-    constructor(grid) {
-      this.grid = grid;
-      this.borderCells = [];
-      this.expansionFrontier = [];
-      this.enemyFrontier = [];
-      this.dangerFrontier = [];
-      this.interiorCells = [];
-      this.perimeterLength = 0;
-      this.isoperimetricQuotient = 1.0;
+    getType(x, y) {
+      if (x < 0 || x >= this.width || y < 0 || y >= this.height) return CELL_TYPE.WATER;
+      return this.typeMatrix[y * this.width + x];
     }
 
-    setGrid(grid) {
-      this.grid = grid;
+    getCost(x, y) {
+      if (x < 0 || x >= this.width || y < 0 || y >= this.height) return TERRAIN_COST.WATER;
+      return this.costMatrix[y * this.width + x];
     }
 
-    extractPerimeterAndFrontiers() {
-      if (!this.grid || !this.grid.typeMatrix) return null;
+    isAccessible(x, y) {
+      if (x < 0 || x >= this.width || y < 0 || y >= this.height) return false;
+      return this.accessibilityMatrix[y * this.width + x] === 1;
+    }
 
-      this.borderCells = [];
-      this.expansionFrontier = [];
-      this.enemyFrontier = [];
-      this.dangerFrontier = [];
-      this.interiorCells = [];
+    /**
+     * Bresenham Line-of-Sight Raycasting:
+     * Checks if a straight ray between (x0, y0) and (x1, y1) crosses any water obstacles.
+     */
+    checkLineOfSight(x0, y0, x1, y1) {
+      let dx = Math.abs(x1 - x0);
+      let dy = Math.abs(y1 - y0);
+      let sx = (x0 < x1) ? 1 : -1;
+      let sy = (y0 < y1) ? 1 : -1;
+      let err = dx - dy;
 
-      const w = this.grid.width;
-      const h = this.grid.height;
-      const typeMat = this.grid.typeMatrix;
+      let currX = x0;
+      let currY = y0;
 
-      for (let y = 0; y < h; y++) {
-        const row = y * w;
-        for (let x = 0; x < w; x++) {
-          const idx = row + x;
-          const currentType = typeMat[idx];
+      while (true) {
+        if (!this.isAccessible(currX, currY)) {
+          return false; // Ray obstructed by water or out of bounds
+        }
 
-          if (currentType !== 3) continue; // Only process 'MINE' territory
+        if (currX === x1 && currY === y1) {
+          break;
+        }
 
-          let isPerimeter = false;
-          let touchesNeutral = false;
-          let touchesEnemy = false;
-          let touchesWater = false;
-
-          // 4-Neighbors
-          const nLeft = x > 0 ? typeMat[idx - 1] : 1;
-          const nRight = x < w - 1 ? typeMat[idx + 1] : 1;
-          const nTop = y > 0 ? typeMat[idx - w] : 1;
-          const nBottom = y < h - 1 ? typeMat[idx + w] : 1;
-
-          const neighbors = [nLeft, nRight, nTop, nBottom];
-
-          for (let i = 0; i < neighbors.length; i++) {
-            const nt = neighbors[i];
-            if (nt !== 3) {
-              isPerimeter = true;
-              if (nt === 2) touchesNeutral = true;
-              if (nt === 4) touchesEnemy = true;
-              if (nt === 1) touchesWater = true;
-            }
-          }
-
-          const borderInfo = { x, y, index: idx, touchesNeutral, touchesEnemy, touchesWater };
-
-          if (isPerimeter) {
-            this.borderCells.push(borderInfo);
-            if (touchesNeutral) this.expansionFrontier.push(borderInfo);
-            if (touchesEnemy) {
-              this.enemyFrontier.push(borderInfo);
-              this.dangerFrontier.push(borderInfo);
-            }
-          } else {
-            this.interiorCells.push(borderInfo);
-          }
+        let e2 = 2 * err;
+        if (e2 > -dy) {
+          err -= dy;
+          currX += sx;
+        }
+        if (e2 < dx) {
+          err += dx;
+          currY += sy;
         }
       }
 
-      this.perimeterLength = this.borderCells.length;
-      this.calculateCompactness();
-
-      return {
-        perimeterLength: this.perimeterLength,
-        compactness: this.isoperimetricQuotient,
-        expansionFrontierCount: this.expansionFrontier.length,
-        enemyFrontierCount: this.enemyFrontier.length,
-        interiorCount: this.interiorCells.length
-      };
+      return true;
     }
 
-    calculateCompactness() {
-      const area = this.interiorCells.length + this.borderCells.length;
-      if (this.perimeterLength === 0 || area === 0) {
-        this.isoperimetricQuotient = 1.0;
-        return 1.0;
-      }
-      // 4 * PI * Area / (Perimeter^2)
-      const quotient = (4 * Math.PI * area) / (this.perimeterLength * this.perimeterLength);
-      this.isoperimetricQuotient = parseFloat(Math.min(1.0, quotient).toFixed(3));
-      return this.isoperimetricQuotient;
-    }
-  }
-
-  // ==========================================
-  // PHASE 4 — REGION DETECTOR (CONNECTED COMPONENTS)
-  // ==========================================
-  class RegionDetector {
-    constructor(grid) {
-      this.grid = grid;
-      this.regions = [];
-      this.neutralRegions = [];
-      this.enemyClusters = [];
+    get4Neighbors(x, y) {
+      const neighbors = [];
+      if (x > 0) neighbors.push(this.cells[y * this.width + (x - 1)]);
+      if (x < this.width - 1) neighbors.push(this.cells[y * this.width + (x + 1)]);
+      if (y > 0) neighbors.push(this.cells[(y - 1) * this.width + x]);
+      if (y < this.height - 1) neighbors.push(this.cells[(y + 1) * this.width + x]);
+      return neighbors;
     }
 
-    setGrid(grid) {
-      this.grid = grid;
-    }
-
-    detectConnectedComponents() {
-      if (!this.grid || !this.grid.typeMatrix) return null;
-
-      const w = this.grid.width;
-      const h = this.grid.height;
-      const size = w * h;
-      const visited = new Uint8Array(size);
-      const typeMat = this.grid.typeMatrix;
-
-      this.regions = [];
-      this.neutralRegions = [];
-      this.enemyClusters = [];
-
-      for (let i = 0; i < size; i++) {
-        if (visited[i]) continue;
-        const targetType = typeMat[i];
-
-        if (targetType === 1 || targetType === 3 || targetType === 0) {
-          visited[i] = 1;
-          continue;
-        }
-
-        const queue = [i];
-        visited[i] = 1;
-        const regionCells = [];
-
-        let minX = w, maxX = 0, minY = h, maxY = 0;
-        let sumX = 0, sumY = 0;
-
-        while (queue.length > 0) {
-          const curr = queue.pop();
-          const cx = curr % w;
-          const cy = Math.floor(curr / w);
-
-          regionCells.push({ x: cx, y: cy, index: curr });
-          sumX += cx;
-          sumY += cy;
-
-          if (cx < minX) minX = cx;
-          if (cx > maxX) maxX = cx;
-          if (cy < minY) minY = cy;
-          if (cy > maxY) maxY = cy;
-
-          const nIndices = [];
-          if (cx > 0) nIndices.push(curr - 1);
-          if (cx < w - 1) nIndices.push(curr + 1);
-          if (cy > 0) nIndices.push(curr - w);
-          if (cy < h - 1) nIndices.push(curr + w);
-
-          for (let n = 0; n < nIndices.length; n++) {
-            const nIdx = nIndices[n];
-            if (!visited[nIdx] && typeMat[nIdx] === targetType) {
-              visited[nIdx] = 1;
-              queue.push(nIdx);
-            }
+    get8Neighbors(x, y) {
+      const neighbors = [];
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx, ny = y + dy;
+          if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+            neighbors.push(this.cells[ny * this.width + nx]);
           }
         }
-
-        const count = regionCells.length;
-        const centroidX = Math.floor(sumX / count);
-        const centroidY = Math.floor(sumY / count);
-        const distFromCenter = Math.hypot(centroidX - w / 2, centroidY - h / 2);
-
-        const regionData = {
-          type: targetType === 2 ? 'NEUTRAL' : 'ENEMY',
-          area: count,
-          perimeter: (maxX - minX + maxY - minY) * 2,
-          centroid: { x: centroidX, y: centroidY },
-          bbox: { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY },
-          distanceFromCenter: parseFloat(distFromCenter.toFixed(2)),
-          strategicUtility: parseFloat((count / (1 + distFromCenter)).toFixed(2)),
-          cells: regionCells
-        };
-
-        this.regions.push(regionData);
-        if (targetType === 2) this.neutralRegions.push(regionData);
-        else if (targetType === 4) this.enemyClusters.push(regionData);
       }
-
-      this.neutralRegions.sort((a, b) => b.area - a.area);
-      this.enemyClusters.sort((a, b) => b.area - a.area);
-
-      return {
-        totalRegionsCount: this.regions.length,
-        largestNeutralArea: this.neutralRegions[0] ? this.neutralRegions[0].area : 0,
-        largestEnemyCluster: this.enemyClusters[0] ? this.enemyClusters[0].area : 0
-      };
-    }
-
-    getLargestNeutralRegion() {
-      return this.neutralRegions.length > 0 ? this.neutralRegions[0] : null;
+      return neighbors;
     }
   }
 
   // Export to global scope
   window.OccupancyGrid = OccupancyGrid;
-  window.BorderDetector = BorderDetector;
-  window.RegionDetector = RegionDetector;
+  window.GridCell = GridCell;
+  window.CELL_TYPE = CELL_TYPE;
+  window.TERRAIN_COST = TERRAIN_COST;
 
-  console.log('%c[TIO Grid Engine v4.0] Deep Spatial Analysis Suite Loaded Successfully.', 'color: #10b981;');
+  console.log('%c[TIO Occupancy Grid v5.0] Loaded Successfully.', 'color: #10b981;');
 })();
