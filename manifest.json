@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Auto Commander & Mouse Controller",
-  "version": "2.0.0",
-  "description": "Pro Strategic Engine for Territorial.io (108-Sample Frontier Gradient Math, 60Hz/120Hz rAF High Speed Engine, Dynamic Troop Pacing). Last Updated: 2026-07-29 21:17:08 +07:00",
+  "version": "2.1.0",
+  "description": "Combat Engine for Territorial.io (Strong Enemy Breakthrough AI, 50% Troop Bursts, 108-Sample Gradient Math). Last Updated: 2026-07-29 21:18:15 +07:00",
   "permissions": [
     "storage",
     "activeTab"

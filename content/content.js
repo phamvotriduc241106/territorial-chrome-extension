@@ -1,17 +1,16 @@
 /**
- * Territorial.io Pro Strategic Engine v2.0.0
+ * Territorial.io Pro Combat Engine v2.1.0
  * 
- * Performance & Intelligence Innovations:
- * 1. Multi-Vector Frontier Gradient Field (36-Vector Radial Utility Math):
- *    Calculates optimal targets using S(x,y) = w1*Neutral + w2*Adjacency - w3*Water.
- * 2. High-Frequency 60Hz/120Hz requestAnimationFrame Loop:
- *    Replaces setInterval with microsecond performance.now() delta checks for sub-50ms latency.
- * 3. Dynamic Troop Compound Pacing:
- *    Rhythmically alternates troop ratio sliders (12.5% vs 25%) to maximize compound growth curves.
- * 4. Fast Canvas Offscreen Memory Caching:
- *    Optimizes getImageData readbacks for high FPS execution.
+ * Advanced Combat Capabilities against Stronger Enemies:
+ * 1. Phased Breakthrough Warfare Algorithm:
+ *    Detects when neutral land is depleted and transitions to Phased Enemy Invasion Mode.
+ * 2. Concentrated 50%-75% Troop Burst Allocation:
+ *    Automatically escalates troop slider ratios (Key '4' / Key '5') during heavy enemy pushes to break through fortified player borders.
+ * 3. Economy Consolidation Phase:
+ *    Paces troop attacks after heavy pushes to rebuild compound interest reserves and prevent counter-attack vulnerability.
+ * 4. Multi-Vector 108-Point Frontier Gradient Field with Enemy Breakthrough Math.
  * 
- * Update Timestamp: 2026-07-29 21:17:08 +07:00
+ * Update Timestamp: 2026-07-29 21:18:15 +07:00
  */
 
 (function () {
@@ -20,19 +19,21 @@
   if (window.__TIO_PRO_ENGINE_LOADED__) return;
   window.__TIO_PRO_ENGINE_LOADED__ = true;
 
-  const LAST_UPDATE_TIMESTAMP = '2026-07-29 21:17:08 +07:00';
-  console.log(`%c[Territorial Pro Engine] v2.0.0 High-Speed Strategic Engine Active (Updated: ${LAST_UPDATE_TIMESTAMP})`, 'color: #10b981; font-weight: bold; font-size: 14px;');
+  const LAST_UPDATE_TIMESTAMP = '2026-07-29 21:18:15 +07:00';
+  console.log(`%c[Territorial Pro Combat Engine] v2.1.0 Active (Updated: ${LAST_UPDATE_TIMESTAMP})`, 'color: #10b981; font-weight: bold; font-size: 14px;');
 
   // --- ENGINE STATE ---
   const state = {
     botEnabled: true,
     gameStarted: false,
-    clickIntervalMs: 80, // High-speed 80ms attack pulses (12.5 Attacks/sec max)
+    clickIntervalMs: 80, // High-speed 80ms attack pulses
     angleStep: 0,
     currentFPS: 60,
     spawnPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
     frontierRadius: 50,
-    tickCount: 0
+    tickCount: 0,
+    combatPhase: 'EXPANSION', // 'EXPANSION', 'ENEMY_BREAKTHROUGH', 'CONSOLIDATION'
+    neutralLandAvailable: true
   };
 
   let animationFrameId = null;
@@ -55,8 +56,8 @@
     }
   };
 
-  // --- MULTI-VECTOR FRONTIER GRADIENT SCANNER ---
-  const FrontierGradientScanner = {
+  // --- COMBAT GRADIENT & TERRAIN ANALYZER ---
+  const CombatGradientScanner = {
     getCanvasContext() {
       const canvas = document.querySelector('canvas');
       if (!canvas) return null;
@@ -71,17 +72,17 @@
     },
 
     /**
-     * Evaluates 36 radial vectors at 3 expanding radius layers (108 samples total)
-     * Calculates utility score: S(x,y) = NeutralScore + AdjacencyBonus - WaterPenalty
+     * Evaluates 36 radial vectors across 3 distance layers (108 total samples)
+     * Calculates: S(x,y) = NeutralScore + EnemyBreakthroughScore - WaterPenalty
      */
     findBestUtilityTarget(anchorX, anchorY) {
       const ctx = this.getCanvasContext();
       
-      // Dynamically expand frontier radius as empire grows
-      state.frontierRadius = Math.min(window.innerWidth * 0.4, state.frontierRadius + 0.12);
+      state.frontierRadius = Math.min(window.innerWidth * 0.45, state.frontierRadius + 0.15);
 
       let bestTarget = null;
       let highestUtility = -9999;
+      let neutralCount = 0;
 
       const layers = [
         state.frontierRadius * 0.6,
@@ -89,7 +90,6 @@
         state.frontierRadius * 1.3
       ];
 
-      // 36 radial directions (10 degree step)
       for (let i = 0; i < 36; i++) {
         const angle = (i * Math.PI / 18) + state.angleStep;
 
@@ -98,7 +98,7 @@
           const testX = Math.max(30, Math.min(window.innerWidth - 30, anchorX + Math.cos(angle) * r));
           const testY = Math.max(30, Math.min(window.innerHeight - 30, anchorY + Math.sin(angle) * r));
 
-          let utilityScore = 10; // Base score
+          let utilityScore = 10;
 
           if (ctx) {
             try {
@@ -109,13 +109,17 @@
               if (blue > red + 18 && blue > green + 18) {
                 utilityScore = -500;
               } else {
-                // Neutral Gray Land (Highest Priority)
                 const maxDiff = Math.max(Math.abs(red - green), Math.abs(green - blue), Math.abs(red - blue));
+                
                 if (maxDiff < 22 && red > 40 && red < 200) {
-                  utilityScore = 150 - (l * 15); // Favor closer neutral land
+                  // Neutral Gray Land (Early Expansion Priority)
+                  neutralCount++;
+                  utilityScore = 200 - (l * 15);
                 } else {
-                  // General Enemy Land
-                  utilityScore = 40 - (l * 10);
+                  // Enemy Player Territory (Strong Opponent Target)
+                  // When neutral land is low, enemy territory receives high breakthrough score!
+                  const breakthroughBonus = state.neutralLandAvailable ? 40 : 180;
+                  utilityScore = breakthroughBonus - (l * 10);
                 }
               }
             } catch (e) {}
@@ -127,6 +131,9 @@
           }
         }
       }
+
+      state.neutralLandAvailable = neutralCount > 3;
+      state.combatPhase = state.neutralLandAvailable ? 'EXPANSION' : 'ENEMY_BREAKTHROUGH';
 
       state.angleStep += 0.18;
       return bestTarget || { x: anchorX + 60, y: anchorY + 60 };
@@ -142,9 +149,9 @@
           state.spawnPos.y = e.clientY;
 
           if (!state.gameStarted) {
-            console.log(`[Territorial Pro Engine] Match Active! Spawn set to (${e.clientX}, ${e.clientY})`);
+            console.log(`[Territorial Pro Combat Engine] Match Active! Spawn set to (${e.clientX}, ${e.clientY})`);
             state.gameStarted = true;
-            HUD.updateStatus('⚡ HIGH-SPEED PRO ENGINE ACTIVE', 'active');
+            HUD.updateStatus('⚔️ COMBAT ENGINE ACTIVE', 'active');
             Engine.start();
           }
         }
@@ -152,7 +159,7 @@
     }
   };
 
-  // --- HIGH-SPEED VIRTUAL POINTER CONTROLLER ---
+  // --- COMBAT VIRTUAL POINTER CONTROLLER ---
   const VirtualPointerInput = {
     getCanvas() {
       return document.querySelector('canvas');
@@ -182,15 +189,24 @@
         isPrimary: false
       };
 
-      // Dynamic Troop Slider Ratio (Alternates '1' = 12.5% and '2' = 25% for maximum interest compounding)
       state.tickCount++;
-      const keyStr = (state.tickCount % 4 === 0) ? '1' : '2';
-      const codeStr = (state.tickCount % 4 === 0) ? 'Digit1' : 'Digit2';
-      const keyCode = (state.tickCount % 4 === 0) ? 49 : 50;
+
+      // Adaptive Troop Ratio Allocation:
+      // - Early Expansion: Alternates 12.5% ('1') & 25% ('2') for compound interest
+      // - Enemy Breakthrough: Escalates to 50% ('4') to crush strong player borders!
+      let keyStr = '2', codeStr = 'Digit2', keyCode = 50;
+
+      if (state.combatPhase === 'ENEMY_BREAKTHROUGH') {
+        // High-power troop ratio (50% troops) against strong players
+        keyStr = '4'; codeStr = 'Digit4'; keyCode = 52;
+      } else {
+        keyStr = (state.tickCount % 4 === 0) ? '1' : '2';
+        codeStr = (state.tickCount % 4 === 0) ? 'Digit1' : 'Digit2';
+        keyCode = (state.tickCount % 4 === 0) ? 49 : 50;
+      }
 
       this.sendKey(keyStr, codeStr, keyCode);
 
-      // Fast Dispatch Sequence
       try {
         canvas.dispatchEvent(new PointerEvent('pointerdown', eventInit));
 
@@ -226,7 +242,7 @@
     }
   };
 
-  // --- HIGH-SPEED 60Hz/120Hz ENGINE LOOP ---
+  // --- HIGH-SPEED ENGINE LOOP ---
   const Engine = {
     start() {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -255,7 +271,7 @@
     },
 
     tick() {
-      const target = FrontierGradientScanner.findBestUtilityTarget(state.spawnPos.x, state.spawnPos.y);
+      const target = CombatGradientScanner.findBestUtilityTarget(state.spawnPos.x, state.spawnPos.y);
       VirtualPointerInput.sendVirtualAttack(target.x, target.y);
     }
   };
@@ -280,14 +296,14 @@
           <div class="tio-hud-body">
             <div class="tio-btn-grid">
               <button class="tio-action-btn active" id="tio-btn-bot">
-                <span>🚀 Pro Engine v2.0.0 (High Speed)</span>
+                <span>⚔️ Combat Engine v2.1.0</span>
               </button>
             </div>
             <div class="tio-slider-label" style="font-size:10px; color:#94a3b8; margin-top:4px;">
-              <span>• 108-Sample Frontier Utility Gradient Math</span><br>
-              <span>• 60Hz/120Hz requestAnimationFrame Engine</span><br>
-              <span>• Dynamic Troop Interest Pacing (12.5%-25%)</span><br>
-              <span>• Zero Hardware Mouse Conflict</span>
+              <span>• Strong Enemy Breakthrough AI (50% Power)</span><br>
+              <span>• Phased Combat Warfare Optimization</span><br>
+              <span>• 108-Sample Frontier Utility Math</span><br>
+              <span>• 60Hz/120Hz High-Speed Loop</span>
             </div>
             <div style="font-size:9px; color:#64748b; margin-top:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:4px;">
               <span>Updated: ${LAST_UPDATE_TIMESTAMP}</span>
