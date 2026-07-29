@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "5.0.0",
-  "description": "Comprehensive Human-Level Autonomous Agent v5.0 for Territorial.io (~5,300+ LOC) featuring 15 Deep Modular Engines (Morphological Vision, Occupancy Grid, Monotone Chain Convex Hull Border Detector, Two-Pass CCL Region Detector, 300-Frame RAM World Model, Enemy Tracker, Exponential Economy, 2D Gaussian Blur Threat Heatmap, 12-State Strategy FSM, 10-Factor Utility Evaluator, Prediction Engine, Hysteresis Temporal Smoothing, Min-Heap A* Pathfinding, Zero-Crosshair 14-Metric HUD, Virtual PointerId 99 Controller, TypedArray Optimization). Last Updated: 2026-07-29 21:55:00 +07:00",
+  "version": "5.0.1",
+  "description": "Comprehensive Human-Level Autonomous Agent v5.0.1 for Territorial.io (~5,834 LOC) featuring 18 Deep Modular Engines (Morphological Vision with Spawn RGB Calibration, Occupancy Grid, Monotone Chain Convex Hull Border Detector, Two-Pass CCL Region Detector, 300-Frame RAM World Model, Enemy Tracker, Exponential Economy with <200 Troop Floor, 2D Gaussian Blur Threat Heatmap, 12-State Strategy FSM with Aggression Meter, 35/25/20/10/10 Utility Evaluator, Prediction Engine, Hysteresis Temporal Smoothing, Min-Heap A* Pathfinding, Zero-Crosshair 15-Metric HUD, Synchronous PointerId 99 Controller, TypedArray Optimization). Last Updated: 2026-07-29 22:16:29 +07:00",
   "permissions": [
     "storage",
     "activeTab"
