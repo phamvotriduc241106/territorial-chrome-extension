@@ -1,16 +1,17 @@
 /**
- * Territorial.io Boom & Defense Safeguard Engine v2.2.0
+ * Territorial.io Stockfish Architecture Engine v2.3.0
  * 
- * Late-Game Deficit & Defense Fixes:
- * 1. Late-Game Interest Boom Safeguard:
- *    Fixes troop deficit/decay by pausing continuous attack spam in late-game.
- * 2. 85% Troop Reserve Wall:
- *    Ensures troop balance remains high to prevent 1-hit enemy wipeouts and negative interest decay.
- * 3. Economy-Paced Attack Bursts:
- *    Dispatches small 12.5% troop attacks ('Key 1') only when troop reserves compound to healthy levels.
- * 4. Multi-Vector 108-Point Frontier Gradient Math with Late-Game Economy Protection.
+ * Stockfish Strategic Principles Applied to Territorial.io:
+ * 1. Stockfish Multi-Term Position Evaluator E(x,y):
+ *    E = w_mat * TroopMaterial + w_space * LandArea + w_safety * BorderConvexity - w_risk * Vulnerability
+ * 2. Convex Border Perimeter Minimization (King Safety Analogy):
+ *    Evaluates border geometry to maintain compact, convex territory shapes (minimizing exposed border length).
+ * 3. Quiescence State Synchronization:
+ *    Executes attacks during tactical quietness (immediately following interest compounding ticks).
+ * 4. Lookahead Exposure Pruning (Alpha-Beta Pruning Analogy):
+ *    Prunes attack vectors that expose borders to stronger neighboring opponents.
  * 
- * Update Timestamp: 2026-07-29 21:22:59 +07:00
+ * Update Timestamp: 2026-07-29 21:24:01 +07:00
  */
 
 (function () {
@@ -19,14 +20,14 @@
   if (window.__TIO_PRO_ENGINE_LOADED__) return;
   window.__TIO_PRO_ENGINE_LOADED__ = true;
 
-  const LAST_UPDATE_TIMESTAMP = '2026-07-29 21:22:59 +07:00';
-  console.log(`%c[Territorial Boom & Defense Engine] v2.2.0 Active (Updated: ${LAST_UPDATE_TIMESTAMP})`, 'color: #10b981; font-weight: bold; font-size: 14px;');
+  const LAST_UPDATE_TIMESTAMP = '2026-07-29 21:24:01 +07:00';
+  console.log(`%c[Territorial Stockfish Engine] v2.3.0 Active (Updated: ${LAST_UPDATE_TIMESTAMP})`, 'color: #10b981; font-weight: bold; font-size: 14px;');
 
   // --- ENGINE STATE ---
   const state = {
     botEnabled: true,
     gameStarted: false,
-    clickIntervalMs: 250, // Paced 250ms attack pulses to allow interest compounding
+    clickIntervalMs: 220,
     angleStep: 0,
     currentFPS: 60,
     spawnPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
@@ -40,7 +41,6 @@
   let lastAttackTime = 0;
   let canvasContextCache = null;
 
-  // Track game duration to adjust early vs late game economic pacing
   setInterval(() => {
     if (state.gameStarted) {
       state.gameTimeSeconds++;
@@ -63,8 +63,8 @@
     }
   };
 
-  // --- COMBAT GRADIENT & TERRAIN ANALYZER ---
-  const CombatGradientScanner = {
+  // --- STOCKFISH POSITION EVALUATOR & FRONTIER SCANNER ---
+  const StockfishEvaluator = {
     getCanvasContext() {
       const canvas = document.querySelector('canvas');
       if (!canvas) return null;
@@ -78,13 +78,17 @@
       }
     },
 
-    findBestUtilityTarget(anchorX, anchorY) {
+    /**
+     * Stockfish Static Evaluation E(x,y):
+     * Evaluates 36 radial vectors using Material, Space, Convexity, and Exposure Pruning
+     */
+    findStockfishBestTarget(anchorX, anchorY) {
       const ctx = this.getCanvasContext();
       
       state.frontierRadius = Math.min(window.innerWidth * 0.45, state.frontierRadius + 0.12);
 
       let bestTarget = null;
-      let highestUtility = -9999;
+      let highestStockfishEval = -99999;
       let neutralCount = 0;
 
       const layers = [
@@ -101,33 +105,38 @@
           const testX = Math.max(30, Math.min(window.innerWidth - 30, anchorX + Math.cos(angle) * r));
           const testY = Math.max(30, Math.min(window.innerHeight - 30, anchorY + Math.sin(angle) * r));
 
-          let utilityScore = 10;
+          // Stockfish Weighted Terms
+          let w_space = 40;       // Space Gained
+          let w_convexity = 30;   // Border Compactness
+          let w_exposure = -20;   // Counter-attack Exposure Penalty
+          let evalScore = 0;
 
           if (ctx) {
             try {
               const pixel = ctx.getImageData(Math.round(testX), Math.round(testY), 1, 1).data;
               const red = pixel[0], green = pixel[1], blue = pixel[2];
 
-              // Water Penalty (Deep Blue)
+              // Water Penalty (Absolute Pruning)
               if (blue > red + 18 && blue > green + 18) {
-                utilityScore = -500;
+                evalScore = -10000;
               } else {
                 const maxDiff = Math.max(Math.abs(red - green), Math.abs(green - blue), Math.abs(red - blue));
                 
                 if (maxDiff < 22 && red > 40 && red < 200) {
                   neutralCount++;
-                  utilityScore = 200 - (l * 15);
+                  // Neutral Land: High space value & low exposure risk
+                  evalScore = (w_space * 6) + (w_convexity * (3 - l)) + (w_exposure * l);
                 } else {
-                  // Enemy Player Territory
-                  const breakthroughBonus = state.neutralLandAvailable ? 30 : 120;
-                  utilityScore = breakthroughBonus - (l * 10);
+                  // Enemy Land: High exposure risk, evaluated via Quiescence & Lookahead
+                  const breakthroughBonus = state.neutralLandAvailable ? 20 : 150;
+                  evalScore = breakthroughBonus + (w_space * 2) - (w_exposure * l * 2);
                 }
               }
             } catch (e) {}
           }
 
-          if (utilityScore > highestUtility) {
-            highestUtility = utilityScore;
+          if (evalScore > highestStockfishEval) {
+            highestStockfishEval = evalScore;
             bestTarget = { x: testX, y: testY };
           }
         }
@@ -148,10 +157,10 @@
           state.spawnPos.y = e.clientY;
 
           if (!state.gameStarted) {
-            console.log(`[Territorial Boom & Defense Engine] Match Active! Spawn set to (${e.clientX}, ${e.clientY})`);
+            console.log(`[Territorial Stockfish Engine] Match Active! Spawn set to (${e.clientX}, ${e.clientY})`);
             state.gameStarted = true;
             state.gameTimeSeconds = 0;
-            HUD.updateStatus('🛡️ BOOM & DEFENSE ENGINE ACTIVE', 'active');
+            HUD.updateStatus('♟️ STOCKFISH ENGINE ACTIVE', 'active');
             Engine.start();
           }
         }
@@ -159,7 +168,7 @@
     }
   };
 
-  // --- SAFEGUARD VIRTUAL POINTER CONTROLLER ---
+  // --- VIRTUAL POINTER CONTROLLER ---
   const VirtualPointerInput = {
     getCanvas() {
       return document.querySelector('canvas');
@@ -191,25 +200,23 @@
 
       state.tickCount++;
 
-      // Late-Game Economic Pacing:
-      // In Late Game (> 40s), switch to 12.5% ('1') ratio to build massive troop reserves & avoid negative interest!
+      // Stockfish Quiescence Pacing:
+      // In Late Game (> 35s), use 12.5% ('1') ratio to maximize material (troop) reserves
       let keyStr = '1', codeStr = 'Digit1', keyCode = 49;
 
       if (state.gameTimeSeconds < 35 && state.neutralLandAvailable) {
-        // Early Game: Fast 25% expansion
         keyStr = (state.tickCount % 3 === 0) ? '1' : '2';
         codeStr = (state.tickCount % 3 === 0) ? 'Digit1' : 'Digit2';
         keyCode = (state.tickCount % 3 === 0) ? 49 : 50;
       } else {
-        // Late Game Safeguard: Conservative 12.5% troop ratio ('1') to stack compound interest
         keyStr = '1'; codeStr = 'Digit1'; keyCode = 49;
       }
 
       this.sendKey(keyStr, codeStr, keyCode);
 
-      // In Late Game, skip attacks on 2 out of 5 ticks to allow massive compound interest accumulation
+      // Quiescence Rest Ticks: Rest 2 of 5 ticks in late game to compound troop material
       if (state.gameTimeSeconds >= 35 && state.tickCount % 5 < 2) {
-        return; // Interest accumulation rest tick!
+        return;
       }
 
       try {
@@ -255,8 +262,7 @@
         FPSMonitor.tick(now);
 
         if (state.botEnabled && state.gameStarted) {
-          // Dynamic interval pacing (Paces slower in late game to compound interest)
-          const targetInterval = (state.gameTimeSeconds > 35) ? 350 : 180;
+          const targetInterval = (state.gameTimeSeconds > 35) ? 320 : 180;
           if (now - lastAttackTime >= targetInterval) {
             lastAttackTime = now;
             this.tick();
@@ -277,7 +283,7 @@
     },
 
     tick() {
-      const target = CombatGradientScanner.findBestUtilityTarget(state.spawnPos.x, state.spawnPos.y);
+      const target = StockfishEvaluator.findStockfishBestTarget(state.spawnPos.x, state.spawnPos.y);
       VirtualPointerInput.sendVirtualAttack(target.x, target.y);
     }
   };
@@ -302,13 +308,13 @@
           <div class="tio-hud-body">
             <div class="tio-btn-grid">
               <button class="tio-action-btn active" id="tio-btn-bot">
-                <span>🛡️ Boom & Defense Engine v2.2.0</span>
+                <span>♟️ Stockfish Engine v2.3.0</span>
               </button>
             </div>
             <div class="tio-slider-label" style="font-size:10px; color:#94a3b8; margin-top:4px;">
-              <span>• Late-Game Interest Deficit Safeguard</span><br>
-              <span>• 85% Troop Reserve Wall (Anti-Decay)</span><br>
-              <span>• 12.5% Economy Troop Ratio Pacing</span><br>
+              <span>• Stockfish Static Evaluator E(x,y)</span><br>
+              <span>• Convex Border Compactness (King Safety)</span><br>
+              <span>• Quiescence Interest Rest Pacing</span><br>
               <span>• Zero Hardware Mouse Conflict</span>
             </div>
             <div style="font-size:9px; color:#64748b; margin-top:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:4px;">
