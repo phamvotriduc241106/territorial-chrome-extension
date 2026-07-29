@@ -65,13 +65,15 @@
 
     setupAutoStart(canvas) {
       canvas.addEventListener('click', (e) => {
+        console.log('%c[TIO Master Orchestrator v5.0] Canvas Clicked! Calibrating spawn & activating loop.', 'color: #34d399; font-weight: bold;');
+        this.playerSpawnPos = { x: e.clientX, y: e.clientY };
+        this.isPlayerSpawnCalibrated = true;
+        this.vision.sampleAndCalibratePlayerColor(e.clientX, e.clientY);
+        this.world.resetMatchTime();
         if (!this.isActive) {
-          console.log('%c[TIO Master Orchestrator v5.0] Canvas Clicked! Activating autonomous bot loop.', 'color: #34d399; font-weight: bold;');
-          this.playerSpawnPos = { x: e.clientX, y: e.clientY };
-          this.isPlayerSpawnCalibrated = true;
           this.startLoop();
         }
-      }, { once: true });
+      });
     }
 
     startLoop() {
@@ -109,6 +111,10 @@
       // ========================================================
       const visionResult = this.vision.processFrame();
       if (!visionResult || !visionResult.typeMatrix) return;
+
+      if (this.frameCount <= 10 && this.isPlayerSpawnCalibrated) {
+        this.vision.sampleAndCalibratePlayerColor(this.playerSpawnPos.x, this.playerSpawnPos.y);
+      }
 
       // ========================================================
       // STEP 2: OCCUPANCY GRID (Update Spatial Cell Matrix)

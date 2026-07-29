@@ -165,24 +165,32 @@
      */
     getEconomicDecisions(neutralRatio = 0.10, aggressionValue = 0.75) {
       const reserveRatio = this.estimatedTroopBalance / Math.max(1, this.maxTroopCap);
+      const isNeutralAvailable = (neutralRatio > 0.02);
 
-      const isNeutralAvailable = (neutralRatio > 0.03);
-
-      // We only save/stop attacking if reserves drop below 20% OR (< 35% when no neutral land remains)
-      const shouldSave   = (reserveRatio < 0.20) || (!isNeutralAvailable && reserveRatio < 0.35);
-      const shouldFarm   = isNeutralAvailable && (reserveRatio >= 0.20 && reserveRatio < 0.50);
-      const shouldAttack = !shouldSave && (reserveRatio >= 0.25 || (isNeutralAvailable && reserveRatio >= 0.20));
-
-      // Determine recommended troop slider ratio scaled by aggression and reserve
+      let shouldSave = false;
+      let shouldFarm = false;
+      let shouldAttack = true;
       let recommendedRatio = 0.25;
-      if (reserveRatio > 0.80) {
-        recommendedRatio = 0.375;
-      } else if (reserveRatio > 0.50) {
-        recommendedRatio = 0.25;
-      } else if (isNeutralAvailable) {
-        recommendedRatio = 0.18; // Keep capturing neutral land at efficient 18% bites!
+
+      if (isNeutralAvailable) {
+        // EARLY & MID GAME EXPANSION: Never block attacks due to dynamic cap percentage!
+        // Only pause if troop balance drops to an absolute emergency floor (< 200 troops)
+        shouldSave = (this.estimatedTroopBalance < 200);
+        shouldAttack = !shouldSave;
+        shouldFarm = true;
+        recommendedRatio = (this.estimatedTroopBalance > 3000) ? 0.25 : 0.18;
       } else {
-        recommendedRatio = 0.125;
+        // LATE GAME PVP WARS: Pause to regenerate if reserve ratio drops below 20%
+        shouldSave = (reserveRatio < 0.20);
+        shouldAttack = !shouldSave;
+        shouldFarm = false;
+        if (reserveRatio > 0.75) {
+          recommendedRatio = 0.375;
+        } else if (reserveRatio > 0.40) {
+          recommendedRatio = 0.25;
+        } else {
+          recommendedRatio = 0.125;
+        }
       }
 
       return {

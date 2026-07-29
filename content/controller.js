@@ -128,26 +128,16 @@
     }
 
     /**
-     * Executes synthetic click at target (x, y) with humanized down-up micro-delay.
+     * Executes synthetic click at target (x, y) synchronously without blocking subsequent attacks.
      */
-    async executeClick(x, y) {
-      if (this.isBusy) return false;
+    executeClick(x, y) {
       const startTime = performance.now();
-      this.isBusy = true;
-
       const downSuccess = this.dispatchPointerEvent('pointerdown', x, y, 1);
-      if (!downSuccess) {
-        this.isBusy = false;
-        return false;
-      }
-
-      await new Promise(r => setTimeout(r, this.getHumanizedDelay(28, 6)));
+      if (!downSuccess) return false;
 
       this.dispatchPointerEvent('pointerup', x, y, 0);
       this.lastActionTimestamp = performance.now();
       this.actionCount++;
-      this.isBusy = false;
-
       this.lastExecutionTimeMs = parseFloat((performance.now() - startTime).toFixed(2));
       return true;
     }
@@ -185,7 +175,7 @@
     /**
      * Adjusts the bottom troop slider bar to a target percentage ratio (0.0 to 1.0).
      */
-    async setTroopSliderRatio(targetRatio) {
+    setTroopSliderRatio(targetRatio) {
       if (!this.canvas) return false;
       const w = window.innerWidth;
       const h = window.innerHeight;

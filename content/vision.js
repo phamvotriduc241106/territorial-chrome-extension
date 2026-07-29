@@ -205,7 +205,7 @@
         const dg = g - this.playerColor.g;
         const db = b - this.playerColor.b;
         const distSq = (dr * dr) + (dg * dg) + (db * db);
-        if (distSq < 1600) { // sqrt(1600) = 40 RGB distance
+        if (distSq < 4225) { // sqrt(4225) = 65 RGB distance tolerance
           return 3; // MINE
         }
       }
@@ -538,6 +538,19 @@
         latencyMs: this.lastExecutionTimeMs,
         motionPixelCount: this.cache.motionPixelCount
       };
+    }
+
+    sampleAndCalibratePlayerColor(clientX, clientY) {
+      if (!this.reader.isAttached) this.reader.attach();
+      const sx = Math.floor(clientX * this.reader.scaleFactor);
+      const sy = Math.floor(clientY * this.reader.scaleFactor);
+      const rgb = this.cache.getPixelRGB(sx, sy);
+      if (rgb) {
+        this.classifier.calibratePlayerColor(rgb.r, rgb.g, rgb.b);
+        console.log(`%c[TIO Vision v5.0] Calibrated player color from spawn click: RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`, 'color: #38bdf8; font-weight: bold;');
+        return rgb;
+      }
+      return null;
     }
 
     getFloodFillRegion(startX, startY, targetType) {

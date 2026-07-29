@@ -160,7 +160,7 @@
    */
   class OpeningPlanner extends StrategicPlanner {
     constructor() {
-      super('OPENING', 0.25, 120, 140, 'NEUTRAL_FAST');
+      super('OPENING', 0.22, 70, 180, 'NEUTRAL_FAST');
     }
 
     getGoalDescription() {
@@ -168,8 +168,8 @@
     }
 
     evaluatePriorityScore(context) {
-      if (context.gameTimeSec > 45 || context.neutralRatio <= 0.15) return 0.0;
-      const timeFactor = Math.max(0, 1.0 - (context.gameTimeSec / 45.0));
+      if (context.gameTimeSec > 40 && context.neutralRatio <= 0.15) return 0.0;
+      const timeFactor = Math.max(0.1, 1.0 - (context.gameTimeSec / 45.0));
       return parseFloat((95.0 * timeFactor).toFixed(2));
     }
   }
@@ -181,7 +181,7 @@
    */
   class RapidExpansionPlanner extends StrategicPlanner {
     constructor() {
-      super('RAPID_EXPANSION', 0.28, 140, 200, 'NEUTRAL_FRONTIER');
+      super('RAPID_EXPANSION', 0.25, 85, 240, 'NEUTRAL_FRONTIER');
     }
 
     getGoalDescription() {

@@ -204,6 +204,12 @@
       this.lastFrame = null;
     }
 
+    resetMatchTime() {
+      this.matchStartTime = performance.now();
+      this.count = 0;
+      console.log('%c[TIO WorldModel v5.0] Match timer reset to 0s for game spawn.', 'color: #38bdf8; font-weight: bold;');
+    }
+
     recordFrame(spatialData) {
       if (!spatialData) return;
 
