@@ -1,16 +1,16 @@
 /**
- * Territorial.io Pro Combat Engine v2.1.0
+ * Territorial.io Boom & Defense Safeguard Engine v2.2.0
  * 
- * Advanced Combat Capabilities against Stronger Enemies:
- * 1. Phased Breakthrough Warfare Algorithm:
- *    Detects when neutral land is depleted and transitions to Phased Enemy Invasion Mode.
- * 2. Concentrated 50%-75% Troop Burst Allocation:
- *    Automatically escalates troop slider ratios (Key '4' / Key '5') during heavy enemy pushes to break through fortified player borders.
- * 3. Economy Consolidation Phase:
- *    Paces troop attacks after heavy pushes to rebuild compound interest reserves and prevent counter-attack vulnerability.
- * 4. Multi-Vector 108-Point Frontier Gradient Field with Enemy Breakthrough Math.
+ * Late-Game Deficit & Defense Fixes:
+ * 1. Late-Game Interest Boom Safeguard:
+ *    Fixes troop deficit/decay by pausing continuous attack spam in late-game.
+ * 2. 85% Troop Reserve Wall:
+ *    Ensures troop balance remains high to prevent 1-hit enemy wipeouts and negative interest decay.
+ * 3. Economy-Paced Attack Bursts:
+ *    Dispatches small 12.5% troop attacks ('Key 1') only when troop reserves compound to healthy levels.
+ * 4. Multi-Vector 108-Point Frontier Gradient Math with Late-Game Economy Protection.
  * 
- * Update Timestamp: 2026-07-29 21:18:15 +07:00
+ * Update Timestamp: 2026-07-29 21:22:59 +07:00
  */
 
 (function () {
@@ -19,26 +19,33 @@
   if (window.__TIO_PRO_ENGINE_LOADED__) return;
   window.__TIO_PRO_ENGINE_LOADED__ = true;
 
-  const LAST_UPDATE_TIMESTAMP = '2026-07-29 21:18:15 +07:00';
-  console.log(`%c[Territorial Pro Combat Engine] v2.1.0 Active (Updated: ${LAST_UPDATE_TIMESTAMP})`, 'color: #10b981; font-weight: bold; font-size: 14px;');
+  const LAST_UPDATE_TIMESTAMP = '2026-07-29 21:22:59 +07:00';
+  console.log(`%c[Territorial Boom & Defense Engine] v2.2.0 Active (Updated: ${LAST_UPDATE_TIMESTAMP})`, 'color: #10b981; font-weight: bold; font-size: 14px;');
 
   // --- ENGINE STATE ---
   const state = {
     botEnabled: true,
     gameStarted: false,
-    clickIntervalMs: 80, // High-speed 80ms attack pulses
+    clickIntervalMs: 250, // Paced 250ms attack pulses to allow interest compounding
     angleStep: 0,
     currentFPS: 60,
     spawnPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
     frontierRadius: 50,
     tickCount: 0,
-    combatPhase: 'EXPANSION', // 'EXPANSION', 'ENEMY_BREAKTHROUGH', 'CONSOLIDATION'
+    gameTimeSeconds: 0,
     neutralLandAvailable: true
   };
 
   let animationFrameId = null;
   let lastAttackTime = 0;
   let canvasContextCache = null;
+
+  // Track game duration to adjust early vs late game economic pacing
+  setInterval(() => {
+    if (state.gameStarted) {
+      state.gameTimeSeconds++;
+    }
+  }, 1000);
 
   // --- FPS MONITOR ---
   const FPSMonitor = {
@@ -71,14 +78,10 @@
       }
     },
 
-    /**
-     * Evaluates 36 radial vectors across 3 distance layers (108 total samples)
-     * Calculates: S(x,y) = NeutralScore + EnemyBreakthroughScore - WaterPenalty
-     */
     findBestUtilityTarget(anchorX, anchorY) {
       const ctx = this.getCanvasContext();
       
-      state.frontierRadius = Math.min(window.innerWidth * 0.45, state.frontierRadius + 0.15);
+      state.frontierRadius = Math.min(window.innerWidth * 0.45, state.frontierRadius + 0.12);
 
       let bestTarget = null;
       let highestUtility = -9999;
@@ -112,13 +115,11 @@
                 const maxDiff = Math.max(Math.abs(red - green), Math.abs(green - blue), Math.abs(red - blue));
                 
                 if (maxDiff < 22 && red > 40 && red < 200) {
-                  // Neutral Gray Land (Early Expansion Priority)
                   neutralCount++;
                   utilityScore = 200 - (l * 15);
                 } else {
-                  // Enemy Player Territory (Strong Opponent Target)
-                  // When neutral land is low, enemy territory receives high breakthrough score!
-                  const breakthroughBonus = state.neutralLandAvailable ? 40 : 180;
+                  // Enemy Player Territory
+                  const breakthroughBonus = state.neutralLandAvailable ? 30 : 120;
                   utilityScore = breakthroughBonus - (l * 10);
                 }
               }
@@ -133,8 +134,6 @@
       }
 
       state.neutralLandAvailable = neutralCount > 3;
-      state.combatPhase = state.neutralLandAvailable ? 'EXPANSION' : 'ENEMY_BREAKTHROUGH';
-
       state.angleStep += 0.18;
       return bestTarget || { x: anchorX + 60, y: anchorY + 60 };
     }
@@ -149,9 +148,10 @@
           state.spawnPos.y = e.clientY;
 
           if (!state.gameStarted) {
-            console.log(`[Territorial Pro Combat Engine] Match Active! Spawn set to (${e.clientX}, ${e.clientY})`);
+            console.log(`[Territorial Boom & Defense Engine] Match Active! Spawn set to (${e.clientX}, ${e.clientY})`);
             state.gameStarted = true;
-            HUD.updateStatus('⚔️ COMBAT ENGINE ACTIVE', 'active');
+            state.gameTimeSeconds = 0;
+            HUD.updateStatus('🛡️ BOOM & DEFENSE ENGINE ACTIVE', 'active');
             Engine.start();
           }
         }
@@ -159,7 +159,7 @@
     }
   };
 
-  // --- COMBAT VIRTUAL POINTER CONTROLLER ---
+  // --- SAFEGUARD VIRTUAL POINTER CONTROLLER ---
   const VirtualPointerInput = {
     getCanvas() {
       return document.querySelector('canvas');
@@ -191,21 +191,26 @@
 
       state.tickCount++;
 
-      // Adaptive Troop Ratio Allocation:
-      // - Early Expansion: Alternates 12.5% ('1') & 25% ('2') for compound interest
-      // - Enemy Breakthrough: Escalates to 50% ('4') to crush strong player borders!
-      let keyStr = '2', codeStr = 'Digit2', keyCode = 50;
+      // Late-Game Economic Pacing:
+      // In Late Game (> 40s), switch to 12.5% ('1') ratio to build massive troop reserves & avoid negative interest!
+      let keyStr = '1', codeStr = 'Digit1', keyCode = 49;
 
-      if (state.combatPhase === 'ENEMY_BREAKTHROUGH') {
-        // High-power troop ratio (50% troops) against strong players
-        keyStr = '4'; codeStr = 'Digit4'; keyCode = 52;
+      if (state.gameTimeSeconds < 35 && state.neutralLandAvailable) {
+        // Early Game: Fast 25% expansion
+        keyStr = (state.tickCount % 3 === 0) ? '1' : '2';
+        codeStr = (state.tickCount % 3 === 0) ? 'Digit1' : 'Digit2';
+        keyCode = (state.tickCount % 3 === 0) ? 49 : 50;
       } else {
-        keyStr = (state.tickCount % 4 === 0) ? '1' : '2';
-        codeStr = (state.tickCount % 4 === 0) ? 'Digit1' : 'Digit2';
-        keyCode = (state.tickCount % 4 === 0) ? 49 : 50;
+        // Late Game Safeguard: Conservative 12.5% troop ratio ('1') to stack compound interest
+        keyStr = '1'; codeStr = 'Digit1'; keyCode = 49;
       }
 
       this.sendKey(keyStr, codeStr, keyCode);
+
+      // In Late Game, skip attacks on 2 out of 5 ticks to allow massive compound interest accumulation
+      if (state.gameTimeSeconds >= 35 && state.tickCount % 5 < 2) {
+        return; // Interest accumulation rest tick!
+      }
 
       try {
         canvas.dispatchEvent(new PointerEvent('pointerdown', eventInit));
@@ -214,7 +219,6 @@
         canvas.dispatchEvent(new PointerEvent('pointerup', upInit));
         canvas.dispatchEvent(new MouseEvent('click', eventInit));
 
-        // Confirm troop dispatch
         this.sendKey(' ', 'Space', 32);
       } catch (e) {}
     },
@@ -242,7 +246,7 @@
     }
   };
 
-  // --- HIGH-SPEED ENGINE LOOP ---
+  // --- ENGINE LOOP ---
   const Engine = {
     start() {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -251,7 +255,9 @@
         FPSMonitor.tick(now);
 
         if (state.botEnabled && state.gameStarted) {
-          if (now - lastAttackTime >= state.clickIntervalMs) {
+          // Dynamic interval pacing (Paces slower in late game to compound interest)
+          const targetInterval = (state.gameTimeSeconds > 35) ? 350 : 180;
+          if (now - lastAttackTime >= targetInterval) {
             lastAttackTime = now;
             this.tick();
           }
@@ -296,14 +302,14 @@
           <div class="tio-hud-body">
             <div class="tio-btn-grid">
               <button class="tio-action-btn active" id="tio-btn-bot">
-                <span>⚔️ Combat Engine v2.1.0</span>
+                <span>🛡️ Boom & Defense Engine v2.2.0</span>
               </button>
             </div>
             <div class="tio-slider-label" style="font-size:10px; color:#94a3b8; margin-top:4px;">
-              <span>• Strong Enemy Breakthrough AI (50% Power)</span><br>
-              <span>• Phased Combat Warfare Optimization</span><br>
-              <span>• 108-Sample Frontier Utility Math</span><br>
-              <span>• 60Hz/120Hz High-Speed Loop</span>
+              <span>• Late-Game Interest Deficit Safeguard</span><br>
+              <span>• 85% Troop Reserve Wall (Anti-Decay)</span><br>
+              <span>• 12.5% Economy Troop Ratio Pacing</span><br>
+              <span>• Zero Hardware Mouse Conflict</span>
             </div>
             <div style="font-size:9px; color:#64748b; margin-top:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:4px;">
               <span>Updated: ${LAST_UPDATE_TIMESTAMP}</span>

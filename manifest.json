@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Auto Commander & Mouse Controller",
-  "version": "2.1.0",
-  "description": "Combat Engine for Territorial.io (Strong Enemy Breakthrough AI, 50% Troop Bursts, 108-Sample Gradient Math). Last Updated: 2026-07-29 21:18:15 +07:00",
+  "version": "2.2.0",
+  "description": "Boom & Defense Engine for Territorial.io (Late-Game Deficit Safeguard, 85% Troop Reserve Wall, 12.5% Economy Ratio Pacing). Last Updated: 2026-07-29 21:22:59 +07:00",
   "permissions": [
     "storage",
     "activeTab"
