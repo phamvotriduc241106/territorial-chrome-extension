@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Auto Commander & Mouse Controller",
-  "version": "2.3.0",
-  "description": "Stockfish Architecture Engine for Territorial.io (Multi-Term Static Evaluator E(x,y), Convex Border Compactness, Quiescence Pacing). Last Updated: 2026-07-29 21:24:01 +07:00",
+  "version": "3.0.0",
+  "description": "Grandmaster Engine for Territorial.io (Bellman MDP Value Iteration, Voronoi/Laplacian Geometry Math, 192-Sample Matrix Filter, Real-Time Telemetry Dashboard). Last Updated: 2026-07-29 21:25:16 +07:00",
   "permissions": [
     "storage",
     "activeTab"
