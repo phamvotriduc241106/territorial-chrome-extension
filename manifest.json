@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Auto Commander & Mouse Controller",
-  "version": "1.7.1",
-  "description": "Master Engine for Territorial.io (Clean View - No Crosshair, Virtual Pointer Isolation, 24-Point Frontier Scanner). Last Updated: 2026-07-29 17:57:13 +07:00",
+  "version": "2.0.0",
+  "description": "Pro Strategic Engine for Territorial.io (108-Sample Frontier Gradient Math, 60Hz/120Hz rAF High Speed Engine, Dynamic Troop Pacing). Last Updated: 2026-07-29 21:17:08 +07:00",
   "permissions": [
     "storage",
     "activeTab"
