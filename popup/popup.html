@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Territorial.io Auto Commander</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="popup-header">
+      <div class="brand">
+        <div class="brand-icon">⚔️</div>
+        <div>
+          <h1 class="brand-title">Territorial.io</h1>
+          <p class="brand-subtitle">Auto Commander & Mouse Bot</p>
+        </div>
+      </div>
+      <div class="status-badge" id="status-badge">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">OFF</span>
+      </div>
+    </div>
+
+    <!-- Main Toggle Section -->
+    <div class="card card-hero">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Auto Commander Bot</span>
+          <span class="toggle-desc">Enable automated mouse targeting and clicks</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-bot">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Mode & Strategy Selection -->
+    <div class="card">
+      <div class="card-title">Strategy Preset</div>
+      <div class="strategy-grid">
+        <button class="strategy-btn active" data-strategy="expansionist">
+          <span class="strategy-icon">🗺️</span>
+          <span>Expansionist</span>
+        </button>
+        <button class="strategy-btn" data-strategy="aggressive">
+          <span class="strategy-icon">🎯</span>
+          <span>Aggressive</span>
+        </button>
+        <button class="strategy-btn" data-strategy="defensive">
+          <span class="strategy-icon">🛡️</span>
+          <span>Defensive</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Fine Tuning & Controls -->
+    <div class="card">
+      <div class="card-title">Bot Configuration</div>
+      
+      <div class="control-row">
+        <div class="control-label">
+          <span>Click Speed (CPS)</span>
+          <span class="val-highlight" id="val-cps">10 CPS</span>
+        </div>
+        <input type="range" class="range-slider" id="input-cps" min="1" max="25" value="10">
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          <span>Troop Percentage</span>
+          <span class="val-highlight" id="val-ratio">25%</span>
+        </div>
+        <input type="range" class="range-slider" id="input-ratio" min="5" max="100" step="5" value="25">
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="sub-toggle-row">
+        <span>Auto-Expand Perimeter</span>
+        <label class="switch small">
+          <input type="checkbox" id="toggle-expand">
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <div class="sub-toggle-row">
+        <span>Auto-Attack Spikes</span>
+        <label class="switch small">
+          <input type="checkbox" id="toggle-attack">
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <div class="sub-toggle-row">
+        <span>Humanized Jitter (Anti-Detection)</span>
+        <label class="switch small">
+          <input type="checkbox" id="toggle-jitter" checked>
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Hotkeys Cheatsheet -->
+    <div class="card card-hotkeys">
+      <div class="card-title">In-Game Hotkeys</div>
+      <div class="hotkey-list">
+        <div class="hotkey-item"><kbd>Z</kbd> Toggle Bot ON/OFF</div>
+        <div class="hotkey-item"><kbd>X</kbd> Toggle Auto-Expand</div>
+        <div class="hotkey-item"><kbd>C</kbd> Set 25% Troop Ratio</div>
+        <div class="hotkey-item"><kbd>V</kbd> Set 50% Troop Ratio</div>
+        <div class="hotkey-item"><kbd>B</kbd> Hold for Rapid Burst</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="popup-footer">
+      <span class="version">v1.0.0</span>
+      <a href="https://territorial.io" target="_blank" class="game-link">Open Territorial.io ↗</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
