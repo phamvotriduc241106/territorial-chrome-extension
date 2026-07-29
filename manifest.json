@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Territorial.io Auto Commander & Mouse Controller",
-  "version": "3.0.0",
-  "description": "Grandmaster Engine for Territorial.io (Bellman MDP Value Iteration, Voronoi/Laplacian Geometry Math, 192-Sample Matrix Filter, Real-Time Telemetry Dashboard). Last Updated: 2026-07-29 21:25:16 +07:00",
+  "name": "Territorial.io Autonomous Human-Level Agent",
+  "version": "3.5.0",
+  "description": "Human-Level Autonomous Agent for Territorial.io featuring 14-Module Architecture (Vision Pipeline, Occupancy Grid, World Model, Enemy Tracker, FSM Strategy, 8-Factor Utility, Prediction Engine). Last Updated: 2026-07-29 21:36:04 +07:00",
   "permissions": [
     "storage",
     "activeTab"
@@ -28,7 +28,14 @@
         "https://territorial.io/*",
         "https://*.territorial.io/*"
       ],
-      "js": ["content/content.js"],
+      "js": [
+        "content/vision.js",
+        "content/grid.js",
+        "content/world.js",
+        "content/strategy.js",
+        "content/controller.js",
+        "content/content.js"
+      ],
       "css": ["content/content.css"],
       "run_at": "document_end"
     }
