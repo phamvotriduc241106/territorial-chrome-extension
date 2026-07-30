@@ -255,13 +255,19 @@
      * Returns up to `count` top targets such that each target is at least `minSpatialDist` pixels apart,
      * ensuring simultaneous expansion vectors attack distinct fronts (e.g. North, East, South).
      */
-    getTopMultiFrontTargets(count = 3, minSpatialDist = 30) {
+    getTopMultiFrontTargets(count = 3, minSpatialDist = 30, gridWidth = 120, gridHeight = 120) {
       if (!this.candidatePool || this.candidatePool.length === 0) return [];
       const selected = [];
       const minDistSq = minSpatialDist * minSpatialDist;
 
+      // Safe playable zone margins (ignore top 15% header UI and bottom 15% footer/slider UI)
+      const minY = Math.floor(gridHeight * 0.15);
+      const maxY = Math.floor(gridHeight * 0.85);
+
       for (let i = 0; i < this.candidatePool.length; i++) {
         const candidate = this.candidatePool[i];
+        if (candidate.y < minY || candidate.y > maxY) continue;
+
         let tooClose = false;
         for (let j = 0; j < selected.length; j++) {
           const dx = candidate.x - selected[j].x;

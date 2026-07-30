@@ -286,7 +286,7 @@
         const waveConfig = this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal);
         if (now - this.lastAttackDispatchTime >= waveConfig.burstPacingMs) {
           const rect = document.querySelector('canvas') ? document.querySelector('canvas').getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-          const waveTargets = this.utility.getTopMultiFrontTargets(waveConfig.waveCount, 30);
+          const waveTargets = this.utility.getTopMultiFrontTargets(waveConfig.waveCount, 30, visionResult.width, visionResult.height);
           const targetsToHit = (waveTargets && waveTargets.length > 0) ? waveTargets : [lockedTarget];
 
           this.controller.setTroopSliderRatio(waveConfig.attackRatio);
