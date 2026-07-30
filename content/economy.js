@@ -179,18 +179,18 @@
         shouldSave = (this.estimatedTroopBalance < 200);
         shouldAttack = !shouldSave;
         shouldFarm = true;
-        recommendedRatio = (this.estimatedTroopBalance > 3000) ? 0.25 : 0.18;
+        recommendedRatio = (this.estimatedTroopBalance > 3000) ? 0.12 : 0.10;
       } else {
-        // LATE GAME PVP WARS: Pause to regenerate if reserve ratio drops below 20%
-        shouldSave = (reserveRatio < 0.20);
+        // LATE GAME PVP WARS: Keep continuous pressure! Only pause if reserve ratio drops below 12%
+        shouldSave = (reserveRatio < 0.12);
         shouldAttack = !shouldSave;
         shouldFarm = false;
         if (reserveRatio > 0.75) {
-          recommendedRatio = 0.375;
+          recommendedRatio = 0.18; // Strong strike when interest bar is near max / red
         } else if (reserveRatio > 0.40) {
-          recommendedRatio = 0.25;
+          recommendedRatio = 0.11; // Optimal 11% continuous pressure ratio
         } else {
-          recommendedRatio = 0.125;
+          recommendedRatio = 0.08; // Conservative 8% pressure while rebuilding reserve
         }
       }
 

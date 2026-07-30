@@ -120,10 +120,10 @@
     }
 
     getExecutionConfig(aggressionValue) {
-      // Scale recommended ratio and attack pacing dynamically by aggression meter
+      // Scale recommended ratio and attack pacing dynamically by aggression meter (8% - 20% interest-preserving range)
       const aggrScale = Math.max(0.5, aggressionValue);
-      const scaledRatio = parseFloat(Math.min(0.50, Math.max(0.125, this.defaultRatio * (0.8 + 0.4 * aggrScale))).toFixed(3));
-      const scaledPacing = Math.max(80, Math.floor(this.defaultPacingMs / Math.max(0.6, aggrScale)));
+      const scaledRatio = parseFloat(Math.min(0.20, Math.max(0.08, this.defaultRatio * (0.9 + 0.2 * aggrScale))).toFixed(3));
+      const scaledPacing = Math.max(65, Math.floor(this.defaultPacingMs / Math.max(0.6, aggrScale)));
 
       return {
         recommendedRatio: scaledRatio,
@@ -160,7 +160,7 @@
    */
   class OpeningPlanner extends StrategicPlanner {
     constructor() {
-      super('OPENING', 0.22, 70, 180, 'NEUTRAL_FAST');
+      super('OPENING', 0.15, 65, 180, 'NEUTRAL_FAST');
     }
 
     getGoalDescription() {
@@ -181,7 +181,7 @@
    */
   class RapidExpansionPlanner extends StrategicPlanner {
     constructor() {
-      super('RAPID_EXPANSION', 0.25, 85, 240, 'NEUTRAL_FRONTIER');
+      super('RAPID_EXPANSION', 0.11, 75, 240, 'NEUTRAL_FRONTIER');
     }
 
     getGoalDescription() {
@@ -203,7 +203,7 @@
    */
   class GreedyFarmingPlanner extends StrategicPlanner {
     constructor() {
-      super('GREEDY_FARMING', 0.20, 170, 160, 'NEUTRAL_SAFE');
+      super('GREEDY_FARMING', 0.10, 150, 160, 'NEUTRAL_SAFE');
     }
 
     getGoalDescription() {
