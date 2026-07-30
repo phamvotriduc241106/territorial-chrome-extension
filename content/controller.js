@@ -81,7 +81,8 @@
     }
 
     /**
-     * Dispatch synthetic PointerEvent with pointerId = 99
+     * Dispatch synthetic PointerEvent (pointerId=99) AND MouseEvent (mousedown, mouseup, click)
+     * required by Territorial.io's canvas event listeners.
      */
     dispatchPointerEvent(type, x, y, buttons = 1) {
       if (!this.canvas) {
@@ -90,7 +91,7 @@
       }
 
       try {
-        const evt = new PointerEvent(type, {
+        const commonOpts = {
           bubbles: true,
           cancelable: true,
           view: window,
@@ -98,14 +99,39 @@
           clientY: y,
           screenX: x,
           screenY: y,
-          pointerId: this.virtualPointerId,
-          pointerType: 'mouse',
           button: 0,
           buttons: buttons,
-          isPrimary: true
-        });
+          detail: 1
+        };
 
-        this.canvas.dispatchEvent(evt);
+        // 1. Dispatch PointerEvent
+        try {
+          const pointerEvt = new PointerEvent(type, {
+            ...commonOpts,
+            pointerId: this.virtualPointerId,
+            pointerType: 'mouse',
+            isPrimary: true
+          });
+          this.canvas.dispatchEvent(pointerEvt);
+        } catch (pe) {}
+
+        // 2. Dispatch MouseEvent (what Territorial.io's engine actually listens to!)
+        let mouseType = '';
+        if (type === 'pointerdown') mouseType = 'mousedown';
+        else if (type === 'pointermove') mouseType = 'mousemove';
+        else if (type === 'pointerup') mouseType = 'mouseup';
+
+        if (mouseType) {
+          const mouseEvt = new MouseEvent(mouseType, commonOpts);
+          this.canvas.dispatchEvent(mouseEvt);
+        }
+
+        // 3. For mouseup, also dispatch a 'click' event
+        if (type === 'pointerup') {
+          const clickEvt = new MouseEvent('click', commonOpts);
+          this.canvas.dispatchEvent(clickEvt);
+        }
+
         this.currentX = x;
         this.currentY = y;
         return true;
