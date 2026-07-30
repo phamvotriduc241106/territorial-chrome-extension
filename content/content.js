@@ -298,9 +298,7 @@
             const targetScreenX = Math.round(rect.left + (targetNormX * rect.width));
             const targetScreenY = Math.round(rect.top + (targetNormY * rect.height));
 
-            setTimeout(() => {
-              this.controller.executeClick(targetScreenX, targetScreenY);
-            }, w * 15);
+            this.controller.executeClick(targetScreenX, targetScreenY);
           }
 
           this.economy.recordAttackDispatch(waveConfig.attackRatio, lockedTarget.type, 100 * targetsToHit.length);

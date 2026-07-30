@@ -73,6 +73,47 @@
       this.currentY = window.innerHeight / 2;
 
       this.lastExecutionTimeMs = 0;
+
+      this.isPhysicalMouseDown = false;
+      this.lastPhysicalMouseActivityMs = 0;
+      this.hasSetupCoexistence = false;
+      this.setupPhysicalMouseCoexistence();
+    }
+
+    setupPhysicalMouseCoexistence() {
+      if (this.hasSetupCoexistence) return;
+      this.hasSetupCoexistence = true;
+
+      window.addEventListener('mousedown', (e) => {
+        if (e.isTrusted) {
+          this.isPhysicalMouseDown = true;
+          this.lastPhysicalMouseActivityMs = performance.now();
+        }
+      }, true);
+
+      window.addEventListener('mouseup', (e) => {
+        if (e.isTrusted) {
+          this.isPhysicalMouseDown = false;
+          this.lastPhysicalMouseActivityMs = performance.now();
+        }
+      }, true);
+
+      window.addEventListener('mousemove', (e) => {
+        if (e.isTrusted) {
+          this.lastPhysicalMouseActivityMs = performance.now();
+        }
+      }, true);
+
+      window.addEventListener('wheel', (e) => {
+        if (e.isTrusted) {
+          this.lastPhysicalMouseActivityMs = performance.now();
+        }
+      }, true);
+    }
+
+    isPhysicalMouseActive() {
+      const now = performance.now();
+      return this.isPhysicalMouseDown || (now - this.lastPhysicalMouseActivityMs < 120);
     }
 
     attach(canvasElement) {
@@ -158,6 +199,10 @@
      * ZERO mousedown duration (0ms hold) ensures physical mouse never pans camera or controls screen.
      */
     executeClick(x, y) {
+      if (this.isPhysicalMouseActive()) {
+        return false; // Yield immediately when user is actively moving, dragging, clicking, or zooming with physical mouse
+      }
+
       const startTime = performance.now();
       const downSuccess = this.dispatchPointerEvent('pointerdown', x, y, 1);
       if (!downSuccess) return false;
@@ -175,7 +220,7 @@
      * Executes a smooth Bezier drag from (x0, y0) to (x1, y1) for troop slider adjustments.
      */
     async executeDrag(x0, y0, x1, y1, durationMs = 120) {
-      if (this.isBusy) return false;
+      if (this.isBusy || this.isPhysicalMouseActive()) return false;
       const startTime = performance.now();
       this.isBusy = true;
 
@@ -206,7 +251,7 @@
      * Dispatches events directly to canvas without moving cursor or triggering external screen actions.
      */
     setTroopSliderRatio(targetRatio) {
-      if (!this.canvas) return false;
+      if (this.isPhysicalMouseActive() || !this.canvas) return false;
       const rect = this.canvas.getBoundingClientRect();
       const sliderStartX = rect.left + (rect.width * 0.30);
       const sliderEndX   = rect.left + (rect.width * 0.70);

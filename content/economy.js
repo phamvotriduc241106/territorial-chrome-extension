@@ -227,21 +227,21 @@
 
       if (reserveRatio > 0.65 || this.estimatedTroopBalance > 10000) {
         waveCount = 3;
-        burstPacingMs = 45;
+        burstPacingMs = 140;
         attackRatio = 0.11;
       } else if (reserveRatio > 0.35 || this.estimatedTroopBalance > 4000) {
         waveCount = 2;
-        burstPacingMs = 55;
+        burstPacingMs = 170;
         attackRatio = 0.10;
       } else {
         waveCount = 1;
-        burstPacingMs = 65;
+        burstPacingMs = 200;
         attackRatio = 0.10;
       }
 
       if (stateName === 'SPOILS_HARVESTER' || stateName === 'KILL_SECURE') {
         attackRatio = 0.20;
-        burstPacingMs = 40;
+        burstPacingMs = 120;
         waveCount = Math.min(3, waveCount + 1);
       }
 
