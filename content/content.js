@@ -294,6 +294,7 @@
     }
   }
 
+  window.TerritorialMasterOrchestrator = TerritorialMasterOrchestrator;
   window.TerritorialEngineV5 = new TerritorialMasterOrchestrator();
   window.TerritorialEngineV5.init();
 

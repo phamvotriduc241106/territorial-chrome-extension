@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Territorial.io Agent v5.0.5 Live Web Verification</title>
+</head>
+<body>
+  <h1>Territorial.io Agent v5.0.5 Live Web Engine Verification Harness</h1>
+  <canvas id="canvasA" width="400" height="400" style="width: 1440px; height: 900px; position: absolute; left: 0; top: 0; display: block;"></canvas>
+  <div id="test-report">Running Live Engine Tests...</div>
+
+  <!-- Load all 18 Content Scripts in Exact Architecture Order -->
+  <script src="../content/vision.js"></script>
+  <script src="../content/grid.js"></script>
+  <script src="../content/border.js"></script>
+  <script src="../content/region.js"></script>
+  <script src="../content/world.js"></script>
+  <script src="../content/enemy.js"></script>
+  <script src="../content/economy.js"></script>
+  <script src="../content/heatmap.js"></script>
+  <script src="../content/strategy.js"></script>
+  <script src="../content/utility.js"></script>
+  <script src="../content/prediction.js"></script>
+  <script src="../content/smoothing.js"></script>
+  <script src="../content/pathfinding.js"></script>
+  <script src="../content/controller.js"></script>
+  <script src="../content/hud.js"></script>
+  <script src="../content/optimization.js"></script>
+  <script src="../content/spatial.js"></script>
+  <script src="../content/content.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const report = [];
+      function log(msg) {
+        console.log(msg);
+        report.push(msg);
+      }
+      try {
+        log("=== [TEST 1] VERIFYING ALL 18 ENGINE MODULES ARE LOADED ===");
+        const modules = [
+          'VisionEngine', 'OccupancyGrid', 'BorderDetector', 'RegionDetector',
+          'WorldModel', 'EnemyTracker', 'EconomyAnalyzer', 'HeatmapEngine',
+          'StrategyEngine', 'UtilityEvaluator', 'PredictionEngine', 'TemporalSmoothing',
+          'PathfindingEngine', 'MouseController', 'HUDEngine', 'AdaptiveScheduler',
+          'SpatialGeometry', 'TerritorialMasterOrchestrator'
+        ];
+        let allLoaded = true;
+        for (const mod of modules) {
+          if (!window[mod]) {
+            log(`[FAIL] Missing module: ${mod}`);
+            allLoaded = false;
+          }
+        }
+        if (allLoaded) log("[PASS] All 18 engine modules successfully loaded.");
+
+        log("\n=== [TEST 2] SIMULATING TERRITORIAL.IO CANVAS & MATCH LIFECYCLE ===");
+        const canvas = document.getElementById('canvasA');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        // Draw match countdown state (Frames 1-10): All Neutral Beige with Water Border
+        function drawMatchState(isMatchStarted) {
+          ctx.fillStyle = 'rgb(25, 45, 75)';
+          ctx.fillRect(0, 0, 400, 400);
+
+          ctx.fillStyle = 'rgb(200, 200, 190)';
+          ctx.fillRect(50, 50, 300, 300);
+
+          ctx.fillStyle = 'rgb(220, 50, 50)';
+          ctx.fillRect(280, 100, 50, 200);
+
+          if (isMatchStarted) {
+            ctx.fillStyle = 'rgb(50, 150, 250)';
+            ctx.fillRect(175, 175, 50, 50);
+          }
+        }
+
+        const engine = new TerritorialMasterOrchestrator();
+        engine.vision.reader.canvas = canvas;
+        engine.vision.reader.context = ctx;
+        engine.controller.canvas = canvas;
+
+        const attackClicks = [];
+        canvas.addEventListener('mousedown', (e) => {
+          attackClicks.push({ type: 'mousedown', clientX: e.clientX, clientY: e.clientY });
+        });
+        canvas.addEventListener('mouseup', (e) => {
+          attackClicks.push({ type: 'mouseup', clientX: e.clientX, clientY: e.clientY });
+        });
+        canvas.addEventListener('click', (e) => {
+          attackClicks.push({ type: 'click', clientX: e.clientX, clientY: e.clientY });
+        });
+
+        log("\n=== [TEST 3] SIMULATING SPAWN SELECTION CLICK ON BEIGE COUNTDOWN SCREEN ===");
+        drawMatchState(false);
+        engine.playerSpawnPos = { x: 720, y: 450 };
+        engine.isPlayerSpawnCalibrated = true;
+        engine.world.resetMatchTime();
+
+        for (let f = 1; f <= 10; f++) {
+          engine.executePipeline(performance.now(), 0.016);
+        }
+        log(`After 10 countdown frames: playerColor is RGB(${engine.vision.classifier.playerColor.r}, ${engine.vision.classifier.playerColor.g}, ${engine.vision.classifier.playerColor.b})`);
+        if (engine.vision.classifier.playerColor.r === 50) {
+          log("[PASS] Deferred color calibration while spawn pixel was neutral beige (countdown screen).");
+        } else {
+          log(`[INFO] Color calibration state: r=${engine.vision.classifier.playerColor.r}`);
+        }
+
+        log("\n=== [TEST 4] SIMULATING MATCH START (FRAME 11+) & TRUE PLAYER COLOR SPAWN ===");
+        drawMatchState(true);
+        engine.executePipeline(performance.now(), 0.016);
+
+        const pc = engine.vision.classifier.playerColor;
+        log(`After Frame 11 (Match Start): Calibrated playerColor is RGB(${pc.r}, ${pc.g}, ${pc.b})`);
+        if (pc.r === 50 && pc.g === 150 && pc.b === 250) {
+          log("[PASS] Auto-calibrated true player color RGB(50, 150, 250) immediately upon territory spawn!");
+        } else {
+          log(`[WARN] Unexpected color: RGB(${pc.r}, ${pc.g}, ${pc.b})`);
+        }
+
+        log("\n=== [TEST 5] VERIFYING TERRITORY CLASSIFICATION & BORDER EXTRACTION ===");
+        const borderStats = engine.border.extractPerimeterAndFrontiers(engine.heatmap);
+        log(`Total Territory Area: ${borderStats ? borderStats.totalTerritoryArea : 0} cells`);
+        log(`Perimeter Cells: ${borderStats ? borderStats.perimeterLength : 0} cells`);
+        log(`Expansion Frontier: ${borderStats ? borderStats.counts.expansionCount : 0} cells`);
+        if (borderStats && borderStats.totalTerritoryArea > 0 && borderStats.counts.expansionCount > 0) {
+          log("[PASS] Successfully classified player territory as MINE (3) and extracted expansion borders!");
+        } else {
+          log("[FAIL] Territory classification or border extraction failed.");
+        }
+
+        log("\n=== [TEST 6] EXECUTING ACTIVE ATTACK DISPATCH VERIFICATION ===");
+        for (let f = 12; f <= 17; f++) {
+          engine.executePipeline(performance.now() + (f * 100), 0.1);
+        }
+
+        log(`Total Attack Events Received by Canvas Listeners: ${attackClicks.length}`);
+        if (attackClicks.length > 0) {
+          log(`[PASS] SUCCESS!! Engine dispatched active attack clicks to canvas!`);
+          log(`First Attack Click: ${attackClicks[0].type} at clientX=${attackClicks[0].clientX}, clientY=${attackClicks[0].clientY}`);
+          const mousedowns = attackClicks.filter(c => c.type === 'mousedown').length;
+          const mouseups = attackClicks.filter(c => c.type === 'mouseup').length;
+          const clicks = attackClicks.filter(c => c.type === 'click').length;
+          log(`Event Breakdown: mousedown=${mousedowns}, mouseup=${mouseups}, click=${clicks}`);
+        } else {
+          log("[FAIL] No attack clicks dispatched.");
+        }
+
+        log("\n=== [OVERALL RESULT] ALL LIVE WEB SIMULATION ASSERTIONS COMPLETE ===");
+      } catch (err) {
+        log(`[FATAL ERROR]: ${err.message}\n${err.stack}`);
+      }
+      document.getElementById('test-report').innerText = report.join('\n');
+    });
+  </script>
+</body>
+</html>
