@@ -25,8 +25,8 @@
   // CLASS 1: DYNAMIC AGGRESSION METER
   // ==========================================
   class AggressionMeter {
-    constructor(initialValue = 0.75) {
-      this.value = initialValue; // Default to high aggression (0.75)
+    constructor(initialValue = 0.95) {
+      this.value = initialValue; // Always high aggression (0.95 default)
       this.lastUpdateTime = performance.now();
       this.trend = 'RISING';
     }
@@ -34,54 +34,20 @@
     update(context, dtSec) {
       if (dtSec <= 0) return this.value;
 
-      let delta = 0.0;
-
-      // 1. INCREASE CONDITIONS (Aggressive Growth Drivers)
-      // Larger than nearby opponents
-      if (context.myArea > context.averageEnemyArea) {
-        delta += 0.06 * dtSec;
-      }
-      // Gaining territory quickly
-      if (context.growthPerSec > 25.0) {
-        delta += 0.08 * dtSec;
-      }
-      // Abundant neutral land available
-      if (context.neutralRatio > 0.10) {
+      let delta = 0.02 * dtSec;
+      if (context.growthPerSec > 10.0 || context.neutralRatio > 0.05) {
         delta += 0.05 * dtSec;
       }
 
-      // 2. DECREASE CONDITIONS (Strict Survival Dampeners)
-      // Multiple enemies actively attacking
-      if (context.attackingEnemyCount >= 2) {
-        delta -= 0.12 * dtSec;
-      }
-      // Expansion stalls completely with no neutral land
-      if (context.growthPerSec <= 0.0 && context.neutralRatio < 0.03) {
-        delta -= 0.04 * dtSec;
-      }
-      // Troop reserves become critically low
-      if (context.ecoHealth === 'CRITICAL_DEFICIT') {
-        delta -= 0.08 * dtSec;
-      }
-
-      const oldValue = this.value;
-      this.value = parseFloat(Math.min(1.0, Math.max(0.10, this.value + delta)).toFixed(3));
-
-      if (this.value > oldValue + 0.005) {
-        this.trend = 'RISING';
-      } else if (this.value < oldValue - 0.005) {
-        this.trend = 'FALLING';
-      } else {
-        this.trend = 'STABLE';
-      }
-
+      // Always clamp to aggressive mode range [0.85, 1.00] unless genuinely collapsing
+      const minAggr = (context.ecoHealth === 'CRITICAL_DEFICIT' && context.myArea < 300) ? 0.75 : 0.85;
+      this.value = parseFloat(Math.min(1.0, Math.max(minAggr, this.value + delta)).toFixed(3));
+      this.trend = 'RISING';
       return this.value;
     }
 
     getAggressionLabel() {
-      if (this.value >= 0.75) return `AGGRESSIVE (${this.value.toFixed(2)})`;
-      if (this.value >= 0.45) return `BALANCED (${this.value.toFixed(2)})`;
-      return `CAUTIOUS (${this.value.toFixed(2)})`;
+      return `AGGRESSIVE (${this.value.toFixed(2)})`;
     }
   }
 
@@ -232,10 +198,10 @@
     }
 
     evaluatePriorityScore(context) {
-      if (context.neutralRatio > 0.05 || context.myArea < 800) return 0.0;
-      // High score once neutral land is depleted and we have strong territory
-      const dominanceBonus = (context.myArea > context.averageEnemyArea * 1.2) ? 12.0 : 0.0;
-      return parseFloat((84.0 + dominanceBonus + (context.aggression * 8.0)).toFixed(2));
+      if (context.neutralRatio > 0.25 || context.myArea < 150) return 0.0;
+      // High score once neutral land starts thinning out
+      const dominanceBonus = (context.myArea > context.averageEnemyArea * 1.1) ? 12.0 : 4.0;
+      return parseFloat((88.0 + dominanceBonus + (context.aggression * 8.0)).toFixed(2));
     }
   }
 
