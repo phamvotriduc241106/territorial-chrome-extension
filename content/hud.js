@@ -147,16 +147,6 @@
           border: 1px solid rgba(59, 130, 246, 0.4);
           font-weight: bold;
         }
-
-        #tio-overlay-canvas-v5 {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          pointer-events: none;
-          z-index: 999990;
-        }
       `;
       document.head.appendChild(styleEl);
 
@@ -233,22 +223,6 @@
       `;
       document.body.appendChild(panel);
       this.container = panel;
-
-      const canvas = document.createElement('canvas');
-      canvas.id = 'tio-overlay-canvas-v5';
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      document.body.appendChild(canvas);
-      this.overlayCanvas = canvas;
-      this.overlayCtx = canvas.getContext('2d');
-
-      window.addEventListener('resize', () => {
-        if (this.overlayCanvas) {
-          this.overlayCanvas.width = window.innerWidth;
-          this.overlayCanvas.height = window.innerHeight;
-        }
-      });
-
       this.isInitialized = true;
     }
 
@@ -318,27 +292,8 @@
       this.lastRenderTimeMs = parseFloat((performance.now() - startTime).toFixed(2));
     }
 
-    renderOverlay(playerPos, lockedTarget, threatVectors) {
-      if (!this.overlayCtx || !this.overlayCanvas) return;
-      this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
-
-      if (playerPos && lockedTarget) {
-        this.overlayCtx.save();
-        this.overlayCtx.beginPath();
-        this.overlayCtx.moveTo(playerPos.x, playerPos.y);
-        this.overlayCtx.lineTo(lockedTarget.x, lockedTarget.y);
-        this.overlayCtx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
-        this.overlayCtx.lineWidth = 2;
-        this.overlayCtx.setLineDash([6, 6]);
-        this.overlayCtx.stroke();
-
-        this.overlayCtx.beginPath();
-        this.overlayCtx.arc(lockedTarget.x, lockedTarget.y, 8, 0, 2 * Math.PI);
-        this.overlayCtx.strokeStyle = 'rgba(52, 211, 153, 0.9)'; // Green aggressive attack ring
-        this.overlayCtx.lineWidth = 2;
-        this.overlayCtx.stroke();
-        this.overlayCtx.restore();
-      }
+    renderOverlay() {
+      // Disabled in v5.1.0: zero green ring/dot or line overlay on screen, preventing any screen/camera clutter
     }
   }
 

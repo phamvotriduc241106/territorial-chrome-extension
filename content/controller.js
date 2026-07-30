@@ -110,7 +110,7 @@
             ...commonOpts,
             pointerId: this.virtualPointerId,
             pointerType: 'mouse',
-            isPrimary: true
+            isPrimary: false
           });
           this.canvas.dispatchEvent(pointerEvt);
         } catch (pe) {}
@@ -155,16 +155,15 @@
 
     /**
      * Executes synthetic click at target (x, y) synchronously without blocking subsequent attacks.
+     * ZERO mousedown duration (0ms hold) ensures physical mouse never pans camera or controls screen.
      */
     executeClick(x, y) {
       const startTime = performance.now();
       const downSuccess = this.dispatchPointerEvent('pointerdown', x, y, 1);
       if (!downSuccess) return false;
 
-      // Schedule pointerup 25ms later to prevent game engines from discarding 0ms noise/glitch clicks
-      setTimeout(() => {
-        this.dispatchPointerEvent('pointerup', x, y, 0);
-      }, 25);
+      // Execute pointerup synchronously in the exact same event loop tick to guarantee ZERO mousedown hold time
+      this.dispatchPointerEvent('pointerup', x, y, 0);
 
       this.lastActionTimestamp = performance.now();
       this.actionCount++;

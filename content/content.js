@@ -330,12 +330,6 @@
         waves: `${this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal).waveCount} Vectors`,
         pincer: (isGameActive && lockedTarget && lockedTarget.utility >= 50) ? 'ACTIVE (+25)' : 'READY'
       });
-
-      this.hud.renderOverlay(
-        this.playerSpawnPos,
-        lockedTarget,
-        threatVectors
-      );
     }
   }
 
