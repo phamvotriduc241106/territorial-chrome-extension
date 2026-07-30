@@ -125,13 +125,6 @@
         this.vision.sampleAndCalibratePlayerColor(this.playerSpawnPos.x, this.playerSpawnPos.y);
       }
 
-      // Automatic Spawn Discovery Fallback: If 120 frames (~2 seconds) elapse without a click, auto-calibrate at viewport center
-      if (!this.isPlayerSpawnCalibrated && this.frameCount > 120) {
-        this.playerSpawnPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-        this.isPlayerSpawnCalibrated = true;
-        this.vision.sampleAndCalibratePlayerColor(this.playerSpawnPos.x, this.playerSpawnPos.y);
-      }
-
       // ========================================================
       // STEP 2: OCCUPANCY GRID (Update Spatial Cell Matrix)
       // ========================================================
@@ -263,9 +256,11 @@
       }
 
       // ========================================================
-      // STEP 13: MOUSE CONTROLLER (Execute Hyper-Aggressive Multi-Front Attack Waves - v5.1.0)
+      // STEP 13: MOUSE CONTROLLER (Execute Hyper-Aggressive Multi-Front Attack Waves - v5.1.1)
       // ========================================================
-      if (lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
+      const isGameActive = this.isPlayerSpawnCalibrated && borderStats.totalTerritoryArea > 0;
+
+      if (isGameActive && lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
         const waveConfig = this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal);
         if (now - this.lastAttackDispatchTime >= waveConfig.burstPacingMs) {
           const rect = document.querySelector('canvas') ? document.querySelector('canvas').getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
@@ -297,7 +292,7 @@
       // ========================================================
       this.hud.updateDashboard({
         fps: visionResult.visionFPS || 15,
-        state: strategyConfig.stateName,
+        state: isGameActive ? strategyConfig.stateName : 'IDLE (Click Map/Canvas to Start)',
         aggression: strategyConfig.aggressionLabel || `AGGRESSIVE (${aggrVal.toFixed(2)})`,
         myArea: borderStats.totalTerritoryArea,
         compactness: borderStats.isoperimetricQuotient,
@@ -308,10 +303,10 @@
         enemyCount: enemyAnalytics.totalTracked || 0,
         primaryThreat: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.id : 'NONE',
         dangerScore: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.dangerScore : 0.0,
-        targetCoord: lockedTarget ? `${lockedTarget.x}, ${lockedTarget.y}` : 'NONE',
-        smoothingLock: lockedTarget ? `HOLD (${lockedTarget.tickCount}/5)` : 'IDLE',
+        targetCoord: (isGameActive && lockedTarget) ? `${lockedTarget.x}, ${lockedTarget.y}` : 'WAITING FOR SPAWN',
+        smoothingLock: (isGameActive && lockedTarget) ? `HOLD (${lockedTarget.tickCount}/5)` : 'IDLE',
         waves: `${this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal).waveCount} Vectors`,
-        pincer: lockedTarget && lockedTarget.utility >= 50 ? 'ACTIVE (+25)' : 'READY'
+        pincer: (isGameActive && lockedTarget && lockedTarget.utility >= 50) ? 'ACTIVE (+25)' : 'READY'
       });
 
       this.hud.renderOverlay(
