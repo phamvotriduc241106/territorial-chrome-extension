@@ -203,20 +203,19 @@
     }
 
     /**
-     * Adjusts the bottom troop slider bar to a target percentage ratio (0.0 to 1.0).
+     * Adjusts the troop slider ratio (0.0 to 1.0) internally.
+     * Dispatches events directly to canvas without moving cursor or triggering external screen actions.
      */
     setTroopSliderRatio(targetRatio) {
       if (!this.canvas) return false;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-
-      // In Territorial.io, the troop slider bar is centered at the bottom ~85% height
-      const sliderStartX = w * 0.30;
-      const sliderEndX   = w * 0.70;
-      const sliderY      = h * 0.88;
+      const rect = this.canvas.getBoundingClientRect();
+      const sliderStartX = rect.left + (rect.width * 0.30);
+      const sliderEndX   = rect.left + (rect.width * 0.70);
+      const sliderY      = rect.top + (rect.height * 0.88);
 
       const targetX = Math.round(sliderStartX + (targetRatio * (sliderEndX - sliderStartX)));
-      return this.executeClick(targetX, sliderY);
+      return this.dispatchPointerEvent('pointerdown', targetX, sliderY, 1) &&
+             this.dispatchPointerEvent('pointerup', targetX, sliderY, 0);
     }
 
     getControllerTelemetry() {
