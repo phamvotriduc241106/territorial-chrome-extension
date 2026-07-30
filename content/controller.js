@@ -161,7 +161,11 @@
       const downSuccess = this.dispatchPointerEvent('pointerdown', x, y, 1);
       if (!downSuccess) return false;
 
-      this.dispatchPointerEvent('pointerup', x, y, 0);
+      // Schedule pointerup 25ms later to prevent game engines from discarding 0ms noise/glitch clicks
+      setTimeout(() => {
+        this.dispatchPointerEvent('pointerup', x, y, 0);
+      }, 25);
+
       this.lastActionTimestamp = performance.now();
       this.actionCount++;
       this.lastExecutionTimeMs = parseFloat((performance.now() - startTime).toFixed(2));

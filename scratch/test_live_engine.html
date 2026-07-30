@@ -135,23 +135,26 @@
           engine.executePipeline(performance.now() + (f * 100), 0.1);
         }
 
-        log(`Total Attack Events Received by Canvas Listeners: ${attackClicks.length}`);
-        if (attackClicks.length > 0) {
-          log(`[PASS] SUCCESS!! Engine dispatched active attack clicks to canvas!`);
-          log(`First Attack Click: ${attackClicks[0].type} at clientX=${attackClicks[0].clientX}, clientY=${attackClicks[0].clientY}`);
-          const mousedowns = attackClicks.filter(c => c.type === 'mousedown').length;
-          const mouseups = attackClicks.filter(c => c.type === 'mouseup').length;
-          const clicks = attackClicks.filter(c => c.type === 'click').length;
-          log(`Event Breakdown: mousedown=${mousedowns}, mouseup=${mouseups}, click=${clicks}`);
-        } else {
-          log("[FAIL] No attack clicks dispatched.");
-        }
+        setTimeout(() => {
+          log(`Total Attack Events Received by Canvas Listeners: ${attackClicks.length}`);
+          if (attackClicks.length > 0) {
+            log(`[PASS] SUCCESS!! Engine dispatched active attack clicks to canvas!`);
+            log(`First Attack Click: ${attackClicks[0].type} at clientX=${attackClicks[0].clientX}, clientY=${attackClicks[0].clientY}`);
+            const mousedowns = attackClicks.filter(c => c.type === 'mousedown').length;
+            const mouseups = attackClicks.filter(c => c.type === 'mouseup').length;
+            const clicks = attackClicks.filter(c => c.type === 'click').length;
+            log(`Event Breakdown: mousedown=${mousedowns}, mouseup=${mouseups}, click=${clicks}`);
+          } else {
+            log("[FAIL] No attack clicks dispatched.");
+          }
 
-        log("\n=== [OVERALL RESULT] ALL LIVE WEB SIMULATION ASSERTIONS COMPLETE ===");
+          log("\n=== [OVERALL RESULT] ALL LIVE WEB SIMULATION ASSERTIONS COMPLETE ===");
+          document.getElementById('test-report').innerText = report.join('\n');
+        }, 60);
       } catch (err) {
         log(`[FATAL ERROR]: ${err.message}\n${err.stack}`);
+        document.getElementById('test-report').innerText = report.join('\n');
       }
-      document.getElementById('test-report').innerText = report.join('\n');
     });
   </script>
 </body>

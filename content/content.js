@@ -58,21 +58,30 @@
           clearInterval(attachInterval);
           this.setupAutoStart(canvas);
           this.hud.init();
-          console.log('%c[TIO Master Orchestrator v5.0] Ready. Waiting for player canvas click to activate engine.', 'color: #10b981;');
+          this.startLoop();
+          console.log('%c[TIO Master Orchestrator v5.0] Ready & Active. Loop started immediately upon canvas detection.', 'color: #10b981;');
         }
       }, 500);
     }
 
     setupAutoStart(canvas) {
-      canvas.addEventListener('click', (e) => {
-        console.log('%c[TIO Master Orchestrator v5.0] Canvas Clicked! Calibrating spawn & activating loop.', 'color: #34d399; font-weight: bold;');
-        this.playerSpawnPos = { x: e.clientX, y: e.clientY };
+      const spawnHandler = (e) => {
+        // Ignore synthetic events dispatched by our own bot (virtualPointerId 99 or detail === 1 from bot)
+        if (e.pointerId === 99 || (e.detail && e.detail._isBot)) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        if (!clientX || !clientY) return;
+
+        console.log(`%c[TIO Master Orchestrator v5.0] User Click Captured at (${clientX}, ${clientY})! Calibrating spawn.`, 'color: #34d399; font-weight: bold;');
+        this.playerSpawnPos = { x: clientX, y: clientY };
         this.isPlayerSpawnCalibrated = true;
-        this.vision.sampleAndCalibratePlayerColor(e.clientX, e.clientY);
+        this.vision.sampleAndCalibratePlayerColor(clientX, clientY);
         this.world.resetMatchTime();
-        if (!this.isActive) {
-          this.startLoop();
-        }
+      };
+
+      ['mousedown', 'pointerdown', 'touchstart', 'click'].forEach(evt => {
+        window.addEventListener(evt, spawnHandler, { capture: true });
+        canvas.addEventListener(evt, spawnHandler, { capture: true });
       });
     }
 
@@ -113,6 +122,13 @@
       if (!visionResult || !visionResult.typeMatrix) return;
 
       if (this.frameCount <= 300 && this.isPlayerSpawnCalibrated) {
+        this.vision.sampleAndCalibratePlayerColor(this.playerSpawnPos.x, this.playerSpawnPos.y);
+      }
+
+      // Automatic Spawn Discovery Fallback: If 120 frames (~2 seconds) elapse without a click, auto-calibrate at viewport center
+      if (!this.isPlayerSpawnCalibrated && this.frameCount > 120) {
+        this.playerSpawnPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        this.isPlayerSpawnCalibrated = true;
         this.vision.sampleAndCalibratePlayerColor(this.playerSpawnPos.x, this.playerSpawnPos.y);
       }
 
