@@ -214,6 +214,43 @@
         latencyMs: this.lastExecutionTimeMs
       };
     }
+
+    /**
+     * Hyper-Aggressive Multi-Wave Configuration (v5.1.0):
+     * Dynamically calculates concurrent attack waves (1 to 3 vectors) and rapid burst intervals (40-65ms).
+     */
+    getMultiWaveConfig(stateName, neutralRatio = 0.10, aggressionValue = 0.95) {
+      const reserveRatio = this.estimatedTroopBalance / Math.max(1, this.maxTroopCap);
+      let waveCount = 1;
+      let burstPacingMs = 65;
+      let attackRatio = 0.11;
+
+      if (reserveRatio > 0.65 || this.estimatedTroopBalance > 10000) {
+        waveCount = 3;
+        burstPacingMs = 45;
+        attackRatio = 0.11;
+      } else if (reserveRatio > 0.35 || this.estimatedTroopBalance > 4000) {
+        waveCount = 2;
+        burstPacingMs = 55;
+        attackRatio = 0.10;
+      } else {
+        waveCount = 1;
+        burstPacingMs = 65;
+        attackRatio = 0.10;
+      }
+
+      if (stateName === 'SPOILS_HARVESTER' || stateName === 'KILL_SECURE') {
+        attackRatio = 0.20;
+        burstPacingMs = 40;
+        waveCount = Math.min(3, waveCount + 1);
+      }
+
+      return {
+        waveCount: waveCount,
+        burstPacingMs: burstPacingMs,
+        attackRatio: attackRatio
+      };
+    }
   }
 
   // Export to global scope
@@ -221,5 +258,5 @@
   window.PaybackCalculator = PaybackCalculator;
   window.EconomyAnalyzer = EconomyAnalyzer;
 
-  console.log('%c[TIO Economy Analyzer v5.0] Expansion-Driven Compounding & ROI Engine Loaded.', 'color: #10b981;');
+  console.log('%c[TIO Economy Analyzer v5.1] Hyper-Aggressive Multi-Wave & Red-Interest Engine Loaded.', 'color: #10b981;');
 })();

@@ -250,6 +250,35 @@
       return this.candidatePool.slice(0, count);
     }
 
+    /**
+     * Upgraded Multi-Frontier Pincer Encirclement Target Selector (v5.1.0):
+     * Returns up to `count` top targets such that each target is at least `minSpatialDist` pixels apart,
+     * ensuring simultaneous expansion vectors attack distinct fronts (e.g. North, East, South).
+     */
+    getTopMultiFrontTargets(count = 3, minSpatialDist = 30) {
+      if (!this.candidatePool || this.candidatePool.length === 0) return [];
+      const selected = [];
+      const minDistSq = minSpatialDist * minSpatialDist;
+
+      for (let i = 0; i < this.candidatePool.length; i++) {
+        const candidate = this.candidatePool[i];
+        let tooClose = false;
+        for (let j = 0; j < selected.length; j++) {
+          const dx = candidate.x - selected[j].x;
+          const dy = candidate.y - selected[j].y;
+          if (dx * dx + dy * dy < minDistSq) {
+            tooClose = true;
+            break;
+          }
+        }
+        if (!tooClose) {
+          selected.push(candidate);
+          if (selected.length >= count) break;
+        }
+      }
+      return selected;
+    }
+
     getUtilityTelemetry() {
       return {
         weights: this.weights,
@@ -268,5 +297,5 @@
   window.SpatialPenaltyMask = SpatialPenaltyMask;
   window.UtilityEvaluator = UtilityEvaluator;
 
-  console.log('%c[TIO Utility Evaluator v5.0] Aggressive 35/25/20/10/10 Profile Loaded.', 'color: #10b981;');
+  console.log('%c[TIO Utility Evaluator v5.1] Aggressive 35/25/20/10/10 Pincer Suite Loaded.', 'color: #10b981;');
 })();

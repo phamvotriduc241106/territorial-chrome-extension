@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "5.0.7",
-  "description": "Comprehensive Human-Level Autonomous Agent v5.0.7 for Territorial.io (~5,834 LOC) featuring 18 Deep Modular Engines (Morphological Vision with Spawn RGB Calibration, Occupancy Grid, Monotone Chain Convex Hull Border Detector, Two-Pass CCL Region Detector, 300-Frame RAM World Model, Enemy Tracker, Exponential Economy with Optimal 10-11% Red-Interest Continuous Attack Formula, 2D Gaussian Blur Threat Heatmap, Permanent Aggressive Mode 12-State Strategy FSM [0.85-1.00 Clamped Aggression, 0.95 Default], 35/25/20/10/10 Utility Evaluator, Prediction Engine, Hysteresis Temporal Smoothing, Min-Heap A* Pathfinding, Zero-Crosshair 15-Metric HUD, Synchronous PointerId 99 Controller with 25ms MouseUp Schedule & Dual MouseEvent/PointerEvent Dispatch for Territorial.io Compatibility, TypedArray Optimization). Last Updated: 2026-07-30 17:11:00 +07:00",
+  "version": "5.1.0",
+  "description": "Comprehensive Human-Level Autonomous Agent v5.1.0 for Territorial.io (~6,200+ LOC) featuring 18 Deep Modular Engines (Morphological Vision with Spawn RGB Calibration, Occupancy Grid, Monotone Chain Convex Hull Border Detector, Two-Pass CCL Region Detector, 300-Frame RAM World Model, Enemy Tracker, Exponential Economy with Multi-Wave Burst Pacing & 10-11% Red-Interest Continuous Attack Formula, 2D Gaussian Blur Threat Heatmap, Permanent Aggressive Mode 13-State Strategy FSM [Spoils-of-War Harvester, 0.85-1.00 Clamped Aggression], 35/25/20/10/10 Utility Evaluator with Pincer Encirclement Targeter, Prediction Engine, Hysteresis Temporal Smoothing, Min-Heap A* Pathfinding, Zero-Crosshair 17-Metric HUD, Synchronous PointerId 99 Controller with Multi-Vector Wave Dispatch & 25ms MouseUp Schedule, TypedArray Optimization). Last Updated: 2026-07-30 17:15:00 +07:00",
   "permissions": [
     "storage",
     "activeTab"

@@ -263,22 +263,32 @@
       }
 
       // ========================================================
-      // STEP 13: MOUSE CONTROLLER (Execute Aggressive Attack & Troop Slider)
+      // STEP 13: MOUSE CONTROLLER (Execute Hyper-Aggressive Multi-Front Attack Waves - v5.1.0)
       // ========================================================
       if (lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
-        if (now - this.lastAttackDispatchTime >= strategyConfig.attackPacingMs) {
-          // Convert grid coordinates back to exact CSS client viewport pixel coordinates (bulletproof on Retina/Mac screens)
+        const waveConfig = this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal);
+        if (now - this.lastAttackDispatchTime >= waveConfig.burstPacingMs) {
           const rect = document.querySelector('canvas') ? document.querySelector('canvas').getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-          const targetNormX = lockedTarget.x / Math.max(1, visionResult.width || 100);
-          const targetNormY = lockedTarget.y / Math.max(1, visionResult.height || 100);
-          const targetScreenX = Math.round(rect.left + (targetNormX * rect.width));
-          const targetScreenY = Math.round(rect.top + (targetNormY * rect.height));
+          const waveTargets = this.utility.getTopMultiFrontTargets(waveConfig.waveCount, 30);
+          const targetsToHit = (waveTargets && waveTargets.length > 0) ? waveTargets : [lockedTarget];
 
-          this.controller.setTroopSliderRatio(ecoDecisions.recommendedRatio);
-          this.controller.executeClick(targetScreenX, targetScreenY);
-          this.economy.recordAttackDispatch(ecoDecisions.recommendedRatio, lockedTarget.type, 100);
+          this.controller.setTroopSliderRatio(waveConfig.attackRatio);
 
+          for (let w = 0; w < targetsToHit.length; w++) {
+            const target = targetsToHit[w];
+            const targetNormX = target.x / Math.max(1, visionResult.width || 100);
+            const targetNormY = target.y / Math.max(1, visionResult.height || 100);
+            const targetScreenX = Math.round(rect.left + (targetNormX * rect.width));
+            const targetScreenY = Math.round(rect.top + (targetNormY * rect.height));
+
+            setTimeout(() => {
+              this.controller.executeClick(targetScreenX, targetScreenY);
+            }, w * 15);
+          }
+
+          this.economy.recordAttackDispatch(waveConfig.attackRatio, lockedTarget.type, 100 * targetsToHit.length);
           this.lastAttackDispatchTime = now;
+          this.lastExecutedTarget = lockedTarget;
         }
       }
 
@@ -299,7 +309,9 @@
         primaryThreat: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.id : 'NONE',
         dangerScore: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.dangerScore : 0.0,
         targetCoord: lockedTarget ? `${lockedTarget.x}, ${lockedTarget.y}` : 'NONE',
-        smoothingLock: lockedTarget ? `HOLD (${lockedTarget.tickCount}/5)` : 'IDLE'
+        smoothingLock: lockedTarget ? `HOLD (${lockedTarget.tickCount}/5)` : 'IDLE',
+        waves: `${this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal).waveCount} Vectors`,
+        pincer: lockedTarget && lockedTarget.utility >= 50 ? 'ACTIVE (+25)' : 'READY'
       });
 
       this.hud.renderOverlay(

@@ -217,6 +217,14 @@
             <span class="tio-hud-label">Target Coord</span>
             <span class="tio-hud-value" id="tio-hud-target">NONE</span>
           </div>
+          <div class="tio-hud-item">
+            <span class="tio-hud-label">Attack Waves</span>
+            <span class="tio-hud-value" id="tio-hud-waves">1 Vector</span>
+          </div>
+          <div class="tio-hud-item">
+            <span class="tio-hud-label">Pincer Mode</span>
+            <span class="tio-hud-value" id="tio-hud-pincer">READY</span>
+          </div>
           <div class="tio-hud-item" style="grid-column: span 2;">
             <span class="tio-hud-label">Target Lock</span>
             <span class="tio-hud-value" id="tio-hud-lock">IDLE</span>
@@ -294,6 +302,14 @@
       }
       if (telemetry.targetCoord) {
         document.getElementById('tio-hud-target').textContent = telemetry.targetCoord;
+      }
+      if (telemetry.waves) {
+        document.getElementById('tio-hud-waves').textContent = telemetry.waves;
+      }
+      if (telemetry.pincer) {
+        const el = document.getElementById('tio-hud-pincer');
+        el.textContent = telemetry.pincer;
+        el.style.color = (telemetry.pincer.includes('ACTIVE')) ? '#34d399' : '#94a3b8';
       }
       if (telemetry.smoothingLock) {
         document.getElementById('tio-hud-lock').textContent = telemetry.smoothingLock;

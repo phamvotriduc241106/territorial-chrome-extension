@@ -379,13 +379,34 @@
     }
   }
 
+  /**
+   * 13. Spoils Harvester Planner (v5.1.0 HYPER-AGGRESSIVE SUITE):
+   * Instantly strip-mines defenseless territory from dying or full-sending opponents before rivals can grab it.
+   */
+  class SpoilsHarvesterPlanner extends StrategicPlanner {
+    constructor() {
+      super('SPOILS_HARVESTER', 0.20, 40, 300, 'SPOILS_RUSH');
+    }
+
+    getGoalDescription() {
+      return 'Instant strip-mining of defenseless territory from collapsing or full-sending opponents.';
+    }
+
+    evaluatePriorityScore(context) {
+      if (context.hasDyingOrFullSendingEnemy) {
+        return 98.0; // Highest offensive priority in v5.1.0!
+      }
+      return 0.0;
+    }
+  }
+
   // ==========================================
   // CLASS 4: STRATEGY ENGINE MASTER ORCHESTRATOR
   // ==========================================
   class StrategyEngine {
     constructor() {
       // Dynamic Aggression Meter
-      this.aggressionMeter = new AggressionMeter(0.75);
+      this.aggressionMeter = new AggressionMeter(0.95);
 
       this.planners = {
         OPENING: new OpeningPlanner(),
@@ -399,7 +420,8 @@
         ENDGAME: new EndgamePlanner(),
         PANIC: new PanicPlanner(),
         OPPORTUNISTIC_STRIKE: new OpportunisticStrikePlanner(),
-        ISLAND_CAPTURE: new IslandCapturePlanner()
+        ISLAND_CAPTURE: new IslandCapturePlanner(),
+        SPOILS_HARVESTER: new SpoilsHarvesterPlanner()
       };
 
       this.currentState = 'OPENING';
@@ -422,11 +444,15 @@
       const totalOpps = enemyAnalytics.totalTracked || 0;
       let sumEnemyArea = 0;
       let attackingOpps = 0;
+      let hasDyingOrFullSendingEnemy = false;
       if (enemyAnalytics.opponentsList && enemyAnalytics.opponentsList.length > 0) {
         for (let i = 0; i < enemyAnalytics.opponentsList.length; i++) {
           const op = enemyAnalytics.opponentsList[i];
           sumEnemyArea += op.area;
           if (op.status === 'ATTACKING') attackingOpps++;
+          if (op.area < 150 && op.area > 20 && myArea > op.area * 3) {
+            hasDyingOrFullSendingEnemy = true;
+          }
         }
       }
       const avgEnemyArea = totalOpps > 0 ? (sumEnemyArea / totalOpps) : 1000;
@@ -450,6 +476,7 @@
         threatLevel: threatLevel,
         borderPressure: borderPressure,
         hasIslandTargets: (regionStats.islandCount && regionStats.islandCount > 0),
+        hasDyingOrFullSendingEnemy: hasDyingOrFullSendingEnemy,
         aggression: this.aggressionMeter.value
       };
 
@@ -457,7 +484,7 @@
       const currentAggression = this.aggressionMeter.update(context, dtSec);
       context.aggression = currentAggression;
 
-      // 4. Evaluate priority scores across all 12 dedicated planners
+      // 4. Evaluate priority scores across all 13 dedicated planners
       const prevState = this.currentState;
       let bestState = 'RAPID_EXPANSION'; // Default fallback state is RAPID EXPANSION!
       let highestPriority = -1.0;
