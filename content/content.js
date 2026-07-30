@@ -201,13 +201,22 @@
       // STEP 10: UTILITY EVALUATOR (Aggressive 35/25/20/10/10 Profile)
       // ========================================================
       let candidateCells = this.border.expansionFrontier;
-      if (strategyConfig.targetPriority === 'ENEMY_WEAK' || strategyConfig.targetPriority === 'ENEMY_STRONG') {
-        candidateCells = this.border.enemyFrontier.length > 0 ? this.border.enemyFrontier : this.border.expansionFrontier;
+      if (strategyConfig.targetPriority === 'ENEMY_WEAK' || strategyConfig.targetPriority === 'ENEMY_STRONG' || candidateCells.length === 0) {
+        candidateCells = (this.border.enemyFrontier.length > 0) ? this.border.enemyFrontier : this.border.accessibleBorders;
       }
+      if (candidateCells.length === 0) {
+        candidateCells = this.border.accessibleBorders;
+      }
+
+      // Convert spawn position to scaled grid coordinates for accurate spatial Euclidean distance
+      const scaledSpawnPos = {
+        x: Math.floor(this.playerSpawnPos.x * (visionResult.scaleFactor || 0.25)),
+        y: Math.floor(this.playerSpawnPos.y * (visionResult.scaleFactor || 0.25))
+      };
 
       const bestCandidate = this.utility.evaluateCandidates(
         candidateCells,
-        this.playerSpawnPos,
+        scaledSpawnPos,
         worldTelemetry,
         enemyAnalytics,
         borderStats.isoperimetricQuotient,
@@ -226,10 +235,11 @@
       // ========================================================
       let pathWorthy = false;
       if (lockedTarget) {
-        const gx = Math.floor(lockedTarget.x * visionResult.scaleFactor);
-        const gy = Math.floor(lockedTarget.y * visionResult.scaleFactor);
-        const sx = Math.floor(this.playerSpawnPos.x * visionResult.scaleFactor);
-        const sy = Math.floor(this.playerSpawnPos.y * visionResult.scaleFactor);
+        // lockedTarget.x and lockedTarget.y are already in scaled grid coordinates
+        const gx = Math.floor(lockedTarget.x);
+        const gy = Math.floor(lockedTarget.y);
+        const sx = scaledSpawnPos.x;
+        const sy = scaledSpawnPos.y;
 
         const pathResult = this.pathfinder.findPath(sx, sy, gx, gy);
         const worthiness = this.pathfinder.isWorthIt(pathResult, lockedTarget.utility);
@@ -241,8 +251,12 @@
       // ========================================================
       if (lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
         if (now - this.lastAttackDispatchTime >= strategyConfig.attackPacingMs) {
+          // Convert grid coordinates back to full screen canvas coordinates before clicking
+          const targetScreenX = Math.round(lockedTarget.x / (visionResult.scaleFactor || 0.25));
+          const targetScreenY = Math.round(lockedTarget.y / (visionResult.scaleFactor || 0.25));
+
           this.controller.setTroopSliderRatio(ecoDecisions.recommendedRatio);
-          this.controller.executeClick(lockedTarget.x, lockedTarget.y);
+          this.controller.executeClick(targetScreenX, targetScreenY);
           this.economy.recordAttackDispatch(ecoDecisions.recommendedRatio, lockedTarget.type, 100);
 
           this.lastAttackDispatchTime = now;

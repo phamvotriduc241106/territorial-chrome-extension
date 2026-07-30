@@ -85,6 +85,7 @@
       // 1. Dynamic Storage Cap Calculation: Cap = Math.max(2000, currentLandArea * 150)
       this.maxTroopCap = Math.max(2000, currentLandArea * 150);
       this.emergencyDefenseReserve = Math.floor(this.maxTroopCap * 0.15); // 15% minimum emergency reserve
+      this.estimatedTroopBalance = Math.max(this.estimatedTroopBalance, currentLandArea * 15);
 
       // 2. 1.8-Second Compound Interest Tick Synchronization
       if (now >= this.lastInterestTickTimestamp + this.interestCycleDurationMs) {
