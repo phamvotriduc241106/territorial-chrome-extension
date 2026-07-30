@@ -188,26 +188,26 @@
     }
 
     classifyRGB(r, g, b) {
-      // 1. Water Classification: High dominant blue intensity
-      if (b > r + 16 && b > g + 16 && b > 55) {
-        return 1; // WATER
-      }
-
-      // 2. Neutral Land: Achromatic gray/beige tones
-      const maxDelta = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
-      if (maxDelta < 24 && r > 38 && r < 210) {
-        return 2; // NEUTRAL
-      }
-
-      // 3. Player Own Territory: Color distance thresholding in RGB space
+      // 1. Player Own Territory (MINE): Checked FIRST with generous 90 RGB distance tolerance (distSq < 8100)
       if (this.playerColor) {
         const dr = r - this.playerColor.r;
         const dg = g - this.playerColor.g;
         const db = b - this.playerColor.b;
         const distSq = (dr * dr) + (dg * dg) + (db * db);
-        if (distSq < 4225) { // sqrt(4225) = 65 RGB distance tolerance
+        if (distSq < 8100) { // sqrt(8100) = 90 RGB tolerance
           return 3; // MINE
         }
+      }
+
+      // 2. Water Classification: High dominant blue intensity
+      if (b > r + 16 && b > g + 16 && b > 55) {
+        return 1; // WATER
+      }
+
+      // 3. Neutral Land: Achromatic gray/beige tones
+      const maxDelta = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+      if (maxDelta < 26 && r > 35 && r < 215) {
+        return 2; // NEUTRAL
       }
 
       // 4. Enemy Territory: Chromatic pixels not matching player or neutral
@@ -546,9 +546,13 @@
       const sy = Math.floor(clientY * this.reader.scaleFactor);
       const rgb = this.cache.getPixelRGB(sx, sy);
       if (rgb) {
-        this.classifier.calibratePlayerColor(rgb.r, rgb.g, rgb.b);
-        console.log(`%c[TIO Vision v5.0] Calibrated player color from spawn click: RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`, 'color: #38bdf8; font-weight: bold;');
-        return rgb;
+        // Only calibrate if the sampled pixel is NOT achromatic gray/beige and NOT water
+        const maxDelta = Math.max(Math.abs(rgb.r - rgb.g), Math.abs(rgb.g - rgb.b), Math.abs(rgb.r - rgb.b));
+        const isWater = (rgb.b > rgb.r + 16 && rgb.b > rgb.g + 16 && rgb.b > 55);
+        if (maxDelta >= 18 && !isWater) {
+          this.classifier.calibratePlayerColor(rgb.r, rgb.g, rgb.b);
+          return rgb;
+        }
       }
       return null;
     }

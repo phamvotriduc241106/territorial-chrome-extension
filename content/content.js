@@ -112,7 +112,7 @@
       const visionResult = this.vision.processFrame();
       if (!visionResult || !visionResult.typeMatrix) return;
 
-      if (this.frameCount <= 10 && this.isPlayerSpawnCalibrated) {
+      if (this.frameCount <= 300 && this.isPlayerSpawnCalibrated) {
         this.vision.sampleAndCalibratePlayerColor(this.playerSpawnPos.x, this.playerSpawnPos.y);
       }
 
@@ -251,9 +251,12 @@
       // ========================================================
       if (lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
         if (now - this.lastAttackDispatchTime >= strategyConfig.attackPacingMs) {
-          // Convert grid coordinates back to full screen canvas coordinates before clicking
-          const targetScreenX = Math.round(lockedTarget.x / (visionResult.scaleFactor || 0.25));
-          const targetScreenY = Math.round(lockedTarget.y / (visionResult.scaleFactor || 0.25));
+          // Convert grid coordinates back to exact CSS client viewport pixel coordinates (bulletproof on Retina/Mac screens)
+          const rect = document.querySelector('canvas') ? document.querySelector('canvas').getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+          const targetNormX = lockedTarget.x / Math.max(1, visionResult.width || 100);
+          const targetNormY = lockedTarget.y / Math.max(1, visionResult.height || 100);
+          const targetScreenX = Math.round(rect.left + (targetNormX * rect.width));
+          const targetScreenY = Math.round(rect.top + (targetNormY * rect.height));
 
           this.controller.setTroopSliderRatio(ecoDecisions.recommendedRatio);
           this.controller.executeClick(targetScreenX, targetScreenY);
