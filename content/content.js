@@ -256,9 +256,31 @@
       }
 
       // ========================================================
-      // STEP 13: MOUSE CONTROLLER (Execute Hyper-Aggressive Multi-Front Attack Waves - v5.1.1)
+      // STEP 13: MOUSE CONTROLLER (Execute Hyper-Aggressive Multi-Front Attack Waves - v5.1.3)
       // ========================================================
-      const isGameActive = this.isPlayerSpawnCalibrated && borderStats.totalTerritoryArea > 0;
+      let isSpawnTerritoryActive = false;
+      if (this.isPlayerSpawnCalibrated && visionResult && visionResult.typeMatrix) {
+        const scaledX = Math.floor(this.playerSpawnPos.x * (visionResult.scaleFactor || 0.25));
+        const scaledY = Math.floor(this.playerSpawnPos.y * (visionResult.scaleFactor || 0.25));
+        const w = visionResult.width;
+        const h = visionResult.height;
+
+        let mineNearSpawn = 0;
+        for (let dy = -3; dy <= 3; dy++) {
+          for (let dx = -3; dx <= 3; dx++) {
+            const sx = scaledX + dx;
+            const sy = scaledY + dy;
+            if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+              if (visionResult.typeMatrix[sy * w + sx] === 3) {
+                mineNearSpawn++;
+              }
+            }
+          }
+        }
+        isSpawnTerritoryActive = (mineNearSpawn > 0);
+      }
+
+      const isGameActive = this.isPlayerSpawnCalibrated && isSpawnTerritoryActive && borderStats.totalTerritoryArea > 0;
 
       if (isGameActive && lockedTarget && !isPanic && ecoDecisions.shouldAttack) {
         const waveConfig = this.economy.getMultiWaveConfig(strategyConfig.stateName, neutralRatio, aggrVal);
