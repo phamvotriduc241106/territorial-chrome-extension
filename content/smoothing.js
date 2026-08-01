@@ -49,9 +49,9 @@
   // CLASS 2: TEMPORAL SMOOTHING MASTER ENGINE
   // ==========================================
   class TemporalSmoothing {
-    constructor(defaultHoldMs = 1500, hysteresisThreshold = 0.15) {
-      this.defaultHoldMs = defaultHoldMs; // 1500ms ~2-3 ticks
-      this.hysteresisThreshold = hysteresisThreshold; // +15% utility required to preempt
+    constructor(defaultHoldMs = 700, hysteresisThreshold = 0.10) {
+      this.defaultHoldMs = defaultHoldMs; // shorter lock → less sticky/passive targeting
+      this.hysteresisThreshold = hysteresisThreshold;
 
       this.lockedTarget = null;
       this.lastSwitchTimestamp = 0;

@@ -1,46 +1,83 @@
-// Territorial.io Commander - Background Service Worker
+// Territorial.io Commander - Background Service Worker v7.2
+// Keep this file free of window/document and always clear lastError.
 
 const DEFAULT_SETTINGS = {
-  botEnabled: false,
-  autoExpand: false,
-  autoAttack: false,
-  clickSpeed: 10, // Clicks per second
-  sliderPercentage: 25, // Default troop percentage slider
+  botEnabled: true,
+  autoExpand: true,
+  autoAttack: true,
+  clickSpeed: 14,
+  sliderPercentage: 30,
   humanJitter: true,
   hotkeysEnabled: true,
-  strategy: 'expansionist' // 'expansionist', 'aggressive', 'defensive', 'custom'
+  strategy: 'expansionist'
 };
 
-// Initialize settings on installation
+function safeSetBadge(enabled) {
+  try {
+    chrome.action.setBadgeText({ text: enabled ? 'ON' : '' });
+    chrome.action.setBadgeBackgroundColor({ color: enabled ? '#10B981' : '#6B7280' });
+  } catch (_) {
+    /* ignore */
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(DEFAULT_SETTINGS, (stored) => {
-    chrome.storage.local.set(stored);
-    console.log('[Territorial Commander] Service Worker Initialized with settings:', stored);
-  });
+  try {
+    chrome.storage.local.get(DEFAULT_SETTINGS, (stored) => {
+      void chrome.runtime.lastError;
+      const merged = { ...DEFAULT_SETTINGS, ...(stored || {}) };
+      chrome.storage.local.set(merged, () => {
+        void chrome.runtime.lastError;
+      });
+      safeSetBadge(!!merged.botEnabled);
+    });
+  } catch (_) {
+    /* ignore */
+  }
 });
 
-// Update badge status on icon when bot state changes
+// Also run on service worker wake so badge is correct
+try {
+  chrome.storage.local.get(['botEnabled'], (data) => {
+    void chrome.runtime.lastError;
+    safeSetBadge(!!(data && data.botEnabled));
+  });
+} catch (_) {
+  /* ignore */
+}
+
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'local' && changes.botEnabled) {
-    const active = changes.botEnabled.newValue;
-    chrome.action.setBadgeText({ text: active ? 'ON' : '' });
-    chrome.action.setBadgeBackgroundColor({ color: active ? '#10B981' : '#6B7280' });
+    safeSetBadge(!!changes.botEnabled.newValue);
   }
 });
 
-// Message listener from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'GET_SETTINGS') {
-    chrome.storage.local.get(DEFAULT_SETTINGS, (data) => {
-      sendResponse(data);
-    });
-    return true;
+  try {
+    if (!request || !request.action) {
+      sendResponse({ status: 'bad_request' });
+      return false;
+    }
+
+    if (request.action === 'GET_SETTINGS') {
+      chrome.storage.local.get(DEFAULT_SETTINGS, (data) => {
+        void chrome.runtime.lastError;
+        sendResponse(data || DEFAULT_SETTINGS);
+      });
+      return true; // async
+    }
+
+    if (request.action === 'UPDATE_SETTINGS') {
+      chrome.storage.local.set(request.settings || {}, () => {
+        void chrome.runtime.lastError;
+        sendResponse({ status: 'ok' });
+      });
+      return true;
+    }
+
+    sendResponse({ status: 'unknown' });
+  } catch (_) {
+    try { sendResponse({ status: 'error' }); } catch (__) { /* ignore */ }
   }
-  
-  if (request.action === 'UPDATE_SETTINGS') {
-    chrome.storage.local.set(request.settings, () => {
-      sendResponse({ status: 'ok' });
-    });
-    return true;
-  }
+  return false;
 });

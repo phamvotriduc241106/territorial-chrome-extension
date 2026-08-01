@@ -1,15 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "5.1.7",
-  "description": "Comprehensive Human-Level Autonomous Agent v5.1.7 for Territorial.io (~6,200+ LOC) featuring 18 Deep Modular Engines (Morphological Vision with Spawn RGB Calibration, Occupancy Grid, Monotone Chain Convex Hull Border Detector, Two-Pass CCL Region Detector, 300-Frame RAM World Model, Enemy Tracker, Exponential Economy with Multi-Wave Burst Pacing & 10-11% Red-Interest Continuous Attack Formula, 2D Gaussian Blur Threat Heatmap, Permanent Aggressive Mode 13-State Strategy FSM [Spoils-of-War Harvester, 0.85-1.00 Clamped Aggression], 35/25/20/10/10 Utility Evaluator with Pincer Encirclement Targeter, Prediction Engine, Hysteresis Temporal Smoothing, Min-Heap A* Pathfinding, Zero-Crosshair 17-Metric HUD with Green Overlay Removed, Synchronous Atomic PointerId 99 Controller with Hardware Mouse Shield & 100% Physical Mouse Priority, Strict Manual Spawn Location Gate, TypedArray Optimization). Last Updated: 2026-07-30 22:17:00 +07:00",
+  "version": "9.9.9",
+  "description": "v9.9.9 Adjacent-only land attacks; ship (pZ) for sea-isolated islands.",
   "permissions": [
     "storage",
     "activeTab"
   ],
   "host_permissions": [
     "https://territorial.io/*",
-    "https://*.territorial.io/*"
+    "https://*.territorial.io/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*"
   ],
   "background": {
     "service_worker": "background/background.js"
@@ -26,13 +30,35 @@
     {
       "matches": [
         "https://territorial.io/*",
-        "https://*.territorial.io/*"
+        "https://*.territorial.io/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
       ],
       "js": [
+        "content/main-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://territorial.io/*",
+        "https://*.territorial.io/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
+      ],
+      "js": [
+        "content/hardmode.js",
+        "content/coords.js",
         "content/vision.js",
         "content/grid.js",
         "content/region.js",
         "content/border.js",
+        "content/neutral.js",
         "content/world.js",
         "content/enemy.js",
         "content/economy.js",
@@ -44,6 +70,7 @@
         "content/pathfinding.js",
         "content/spatial.js",
         "content/controller.js",
+        "content/internal.js",
         "content/hud.js",
         "content/optimization.js",
         "content/content.js"

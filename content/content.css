@@ -1,5 +1,17 @@
 /* Territorial.io Commander - Floating HUD Overlay Styles */
 
+/* Force agent HUD above game canvas */
+#tio-hud-v5-panel {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 2147483646 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
 #tio-hud-container {
   position: fixed;
   top: 20px;

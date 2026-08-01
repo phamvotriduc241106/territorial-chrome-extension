@@ -25,8 +25,8 @@
   // CLASS 1: DYNAMIC AGGRESSION METER
   // ==========================================
   class AggressionMeter {
-    constructor(initialValue = 0.95) {
-      this.value = initialValue; // Always high aggression (0.95 default)
+    constructor(initialValue = 0.92) {
+      this.value = initialValue; // expansion-first default
       this.lastUpdateTime = performance.now();
       this.trend = 'RISING';
     }
@@ -34,20 +34,33 @@
     update(context, dtSec) {
       if (dtSec <= 0) return this.value;
 
-      let delta = 0.02 * dtSec;
-      if (context.growthPerSec > 10.0 || context.neutralRatio > 0.05) {
-        delta += 0.05 * dtSec;
+      let delta = 0.03 * dtSec; // baseline: stay hungry for land
+      if (context.neutralRatio > 0.03) {
+        delta += 0.08 * dtSec; // neutrals left → expand harder
+      }
+      if (context.growthPerSec > 2.0) {
+        delta += 0.04 * dtSec;
+      }
+      if (context.myArea > (context.averageEnemyArea || 0) * 1.1) {
+        delta += 0.03 * dtSec;
+      }
+      // Only ease off on genuine collapse
+      if (context.ecoHealth === 'CRITICAL_DEFICIT' && context.threatLevel > 0.7) {
+        delta -= 0.10 * dtSec;
+      }
+      if (context.growthPerSec < -40) {
+        delta -= 0.06 * dtSec;
       }
 
-      // Always clamp to aggressive mode range [0.85, 1.00] unless genuinely collapsing
-      const minAggr = (context.ecoHealth === 'CRITICAL_DEFICIT' && context.myArea < 300) ? 0.75 : 0.85;
-      this.value = parseFloat(Math.min(1.0, Math.max(minAggr, this.value + delta)).toFixed(3));
-      this.trend = 'RISING';
+      this.value = parseFloat(Math.min(1.0, Math.max(0.55, this.value + delta)).toFixed(3));
+      this.trend = delta >= 0 ? 'RISING' : 'FALLING';
       return this.value;
     }
 
     getAggressionLabel() {
-      return `AGGRESSIVE (${this.value.toFixed(2)})`;
+      if (this.value >= 0.85) return `EXPAND (${this.value.toFixed(2)})`;
+      if (this.value >= 0.65) return `PRESS (${this.value.toFixed(2)})`;
+      return `HOLD (${this.value.toFixed(2)})`;
     }
   }
 
@@ -86,10 +99,11 @@
     }
 
     getExecutionConfig(aggressionValue) {
-      // Scale recommended ratio and attack pacing dynamically by aggression meter (8% - 20% interest-preserving range)
-      const aggrScale = Math.max(0.5, aggressionValue);
-      const scaledRatio = parseFloat(Math.min(0.20, Math.max(0.08, this.defaultRatio * (0.9 + 0.2 * aggrScale))).toFixed(3));
-      const scaledPacing = Math.max(65, Math.floor(this.defaultPacingMs / Math.max(0.6, aggrScale)));
+      // 10–20% expand band: preserve interest while still taking land every cycle
+      const aggrScale = Math.max(0.6, aggressionValue);
+      const scaledRatio = parseFloat(Math.min(0.22, Math.max(0.10, this.defaultRatio * (0.95 + 0.25 * aggrScale))).toFixed(3));
+      // Faster pacing when aggressive (was too passive)
+      const scaledPacing = Math.max(55, Math.floor(this.defaultPacingMs / Math.max(0.85, aggrScale)));
 
       return {
         recommendedRatio: scaledRatio,
@@ -126,61 +140,57 @@
    */
   class OpeningPlanner extends StrategicPlanner {
     constructor() {
-      super('OPENING', 0.15, 65, 180, 'NEUTRAL_FAST');
+      super('OPENING', 0.16, 55, 220, 'NEUTRAL_FAST');
     }
 
     getGoalDescription() {
-      return 'Fastest early territorial footprint acquisition around spawn point.';
+      return 'Grab early land footprint — land raises interest base immediately.';
     }
 
     evaluatePriorityScore(context) {
-      if (context.gameTimeSec > 40 && context.neutralRatio <= 0.15) return 0.0;
-      const timeFactor = Math.max(0.1, 1.0 - (context.gameTimeSec / 45.0));
-      return parseFloat((95.0 * timeFactor).toFixed(2));
+      if (context.gameTimeSec > 50 && context.neutralRatio <= 0.12) return 0.0;
+      const timeFactor = Math.max(0.15, 1.0 - (context.gameTimeSec / 55.0));
+      return parseFloat((98.0 * timeFactor).toFixed(2));
     }
   }
 
   /**
-   * 2. Rapid Expansion Planner (THE DEFAULT AGGRESSIVE STATE):
-   * Aggressive expansion along open neutral frontiers to maximize land compounding.
-   * Remains the default high-priority choice unless survival is at imminent risk.
+   * 2. Rapid Expansion — DEFAULT. Land compounds interest → more troops forever.
    */
   class RapidExpansionPlanner extends StrategicPlanner {
     constructor() {
-      super('RAPID_EXPANSION', 0.11, 75, 240, 'NEUTRAL_FRONTIER');
+      super('RAPID_EXPANSION', 0.14, 70, 280, 'NEUTRAL_FRONTIER');
     }
 
     getGoalDescription() {
-      return 'Default aggressive expansion along open neutral frontiers to maximize land compounding.';
+      return 'Max land growth: more pixels → higher interest → more troops.';
     }
 
     evaluatePriorityScore(context) {
-      if (context.neutralRatio <= 0.02) return 0.0;
-      // High default base score (85.0) that scales up with available neutral land and aggression
-      const aggrBonus = context.aggression * 10.0;
-      const neutralBonus = Math.min(15.0, context.neutralRatio * 30.0);
-      return parseFloat((85.0 + aggrBonus + neutralBonus).toFixed(2));
+      if (context.neutralRatio <= 0.012) return 0.0;
+      const aggrBonus = context.aggression * 12.0;
+      const neutralBonus = Math.min(20.0, context.neutralRatio * 40.0);
+      // Always preferred over passive farming while neutrals exist
+      return parseFloat((92.0 + aggrBonus + neutralBonus).toFixed(2));
     }
   }
 
   /**
-   * 3. Greedy Farming Planner (ECONOMY GROWTH THROUGH EXPANSION):
-   * Early-game economy in Territorial.io is built through fast, efficient expansion into neutral land.
+   * 3. Greedy Farming — still expansion, slightly safer targets (NOT passive save).
    */
   class GreedyFarmingPlanner extends StrategicPlanner {
     constructor() {
-      super('GREEDY_FARMING', 0.10, 150, 160, 'NEUTRAL_SAFE');
+      super('GREEDY_FARMING', 0.13, 85, 200, 'NEUTRAL_SAFE');
     }
 
     getGoalDescription() {
-      return 'Economy growth through efficient continuous neutral land acquisition.';
+      return 'Efficient neutral grabs that compound interest income.';
     }
 
     evaluatePriorityScore(context) {
-      if (context.neutralRatio <= 0.02) return 0.0;
-      // Secondary choice to Rapid Expansion when troop reserves are moderate
-      const reserveScore = (context.ecoHealth === 'MODERATE') ? 88.0 : 75.0;
-      return parseFloat(reserveScore.toFixed(2));
+      if (context.neutralRatio <= 0.012) return 0.0;
+      // Must stay below Rapid Expansion so we don't stall
+      return parseFloat((80.0 + context.aggression * 5.0).toFixed(2));
     }
   }
 
@@ -198,10 +208,11 @@
     }
 
     evaluatePriorityScore(context) {
-      if (context.neutralRatio > 0.25 || context.myArea < 150) return 0.0;
-      // High score once neutral land starts thinning out
-      const dominanceBonus = (context.myArea > context.averageEnemyArea * 1.1) ? 12.0 : 4.0;
-      return parseFloat((88.0 + dominanceBonus + (context.aggression * 8.0)).toFixed(2));
+      // Hard mode: do not open wars while free land remains
+      if (context.neutralRatio > 0.06 || context.myArea < 200) return 0.0;
+      if (context.myArea < context.averageEnemyArea * 0.95) return 0.0;
+      const dominanceBonus = (context.myArea > context.averageEnemyArea * 1.15) ? 16.0 : 4.0;
+      return parseFloat((86.0 + dominanceBonus + (context.aggression * 6.0)).toFixed(2));
     }
   }
 
@@ -241,17 +252,18 @@
     }
 
     evaluatePriorityScore(context) {
-      // STRICT SURVIVAL MULTI-CONDITION CHECK
+      // Only turtle on extreme multi-condition collapse (was too easy to trigger → passivity)
       const isCloseToCollapse = (
-        context.myArea < (0.40 * context.averageEnemyArea) &&
-        context.threatLevel > 0.80 &&
-        context.borderPressure > 0.70
+        context.myArea < (0.25 * context.averageEnemyArea) &&
+        context.threatLevel > 0.90 &&
+        context.borderPressure > 0.85 &&
+        context.ecoHealth === 'CRITICAL_DEFICIT'
       );
 
       if (isCloseToCollapse) {
-        return 96.0; // True collapse danger — turtle to survive
+        return 96.0;
       }
-      return 0.0; // NEVER turtle prematurely!
+      return 0.0;
     }
   }
 
@@ -269,8 +281,9 @@
     }
 
     evaluatePriorityScore(context) {
-      if (context.ecoHealth === 'CRITICAL_DEFICIT' && context.neutralRatio <= 0.03) {
-        return 89.0;
+      // Never "recover" by idling while free land exists — expand is the recovery
+      if (context.ecoHealth === 'CRITICAL_DEFICIT' && context.neutralRatio <= 0.01) {
+        return 70.0;
       }
       return 0.0;
     }

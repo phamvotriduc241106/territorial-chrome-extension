@@ -1,178 +1,178 @@
 /**
- * Territorial.io Comprehensive HUD & Telemetry Dashboard v5.0.0
- * 
- * Production-Grade 15-Metric Telemetry Display & Zero-Crosshair Overlay (~330 lines):
- * 1. Strict Compliance with User Constraints:
- *    - Zero Visual Crosshair: Hides .tio-crosshair-overlay with display: none !important
- *    - Mandatory Timestamping: Every update displays exact YYYY-MM-DD HH:MM:SS +07:00
- * 2. 15-Metric High-Contrast Glassmorphism Dashboard Panel (Including dynamic Aggression Meter!)
- * 3. Real-Time Danger Heatmap Canvas Overlay & Spatial Line Rendering
- * 4. Multi-Tab Visual Diagnostics (State, Economy, Threat, Kinematics, Vision FPS)
+ * Territorial.io HUD Engine v6.4.0
+ * Always-visible top-right panel (forced above game canvas).
  */
-
 (function () {
   'use strict';
 
   if (window.__TIO_HUD_ENGINE_V5_LOADED__) return;
   window.__TIO_HUD_ENGINE_V5_LOADED__ = true;
 
-  console.log('%c[TIO HUD Engine v5.0] Initializing 15-Metric Telemetry Dashboard & Zero-Crosshair Overlay (~330 LOC)...', 'color: #34d399; font-weight: bold; font-size: 14px;');
+  const HUD_VERSION = '9.9.9';
 
-  // ==========================================
-  // CLASS 1: TIMESTAMP FORMATTER
-  // ==========================================
   class TimestampFormatter {
     static getFormattedTimestamp() {
       const now = new Date();
-      const yr = now.getFullYear();
-      const mo = String(now.getMonth() + 1).padStart(2, '0');
-      const da = String(now.getDate()).padStart(2, '0');
-      const hr = String(now.getHours()).padStart(2, '0');
-      const mi = String(now.getMinutes()).padStart(2, '0');
-      const sc = String(now.getSeconds()).padStart(2, '0');
-      return `${yr}-${mo}-${da} ${hr}:${mi}:${sc} +07:00`;
+      const p = (n) => String(n).padStart(2, '0');
+      return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
     }
   }
 
-  // ==========================================
-  // CLASS 2: HUD MASTER DISPLAY ENGINE
-  // ==========================================
   class HUDEngine {
     constructor() {
       this.container = null;
-      this.overlayCanvas = null;
-      this.overlayCtx = null;
       this.isInitialized = false;
-
-      this.metrics = {
-        timestamp: '2026-07-29 00:00:00 +07:00',
-        fps: 0,
-        state: 'OPENING',
-        aggression: 'AGGRESSIVE (0.75)',
-        myArea: 0,
-        compactness: 1.0,
-        ecoHealth: 'STRONG',
-        troopBalance: 0,
-        growthPerSec: 0,
-        attackROI: 0,
-        enemyCount: 0,
-        primaryThreat: 'NONE',
-        dangerScore: 0.0,
-        targetCoord: 'NONE',
-        smoothingLock: 'NONE'
-      };
-
+      this.version = HUD_VERSION;
       this.lastRenderTimeMs = 0;
+      this._watchdog = null;
     }
 
     init() {
-      if (this.isInitialized) return;
+      // Always re-ensure panel exists and is visible (game may wipe DOM)
+      this.ensurePanel();
+      if (!this._watchdog) {
+        this._watchdog = setInterval(() => this.ensurePanel(), 2000);
+      }
+      this.isInitialized = true;
+    }
 
-      const styleEl = document.createElement('style');
-      styleEl.id = 'tio-hud-style-v5';
-      styleEl.textContent = `
-        /* MANDATORY ZERO CROSSHAIR RULE */
+    ensurePanel() {
+      let panel = document.getElementById('tio-hud-v5-panel');
+      let styleEl = document.getElementById('tio-hud-style-v6');
+
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'tio-hud-style-v6';
+        styleEl.textContent = this._css();
+        (document.head || document.documentElement).appendChild(styleEl);
+      }
+
+      if (!panel || !document.body.contains(panel)) {
+        if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+        panel = document.createElement('div');
+        panel.id = 'tio-hud-v5-panel';
+        panel.setAttribute('data-tio-hud', '1');
+        panel.innerHTML = this._html();
+        const host = document.body || document.documentElement;
+        host.appendChild(panel);
+      }
+
+      // Force visibility every ensure (game CSS can fight us)
+      panel.style.cssText = [
+        'display:block',
+        'visibility:visible',
+        'opacity:1',
+        'position:fixed',
+        'top:12px',
+        'right:12px',
+        'left:auto',
+        'bottom:auto',
+        'width:360px',
+        'max-width:min(360px, calc(100vw - 24px))',
+        'z-index:2147483646',
+        'pointer-events:none',
+        'transform:none',
+        'margin:0',
+        'box-sizing:border-box'
+      ].join(';');
+
+      this.container = panel;
+      const ver = panel.querySelector('#tio-hud-version');
+      if (ver) ver.textContent = `v${this.version}`;
+    }
+
+    _css() {
+      return `
         .tio-crosshair-overlay, #tio-crosshair, .tio-crosshair {
           display: none !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
         }
-
         #tio-hud-v5-panel {
-          position: fixed;
-          top: 15px;
-          right: 15px;
-          width: 340px;
-          background: rgba(15, 23, 42, 0.90);
-          backdrop-filter: blur(14px);
-          border: 1px solid rgba(56, 189, 248, 0.40);
-          border-radius: 12px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
-          color: #e2e8f0;
-          font-family: 'JetBrains Mono', 'Fira Code', monospace;
-          font-size: 11px;
-          padding: 14px;
-          z-index: 999999;
-          user-select: none;
-          pointer-events: auto;
+          position: fixed !important;
+          top: 12px !important;
+          right: 12px !important;
+          left: auto !important;
+          width: 360px !important;
+          max-width: min(360px, calc(100vw - 24px)) !important;
+          background: rgba(15, 23, 42, 0.94) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(56, 189, 248, 0.55) !important;
+          border-radius: 12px !important;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.65) !important;
+          color: #e2e8f0 !important;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+          font-size: 11px !important;
+          padding: 12px 14px !important;
+          z-index: 2147483646 !important;
+          user-select: none !important;
+          pointer-events: none !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
-
-        .tio-hud-title-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid rgba(56, 189, 248, 0.25);
-          padding-bottom: 8px;
-          margin-bottom: 10px;
-          font-weight: bold;
-          color: #38bdf8;
+        #tio-hud-v5-panel .tio-hud-title-bar {
+          display: flex; justify-content: space-between; align-items: flex-start;
+          border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+          padding-bottom: 8px; margin-bottom: 8px; gap: 8px;
         }
-
-        .tio-hud-timestamp {
-          font-size: 10px;
-          color: #94a3b8;
-          margin-bottom: 10px;
-          text-align: right;
+        #tio-hud-v5-panel .tio-hud-brand-main {
+          font-size: 12px; font-weight: 700; color: #38bdf8; letter-spacing: 0.3px;
         }
-
-        .tio-hud-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 6px 12px;
+        #tio-hud-v5-panel .tio-hud-version-badge {
+          display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 4px;
+          background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5);
+          color: #34d399; font-size: 10px; font-weight: 700;
         }
-
-        .tio-hud-item {
-          display: flex;
-          flex-direction: column;
+        #tio-hud-v5-panel .tio-hud-fps { color: #94a3b8; font-size: 10px; white-space: nowrap; }
+        #tio-hud-v5-panel .tio-hud-timestamp {
+          font-size: 10px; color: #64748b; margin-bottom: 8px; text-align: right;
         }
-
-        .tio-hud-label {
-          color: #64748b;
-          font-size: 9px;
-          text-transform: uppercase;
+        #tio-hud-v5-panel .tio-hud-grid {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px;
         }
-
-        .tio-hud-value {
-          color: #f8fafc;
-          font-weight: 600;
-          font-size: 12px;
+        #tio-hud-v5-panel .tio-hud-label {
+          color: #64748b; font-size: 9px; text-transform: uppercase;
         }
-
-        .tio-hud-state-badge {
-          display: inline-block;
-          padding: 2px 6px;
-          border-radius: 4px;
-          background: rgba(59, 130, 246, 0.2);
-          color: #60a5fa;
-          border: 1px solid rgba(59, 130, 246, 0.4);
-          font-weight: bold;
+        #tio-hud-v5-panel .tio-hud-value {
+          color: #f8fafc; font-weight: 600; font-size: 11px; word-break: break-word;
+        }
+        #tio-hud-v5-panel .tio-hud-state-badge {
+          display: inline-block; padding: 2px 6px; border-radius: 4px;
+          background: rgba(59, 130, 246, 0.22); color: #60a5fa;
+          border: 1px solid rgba(59, 130, 246, 0.45); font-weight: 700; font-size: 10px;
+        }
+        #tio-hud-v5-panel .tio-hud-hint {
+          margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(148,163,184,0.25);
+          font-size: 9px; color: #94a3b8; line-height: 1.35;
         }
       `;
-      document.head.appendChild(styleEl);
+    }
 
-      const panel = document.createElement('div');
-      panel.id = 'tio-hud-v5-panel';
-      panel.innerHTML = `
+    _html() {
+      return `
         <div class="tio-hud-title-bar">
-          <span>ANTIGRAVITY v5.0 ENGINE</span>
-          <span id="tio-hud-fps">FPS: --</span>
+          <div class="tio-hud-brand">
+            <div class="tio-hud-brand-main">TIO INTERNAL SP</div>
+            <span class="tio-hud-version-badge" id="tio-hud-version">v${HUD_VERSION}</span>
+          </div>
+          <span class="tio-hud-fps" id="tio-hud-fps">FPS: --</span>
         </div>
-        <div class="tio-hud-timestamp" id="tio-hud-time">2026-07-29 00:00:00 +07:00</div>
+        <div class="tio-hud-timestamp" id="tio-hud-time">--</div>
         <div class="tio-hud-grid">
           <div class="tio-hud-item">
-            <span class="tio-hud-label">FSM Strategy</span>
-            <span class="tio-hud-value"><span class="tio-hud-state-badge" id="tio-hud-state">RAPID_EXPANSION</span></span>
+            <span class="tio-hud-label">Phase / FSM</span>
+            <span class="tio-hud-value"><span class="tio-hud-state-badge" id="tio-hud-state">IDLE</span></span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Aggression Meter</span>
-            <span class="tio-hud-value" id="tio-hud-aggr">AGGRESSIVE (0.75)</span>
+            <span class="tio-hud-label">Stance</span>
+            <span class="tio-hud-value" id="tio-hud-aggr">--</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Eco Health</span>
-            <span class="tio-hud-value" id="tio-hud-eco">STRONG</span>
+            <span class="tio-hud-label">Eco / Density</span>
+            <span class="tio-hud-value" id="tio-hud-eco">--</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">My Area (px)</span>
+            <span class="tio-hud-label">My Area</span>
             <span class="tio-hud-value" id="tio-hud-area">0</span>
           </div>
           <div class="tio-hud-item">
@@ -180,19 +180,19 @@
             <span class="tio-hud-value" id="tio-hud-compact">1.000</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Troop Balance</span>
+            <span class="tio-hud-label">Est. Troops</span>
             <span class="tio-hud-value" id="tio-hud-troops">0</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Growth / Sec</span>
+            <span class="tio-hud-label">Area Δ / sec</span>
             <span class="tio-hud-value" id="tio-hud-growth">0.0</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Attack ROI</span>
-            <span class="tio-hud-value" id="tio-hud-roi">0.00</span>
+            <span class="tio-hud-label">Land ROI</span>
+            <span class="tio-hud-value" id="tio-hud-roi">0.00x</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Tracked Foes</span>
+            <span class="tio-hud-label">Foes</span>
             <span class="tio-hud-value" id="tio-hud-foes">0</span>
           </div>
           <div class="tio-hud-item">
@@ -200,106 +200,90 @@
             <span class="tio-hud-value" id="tio-hud-threat">NONE</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Danger Score</span>
+            <span class="tio-hud-label">Danger</span>
             <span class="tio-hud-value" id="tio-hud-danger">0.000</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Target Coord</span>
+            <span class="tio-hud-label">Target</span>
             <span class="tio-hud-value" id="tio-hud-target">NONE</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Attack Waves</span>
-            <span class="tio-hud-value" id="tio-hud-waves">1 Vector</span>
+            <span class="tio-hud-label">Pulse</span>
+            <span class="tio-hud-value" id="tio-hud-waves">--</span>
           </div>
           <div class="tio-hud-item">
-            <span class="tio-hud-label">Pincer Mode</span>
-            <span class="tio-hud-value" id="tio-hud-pincer">READY</span>
+            <span class="tio-hud-label">Policy</span>
+            <span class="tio-hud-value" id="tio-hud-pincer">HARD≈29%</span>
           </div>
           <div class="tio-hud-item" style="grid-column: span 2;">
-            <span class="tio-hud-label">Target Lock</span>
+            <span class="tio-hud-label">Lock / Gate</span>
             <span class="tio-hud-value" id="tio-hud-lock">IDLE</span>
           </div>
         </div>
+        <div class="tio-hud-hint" id="tio-hud-hint">
+          v7.2: bot idle until YOU pick spawn on the map. Clicks only inside playable area (never UI buttons). Z toggles.
+        </div>
       `;
-      document.body.appendChild(panel);
-      this.container = panel;
-      this.isInitialized = true;
+    }
+
+    setVersion(ver) {
+      this.version = ver || HUD_VERSION;
+      this.ensurePanel();
+      const el = document.getElementById('tio-hud-version');
+      if (el) el.textContent = `v${this.version}`;
     }
 
     updateDashboard(telemetry) {
-      if (!this.isInitialized) this.init();
-      const startTime = performance.now();
+      this.ensurePanel();
+      const start = performance.now();
+      const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el && text !== undefined && text !== null) el.textContent = String(text);
+      };
 
-      const ts = TimestampFormatter.getFormattedTimestamp();
-      document.getElementById('tio-hud-time').textContent = ts;
+      setText('tio-hud-time', TimestampFormatter.getFormattedTimestamp());
+      if (telemetry.version) this.setVersion(telemetry.version);
+      else setText('tio-hud-version', `v${this.version}`);
 
-      if (telemetry.fps !== undefined) {
-        document.getElementById('tio-hud-fps').textContent = `FPS: ${telemetry.fps}`;
-      }
-      if (telemetry.state) {
-        document.getElementById('tio-hud-state').textContent = telemetry.state;
-      }
-      if (telemetry.aggression) {
-        const agEl = document.getElementById('tio-hud-aggr');
-        agEl.textContent = telemetry.aggression;
-        agEl.style.color = (telemetry.aggression.includes('AGGRESSIVE')) ? '#34d399' :
-                           (telemetry.aggression.includes('BALANCED')) ? '#60a5fa' : '#fbbf24';
-      }
-      if (telemetry.ecoHealth) {
-        const el = document.getElementById('tio-hud-eco');
-        el.textContent = telemetry.ecoHealth;
-        el.style.color = (telemetry.ecoHealth === 'STRONG') ? '#34d399' : (telemetry.ecoHealth === 'MODERATE') ? '#fbbf24' : '#f87171';
-      }
-      if (telemetry.myArea !== undefined) {
-        document.getElementById('tio-hud-area').textContent = telemetry.myArea.toLocaleString();
-      }
-      if (telemetry.compactness !== undefined) {
-        document.getElementById('tio-hud-compact').textContent = telemetry.compactness.toFixed(3);
-      }
-      if (telemetry.troopBalance !== undefined) {
-        document.getElementById('tio-hud-troops').textContent = Math.round(telemetry.troopBalance).toLocaleString();
-      }
+      if (telemetry.fps !== undefined) setText('tio-hud-fps', `FPS: ${telemetry.fps}`);
+      if (telemetry.state) setText('tio-hud-state', telemetry.state);
+      if (telemetry.aggression) setText('tio-hud-aggr', telemetry.aggression);
+      if (telemetry.ecoHealth) setText('tio-hud-eco', telemetry.ecoHealth);
+      if (telemetry.myArea !== undefined) setText('tio-hud-area', Number(telemetry.myArea).toLocaleString());
+      if (telemetry.compactness !== undefined) setText('tio-hud-compact', Number(telemetry.compactness).toFixed(3));
+      if (telemetry.troopBalance !== undefined) setText('tio-hud-troops', Math.round(telemetry.troopBalance).toLocaleString());
       if (telemetry.growthPerSec !== undefined) {
-        document.getElementById('tio-hud-growth').textContent = `+${telemetry.growthPerSec.toFixed(1)}/s`;
+        const g = Number(telemetry.growthPerSec);
+        setText('tio-hud-growth', `${g >= 0 ? '+' : ''}${g.toFixed(1)}/s`);
       }
-      if (telemetry.attackROI !== undefined) {
-        document.getElementById('tio-hud-roi').textContent = `${telemetry.attackROI.toFixed(2)}x`;
-      }
-      if (telemetry.enemyCount !== undefined) {
-        document.getElementById('tio-hud-foes').textContent = telemetry.enemyCount;
-      }
-      if (telemetry.primaryThreat) {
-        document.getElementById('tio-hud-threat').textContent = telemetry.primaryThreat;
-      }
-      if (telemetry.dangerScore !== undefined) {
-        document.getElementById('tio-hud-danger').textContent = telemetry.dangerScore.toFixed(3);
-      }
-      if (telemetry.targetCoord) {
-        document.getElementById('tio-hud-target').textContent = telemetry.targetCoord;
-      }
-      if (telemetry.waves) {
-        document.getElementById('tio-hud-waves').textContent = telemetry.waves;
-      }
-      if (telemetry.pincer) {
-        const el = document.getElementById('tio-hud-pincer');
-        el.textContent = telemetry.pincer;
-        el.style.color = (telemetry.pincer.includes('ACTIVE')) ? '#34d399' : '#94a3b8';
-      }
-      if (telemetry.smoothingLock) {
-        document.getElementById('tio-hud-lock').textContent = telemetry.smoothingLock;
-      }
+      if (telemetry.attackROI !== undefined) setText('tio-hud-roi', `${Number(telemetry.attackROI).toFixed(2)}x`);
+      if (telemetry.enemyCount !== undefined) setText('tio-hud-foes', telemetry.enemyCount);
+      if (telemetry.primaryThreat) setText('tio-hud-threat', telemetry.primaryThreat);
+      if (telemetry.dangerScore !== undefined) setText('tio-hud-danger', Number(telemetry.dangerScore).toFixed(3));
+      if (telemetry.targetCoord) setText('tio-hud-target', telemetry.targetCoord);
+      if (telemetry.waves) setText('tio-hud-waves', telemetry.waves);
+      if (telemetry.pincer) setText('tio-hud-pincer', telemetry.pincer);
+      if (telemetry.smoothingLock) setText('tio-hud-lock', telemetry.smoothingLock);
+      if (telemetry.hint) setText('tio-hud-hint', telemetry.hint);
 
-      this.lastRenderTimeMs = parseFloat((performance.now() - startTime).toFixed(2));
+      this.lastRenderTimeMs = parseFloat((performance.now() - start).toFixed(2));
     }
 
-    renderOverlay() {
-      // Disabled in v5.1.0: zero green ring/dot or line overlay on screen, preventing any screen/camera clutter
-    }
+    renderOverlay() {}
   }
 
-  // Export to global scope
   window.TimestampFormatter = TimestampFormatter;
   window.HUDEngine = HUDEngine;
+  window.__TIO_AGENT_VERSION__ = HUD_VERSION;
 
-  console.log('%c[TIO HUD Engine v5.0] 15-Metric Telemetry Dashboard & Aggression Display Loaded.', 'color: #10b981;');
+  // Early mount if body already ready
+  if (document.body) {
+    try {
+      const h = new HUDEngine();
+      h.init();
+      window.__TIO_HUD_EARLY__ = h;
+    } catch (_) {}
+  }
+
+  console.log(`%c[TIO HUD v${HUD_VERSION}] Forced top-right panel.`, 'color: #10b981;');
 })();

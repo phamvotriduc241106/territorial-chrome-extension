@@ -178,35 +178,58 @@
       this.lastExecutionTimeMs = 0;
     }
 
-    updateOpponents(enemyClusters, playerPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 }) {
+    /**
+     * @param enemyClusters centroids MUST be in GRID coordinates
+     * @param playerPos player position MUST be in GRID coordinates
+     */
+    updateOpponents(enemyClusters, playerPos = { x: 0, y: 0 }) {
       const startTime = performance.now();
       if (!enemyClusters) return;
 
       const currentIds = new Set();
       const now = performance.now();
+      const unmatched = Array.from(this.opponents.values());
 
       for (let i = 0; i < enemyClusters.length; i++) {
         const cluster = enemyClusters[i];
-        // Create spatial hash ID from centroid rounded to 30px grid cells
-        const cellX = Math.round(cluster.centroid.x / 30) * 30;
-        const cellY = Math.round(cluster.centroid.y / 30) * 30;
-        const id = `opp_${cellX}_${cellY}`;
+        const cx = cluster.centroid.x;
+        const cy = cluster.centroid.y;
 
-        currentIds.add(id);
+        // Nearest-neighbor identity track (stable across small moves)
+        let best = null;
+        let bestDist = Infinity;
+        for (let j = 0; j < unmatched.length; j++) {
+          const cand = unmatched[j];
+          const d = Math.hypot(cand.centerX - cx, cand.centerY - cy);
+          // Association radius scales with cluster size
+          const maxAssoc = Math.max(40, Math.sqrt(cluster.area) * 1.5);
+          if (d < bestDist && d < maxAssoc) {
+            bestDist = d;
+            best = cand;
+          }
+        }
 
-        let opp = this.opponents.get(id);
-        if (!opp) {
-          opp = new Enemy(id, cluster.centroid.x, cluster.centroid.y, cluster.area);
-          this.opponents.set(id, opp);
+        let opp;
+        if (best) {
+          unmatched.splice(unmatched.indexOf(best), 1);
+          opp = best;
+          opp.update(cx, cy, cluster.area, now, playerPos);
+          currentIds.add(opp.id);
         } else {
-          opp.update(cluster.centroid.x, cluster.centroid.y, cluster.area, now, playerPos);
+          const cellX = Math.round(cx / 20) * 20;
+          const cellY = Math.round(cy / 20) * 20;
+          const id = `opp_${cellX}_${cellY}_${now | 0}`;
+          opp = new Enemy(id, cx, cy, cluster.area);
+          this.opponents.set(id, opp);
+          currentIds.add(id);
         }
       }
 
-      // Prune inactive opponents not seen for > 15 seconds
+      // Prune inactive opponents not seen for > 8 seconds
       for (const [id, opp] of this.opponents.entries()) {
-        if (now - opp.lastSeen > 15000) {
-          this.opponents.delete(id);
+        if (now - opp.lastSeen > 8000 || !currentIds.has(id)) {
+          // Keep briefly if just missed one frame
+          if (now - opp.lastSeen > 8000) this.opponents.delete(id);
         }
       }
 
@@ -246,8 +269,19 @@
     }
 
     getEnemyAnalytics() {
+      const opponentsList = Array.from(this.opponents.values()).map((op) => ({
+        id: op.id,
+        area: op.area,
+        status: op.status,
+        dangerScore: op.dangerScore,
+        growthRate: op.growthRate,
+        centerX: op.centerX,
+        centerY: op.centerY
+      }));
+
       return {
         totalTracked: this.opponents.size,
+        opponentsList,
         strongest: this.strongestEnemy ? { id: this.strongestEnemy.id, area: this.strongestEnemy.area } : null,
         weakest: this.weakestEnemy ? { id: this.weakestEnemy.id, area: this.weakestEnemy.area } : null,
         primaryThreat: this.primaryAttacker ? {

@@ -49,14 +49,18 @@
       this.canvas = document.querySelector('canvas');
       if (!this.canvas) return false;
 
-      this.width = this.canvas.width || window.innerWidth;
-      this.height = this.canvas.height || window.innerHeight;
+      // Prefer bitmap size; fall back to CSS size for odd embeds
+      this.width = this.canvas.width || Math.floor(this.canvas.clientWidth) || window.innerWidth;
+      this.height = this.canvas.height || Math.floor(this.canvas.clientHeight) || window.innerHeight;
       this.scaledWidth = Math.max(10, Math.floor(this.width * this.scaleFactor));
       this.scaledHeight = Math.max(10, Math.floor(this.height * this.scaleFactor));
 
       try {
-        this.context = this.canvas.getContext('2d', { willReadFrequently: true });
-        
+        // CRITICAL: never call getContext() on the game canvas.
+        // If we grab 2d before the game, the game can fail to boot (black screen).
+        // We only drawImage(gameCanvas → offscreen) and read pixels from offscreen.
+        this.context = null;
+
         this.offscreenCanvas.width = this.scaledWidth;
         this.offscreenCanvas.height = this.scaledHeight;
         this.offscreenCtx = this.offscreenCanvas.getContext('2d', { willReadFrequently: true });
@@ -65,32 +69,40 @@
         this.prevCanvas.height = this.scaledHeight;
         this.prevCtx = this.prevCanvas.getContext('2d', { willReadFrequently: true });
 
-        this.isAttached = true;
-        return true;
+        this.isAttached = !!this.offscreenCtx;
+        return this.isAttached;
       } catch (e) {
         return false;
       }
     }
 
     captureScaledBuffer() {
-      if (!this.isAttached || !this.canvas || !this.context) {
+      if (!this.isAttached || !this.canvas || !this.offscreenCtx) {
         if (!this.attach()) return null;
       }
 
       try {
+        // Re-bind if page swapped canvas element
+        if (!document.contains(this.canvas)) {
+          this.isAttached = false;
+          if (!this.attach()) return null;
+        }
+
         const now = performance.now();
-        // Swap buffers: copy current offscreen into prev offscreen for motion differencing
-        if (this.captureCount > 0) {
+        if (this.captureCount > 0 && this.prevCtx) {
           this.prevCtx.drawImage(this.offscreenCanvas, 0, 0);
         }
 
+        // Works for both 2d and WebGL source canvases (when buffer is present)
         this.offscreenCtx.drawImage(this.canvas, 0, 0, this.scaledWidth, this.scaledHeight);
         const imageData = this.offscreenCtx.getImageData(0, 0, this.scaledWidth, this.scaledHeight);
-        
+
         this.lastCaptureTimestamp = now;
         this.captureCount++;
         return imageData;
       } catch (e) {
+        // SecurityError / tainted canvas → reattach next frame
+        this.isAttached = false;
         return null;
       }
     }
@@ -188,29 +200,54 @@
     }
 
     classifyRGB(r, g, b) {
-      // 1. Player Own Territory (MINE): Checked FIRST with generous 90 RGB distance tolerance (distSq < 8100)
+      // 1. Water first (avoid blue player colors bleeding into water)
+      if (b > r + 22 && b > g + 18 && b > 70 && b > 100) {
+        // Strong ocean blue — unless very close to calibrated player
+        let nearPlayer = false;
+        if (this.playerColor) {
+          const dr0 = r - this.playerColor.r;
+          const dg0 = g - this.playerColor.g;
+          const db0 = b - this.playerColor.b;
+          nearPlayer = (dr0 * dr0 + dg0 * dg0 + db0 * db0) < 2200;
+        }
+        if (!nearPlayer) return 1; // WATER
+      }
+
+      // 2. Player Own Territory (MINE)
       if (this.playerColor) {
         const dr = r - this.playerColor.r;
         const dg = g - this.playerColor.g;
         const db = b - this.playerColor.b;
         const distSq = (dr * dr) + (dg * dg) + (db * db);
-        if (distSq < 8100) { // sqrt(8100) = 90 RGB tolerance
+        if (distSq < 4200) { // ~65 RGB — balance bleed vs miss
           return 3; // MINE
         }
       }
 
-      // 2. Water Classification: High dominant blue intensity
-      if (b > r + 16 && b > g + 16 && b > 55) {
-        return 1; // WATER
-      }
-
-      // 3. Neutral Land: Achromatic gray/beige tones
+      // 3. Neutral / uncaptured land — broad catch for map fill
+      // Territorial neutrals are usually pale gray-green / beige / desaturated.
       const maxDelta = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
-      if (maxDelta < 26 && r > 35 && r < 215) {
+      const avg = (r + g + b) / 3;
+      const chroma = maxDelta;
+
+      // Classic gray/beige fill
+      if (chroma < 32 && avg > 38 && avg < 220) {
         return 2; // NEUTRAL
       }
+      // Warm beige / sand
+      if (chroma < 48 && r >= g - 8 && g >= b - 5 && avg > 45 && avg < 200 && (r - b) < 70) {
+        return 2;
+      }
+      // Cool pale map (slight green/blue desat, still not ocean)
+      if (chroma < 36 && avg > 55 && avg < 190 && b < 150 && !(b > r + 30 && b > g + 25)) {
+        return 2;
+      }
+      // Very light uncaptured (near-white map areas)
+      if (avg > 175 && avg < 245 && chroma < 40) {
+        return 2;
+      }
 
-      // 4. Enemy Territory: Chromatic pixels not matching player or neutral
+      // 4. Enemy Territory (strong chromatic, not player)
       return 4; // ENEMY
     }
 
@@ -542,17 +579,45 @@
 
     sampleAndCalibratePlayerColor(clientX, clientY) {
       if (!this.reader.isAttached) this.reader.attach();
-      const sx = Math.floor(clientX * this.reader.scaleFactor);
-      const sy = Math.floor(clientY * this.reader.scaleFactor);
-      const rgb = this.cache.getPixelRGB(sx, sy);
-      if (rgb) {
-        // Only calibrate if the sampled pixel is NOT achromatic gray/beige and NOT water
-        const maxDelta = Math.max(Math.abs(rgb.r - rgb.g), Math.abs(rgb.g - rgb.b), Math.abs(rgb.r - rgb.b));
-        const isWater = (rgb.b > rgb.r + 16 && rgb.b > rgb.g + 16 && rgb.b > 55);
-        if (maxDelta >= 18 && !isWater) {
-          this.classifier.calibratePlayerColor(rgb.r, rgb.g, rgb.b);
-          return rgb;
+
+      // Prefer CSS-rect mapping so calibration matches on-screen click
+      let sx;
+      let sy;
+      const canvas = this.reader.canvas || document.querySelector('canvas');
+      if (canvas && this.reader.scaledWidth > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const nx = (clientX - rect.left) / Math.max(1, rect.width);
+        const ny = (clientY - rect.top) / Math.max(1, rect.height);
+        sx = Math.max(0, Math.min(this.reader.scaledWidth - 1, Math.floor(nx * this.reader.scaledWidth)));
+        sy = Math.max(0, Math.min(this.reader.scaledHeight - 1, Math.floor(ny * this.reader.scaledHeight)));
+      } else {
+        sx = Math.floor(clientX * this.reader.scaleFactor);
+        sy = Math.floor(clientY * this.reader.scaleFactor);
+      }
+
+      // Sample a small neighborhood median-ish pick for stability
+      const samples = [];
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const rgb = this.cache.getPixelRGB(sx + dx, sy + dy);
+          if (rgb) samples.push(rgb);
         }
+      }
+      if (samples.length === 0) return null;
+
+      // Pick most chromatic sample (likely player color, not gray land UI)
+      samples.sort((a, b) => {
+        const ca = Math.max(Math.abs(a.r - a.g), Math.abs(a.g - a.b), Math.abs(a.r - a.b));
+        const cb = Math.max(Math.abs(b.r - b.g), Math.abs(b.g - b.b), Math.abs(b.r - b.b));
+        return cb - ca;
+      });
+      const rgb = samples[0];
+
+      const maxDelta = Math.max(Math.abs(rgb.r - rgb.g), Math.abs(rgb.g - rgb.b), Math.abs(rgb.r - rgb.b));
+      const isWater = (rgb.b > rgb.r + 16 && rgb.b > rgb.g + 16 && rgb.b > 55);
+      if (maxDelta >= 18 && !isWater) {
+        this.classifier.calibratePlayerColor(rgb.r, rgb.g, rgb.b);
+        return rgb;
       }
       return null;
     }

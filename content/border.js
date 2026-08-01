@@ -272,24 +272,38 @@
           const idx = row + x;
           if (typeMat[idx] !== 3) continue;
 
-          // Check 4-connected neighbors
-          const left   = (x > 0)     ? typeMat[idx - 1] : 1;
-          const right  = (x < w - 1) ? typeMat[idx + 1] : 1;
-          const top    = (y > 0)     ? typeMat[idx - w] : 1;
-          const bottom = (y < h - 1) ? typeMat[idx + w] : 1;
-
+          // 4-connected + light 8-connected so diagonal free land is seen early
           let isBorder = false;
           let touchesWater = false;
           let touchesNeutral = false;
           let touchesEnemy = false;
+          let neutralClickX = x;
+          let neutralClickY = y;
 
-          const nList = [left, right, top, bottom];
-          for (let n = 0; n < nList.length; n++) {
-            const nt = nList[n];
+          const offsets = [
+            [1, 0], [-1, 0], [0, 1], [0, -1],
+            [1, 1], [1, -1], [-1, 1], [-1, -1]
+          ];
+          for (let n = 0; n < offsets.length; n++) {
+            const nx = x + offsets[n][0];
+            const ny = y + offsets[n][1];
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) {
+              isBorder = true;
+              touchesWater = true;
+              continue;
+            }
+            const nt = typeMat[ny * w + nx];
             if (nt !== 3) {
               isBorder = true;
               if (nt === 1) touchesWater = true;
-              if (nt === 2) touchesNeutral = true;
+              if (nt === 2) {
+                touchesNeutral = true;
+                // Prefer storing the uncaptured cell itself for click targeting
+                if (n < 4) {
+                  neutralClickX = nx;
+                  neutralClickY = ny;
+                }
+              }
               if (nt === 4) touchesEnemy = true;
             }
           }
@@ -301,7 +315,10 @@
             touchesWater,
             touchesNeutral,
             touchesEnemy,
-            threatValue: 0.0
+            threatValue: 0.0,
+            // Where to aim when expanding into free land
+            targetX: neutralClickX,
+            targetY: neutralClickY
           };
 
           if (threatHeatmap) {
@@ -311,8 +328,7 @@
           if (isBorder) {
             this.perimeterCells.push(cellObj);
 
-            // Populate multi-class frontiers
-            if (!touchesWater) {
+            if (!touchesWater || touchesNeutral) {
               this.accessibleBorders.push(cellObj);
             }
             if (touchesNeutral) {
@@ -320,7 +336,6 @@
             }
             if (touchesEnemy) {
               this.enemyFrontier.push(cellObj);
-              // Classify danger frontier based on threat heatmap threshold
               if (cellObj.threatValue > 0.40) {
                 this.dangerFrontier.push(cellObj);
               }

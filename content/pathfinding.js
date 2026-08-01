@@ -218,18 +218,113 @@
     }
 
     /**
-     * Path Worthiness Verification (isWorthIt API):
-     * Checks if the cost of traversing a path is justified by the target utility score.
+     * Path Worthiness Verification (isWorthIt API).
+     * Utility scores are typically in ~0.2–1.5 range (not 0–100).
      */
     isWorthIt(pathResult, targetUtilityScore) {
-      if (!pathResult || !pathResult.reachable || pathResult.path.length === 0) {
+      if (!pathResult || !pathResult.reachable) {
         return { worthy: false, reason: 'UNREACHABLE' };
       }
-      const costPerStep = pathResult.totalCost / pathResult.path.length;
-      if (costPerStep > 5.0 && targetUtilityScore < 0.35) {
+      // Adjacent / very short path: always ok
+      if (!pathResult.path || pathResult.path.length <= 2) {
+        return { worthy: true, reason: 'ADJACENT' };
+      }
+      const util = (typeof targetUtilityScore === 'number') ? targetUtilityScore : 0.5;
+      const costPerStep = pathResult.totalCost / Math.max(1, pathResult.path.length);
+      if (pathResult.path.length > 80 && util < 0.4) {
+        return { worthy: false, reason: 'TOO_FAR' };
+      }
+      if (costPerStep > 8.0 && util < 0.35) {
         return { worthy: false, reason: 'COST_EXCEEDS_UTILITY' };
       }
       return { worthy: true, reason: 'OPTIMAL_PATH' };
+    }
+
+    /**
+     * Cheap flood: is target adjacent to any MINE (type 3) cell?
+     * Prefer this for expansion clicks instead of full A* every frame.
+     */
+    isAdjacentToMine(targetX, targetY) {
+      if (!this.grid || !this.grid.typeMatrix) return false;
+      const w = this.grid.width;
+      const h = this.grid.height;
+      const tx = Math.floor(targetX);
+      const ty = Math.floor(targetY);
+      if (tx < 0 || ty < 0 || tx >= w || ty >= h) return false;
+
+      const offsets = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
+      for (let i = 0; i < offsets.length; i++) {
+        const nx = tx + offsets[i][0];
+        const ny = ty + offsets[i][1];
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        if (this.grid.typeMatrix[ny * w + nx] === 3) return true;
+      }
+      return false;
+    }
+
+    /**
+     * BFS reachability from nearest MINE cell near start to target (non-water).
+     */
+    isReachableFromMine(startX, startY, targetX, targetY, maxNodes = 2500) {
+      if (!this.grid || !this.grid.typeMatrix) return false;
+      const w = this.grid.width;
+      const h = this.grid.height;
+      const size = w * h;
+      const sx = Math.max(0, Math.min(w - 1, Math.floor(startX)));
+      const sy = Math.max(0, Math.min(h - 1, Math.floor(startY)));
+      const tx = Math.max(0, Math.min(w - 1, Math.floor(targetX)));
+      const ty = Math.max(0, Math.min(h - 1, Math.floor(targetY)));
+
+      // Fast path: target next to mine
+      if (this.isAdjacentToMine(tx, ty)) return true;
+
+      const visited = new Uint8Array(size);
+      const queue = new Int32Array(Math.min(maxNodes + 8, size));
+      let head = 0;
+      let tail = 0;
+
+      // Seed: any mine in a small window around start, else scan all mine (capped)
+      const seed = sy * w + sx;
+      queue[tail++] = seed;
+      visited[seed] = 1;
+
+      // Also seed known mine near start
+      for (let dy = -8; dy <= 8; dy++) {
+        for (let dx = -8; dx <= 8; dx++) {
+          const nx = sx + dx;
+          const ny = sy + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const idx = ny * w + nx;
+          if (this.grid.typeMatrix[idx] === 3 && !visited[idx]) {
+            visited[idx] = 1;
+            queue[tail++] = idx;
+          }
+        }
+      }
+
+      let explored = 0;
+      while (head < tail && explored < maxNodes) {
+        const curr = queue[head++];
+        explored++;
+        const cx = curr % w;
+        const cy = (curr / w) | 0;
+        if (cx === tx && cy === ty) return true;
+
+        const nbs = [curr - 1, curr + 1, curr - w, curr + w];
+        for (let i = 0; i < 4; i++) {
+          const nIdx = nbs[i];
+          if (nIdx < 0 || nIdx >= size || visited[nIdx]) continue;
+          const nx = nIdx % w;
+          const ny = (nIdx / w) | 0;
+          // stay 4-connected correctly on row wrap
+          if (Math.abs(nx - cx) + Math.abs(ny - cy) !== 1) continue;
+          const t = this.grid.typeMatrix[nIdx];
+          if (t === 1 || t === 0) continue; // water / unknown
+          visited[nIdx] = 1;
+          queue[tail++] = nIdx;
+        }
+      }
+      return false;
     }
   }
 

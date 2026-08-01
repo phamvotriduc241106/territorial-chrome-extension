@@ -1,38 +1,17 @@
 /**
- * Territorial.io Comprehensive Danger Heatmap Engine v5.0.0
- * 
- * Production-Grade 2D Gaussian Blur Threat Field & Multi-Channel Map (~400 lines):
- * 1. 2D Spatial Threat Field Matrix with Inverse-Square Decay
- * 2. High-Performance Separable 2D Gaussian Blur Kernel (Horizontal + Vertical Passes, sigma = 3.0)
- * 3. Multi-Channel Per-Point Evaluation Matrix:
- *    { danger, expansion, economy, travel_cost, enemy_pressure }
- * 4. Fast Spatial Query API for Border Detector and Utility Evaluator
+ * Territorial.io Danger Heatmap Engine v6.0.0
+ *
+ * Grid-native threat field (same coordinates as vision/grid).
+ * No screen-size double scaling.
  */
-
 (function () {
   'use strict';
 
   if (window.__TIO_HEATMAP_ENGINE_V5_LOADED__) return;
   window.__TIO_HEATMAP_ENGINE_V5_LOADED__ = true;
 
-  console.log('%c[TIO Heatmap Engine v5.0] Initializing Separable Gaussian Blur & Threat Field Matrix (~400 LOC)...', 'color: #34d399; font-weight: bold; font-size: 14px;');
+  console.log('%c[TIO Heatmap Engine v6.0] Grid-native threat field...', 'color: #34d399; font-weight: bold; font-size: 14px;');
 
-  // ==========================================
-  // CLASS 1: MULTI-CHANNEL HEATMAP CELL
-  // ==========================================
-  class HeatmapCell {
-    constructor() {
-      this.danger = 0.0;
-      this.expansion = 0.0;
-      this.economy = 0.0;
-      this.travelCost = 0.0;
-      this.enemyPressure = 0.0;
-    }
-  }
-
-  // ==========================================
-  // CLASS 2: SEPARABLE GAUSSIAN BLUR KERNEL
-  // ==========================================
   class GaussianBlurKernel {
     constructor(radius = 3, sigma = 2.0) {
       this.radius = radius;
@@ -55,7 +34,6 @@
     }
 
     applySeparableBlur(sourceMat, destMat, tempMat, w, h) {
-      // 1. Horizontal Pass (Source -> Temp)
       for (let y = 0; y < h; y++) {
         const row = y * w;
         for (let x = 0; x < w; x++) {
@@ -68,7 +46,6 @@
         }
       }
 
-      // 2. Vertical Pass (Temp -> Dest)
       for (let x = 0; x < w; x++) {
         for (let y = 0; y < h; y++) {
           let sumVal = 0.0;
@@ -82,9 +59,6 @@
     }
   }
 
-  // ==========================================
-  // CLASS 3: HEATMAP MASTER ENGINE
-  // ==========================================
   class HeatmapEngine {
     constructor(width = 120, height = 120) {
       this.width = width;
@@ -99,33 +73,63 @@
       this.lastExecutionTimeMs = 0;
     }
 
+    ensureSize(w, h) {
+      if (w === this.width && h === this.height && this.rawThreatMatrix) return;
+      this.width = Math.max(1, w);
+      this.height = Math.max(1, h);
+      this.size = this.width * this.height;
+      this.rawThreatMatrix = new Float32Array(this.size);
+      this.blurredThreatMatrix = new Float32Array(this.size);
+      this.tempBlurMatrix = new Float32Array(this.size);
+    }
+
     reset() {
       this.rawThreatMatrix.fill(0);
       this.blurredThreatMatrix.fill(0);
       this.tempBlurMatrix.fill(0);
     }
 
-    updateThreatField(enemyClusters, playerPos, canvasWidth = window.innerWidth, canvasHeight = window.innerHeight) {
+    /**
+     * @param {Array} enemyClusters - regions with centroid in GRID coordinates
+     * @param {{x:number,y:number}} playerGridPos - player in GRID coordinates
+     * @param {number} gridWidth
+     * @param {number} gridHeight
+     */
+    updateThreatField(enemyClusters, playerGridPos, gridWidth, gridHeight) {
       const startTime = performance.now();
+      const w = gridWidth || this.width;
+      const h = gridHeight || this.height;
+      this.ensureSize(w, h);
       this.reset();
-
-      const scaleX = this.width / canvasWidth;
-      const scaleY = this.height / canvasHeight;
 
       if (enemyClusters && enemyClusters.length > 0) {
         for (let i = 0; i < enemyClusters.length; i++) {
           const cluster = enemyClusters[i];
-          const cx = Math.min(this.width - 1, Math.max(0, Math.floor(cluster.centroid.x * scaleX)));
-          const cy = Math.min(this.height - 1, Math.max(0, Math.floor(cluster.centroid.y * scaleY)));
+          const cx = Math.min(this.width - 1, Math.max(0, Math.floor(cluster.centroid.x)));
+          const cy = Math.min(this.height - 1, Math.max(0, Math.floor(cluster.centroid.y)));
           const idx = cy * this.width + cx;
 
-          // Inverse-square threat intensity proportional to area
           const intensity = Math.min(1.0, cluster.area / 3000.0);
           this.rawThreatMatrix[idx] = Math.max(this.rawThreatMatrix[idx], intensity);
+
+          // Local stamp so small maps still get spread before blur
+          const stampR = 2;
+          for (let dy = -stampR; dy <= stampR; dy++) {
+            for (let dx = -stampR; dx <= stampR; dx++) {
+              const nx = cx + dx;
+              const ny = cy + dy;
+              if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) continue;
+              const nIdx = ny * this.width + nx;
+              const falloff = 1.0 - (Math.hypot(dx, dy) / (stampR + 1));
+              this.rawThreatMatrix[nIdx] = Math.max(
+                this.rawThreatMatrix[nIdx],
+                intensity * Math.max(0, falloff)
+              );
+            }
+          }
         }
       }
 
-      // Apply Separable 2D Gaussian Blur Kernel
       this.blurKernel.applySeparableBlur(
         this.rawThreatMatrix,
         this.blurredThreatMatrix,
@@ -142,19 +146,26 @@
       };
     }
 
-    getThreatAt(x, y, canvasWidth = window.innerWidth, canvasHeight = window.innerHeight) {
-      const scaleX = this.width / canvasWidth;
-      const scaleY = this.height / canvasHeight;
-      const gx = Math.min(this.width - 1, Math.max(0, Math.floor(x * scaleX)));
-      const gy = Math.min(this.height - 1, Math.max(0, Math.floor(y * scaleY)));
-      return this.blurredThreatMatrix[gy * this.width + gx] || 0.0;
+    /**
+     * Query threat at GRID coordinates (same space as border/region cells).
+     */
+    getThreatAt(gx, gy) {
+      if (!this.blurredThreatMatrix || this.width <= 0) return 0.0;
+      const x = Math.min(this.width - 1, Math.max(0, Math.floor(gx)));
+      const y = Math.min(this.height - 1, Math.max(0, Math.floor(gy)));
+      return this.blurredThreatMatrix[y * this.width + x] || 0.0;
     }
   }
 
-  // Export to global scope
-  window.HeatmapCell = HeatmapCell;
+  window.HeatmapCell = function HeatmapCell() {
+    this.danger = 0.0;
+    this.expansion = 0.0;
+    this.economy = 0.0;
+    this.travelCost = 0.0;
+    this.enemyPressure = 0.0;
+  };
   window.GaussianBlurKernel = GaussianBlurKernel;
   window.HeatmapEngine = HeatmapEngine;
 
-  console.log('%c[TIO Heatmap Engine v5.0] Separable Gaussian Blur Threat Field Loaded.', 'color: #10b981;');
+  console.log('%c[TIO Heatmap Engine v6.0] Grid-native threat field loaded.', 'color: #10b981;');
 })();
