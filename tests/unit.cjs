@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 global.window = global;
 global.print = console.log;
-for (const p of ['shared/config.js', 'content/engine-core-v1.js',
+for (const p of ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
   'content/engine-core-v2-advanced.js', 'content/engine-adapter.js',
   'content/source-adapter.js', 'tests/core.test.js']) {
   vm.runInThisContext(read(p), { filename: p });

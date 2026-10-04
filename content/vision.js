@@ -517,6 +517,9 @@
     }
 
     processFrame() {
+      return window.TIOProfiler ? window.TIOProfiler.measureCall('vision.frame', this.processFrameImpl, this, []) : this.processFrameImpl();
+    }
+    processFrameImpl() {
       const startTime = performance.now();
       this.frameCount++;
 

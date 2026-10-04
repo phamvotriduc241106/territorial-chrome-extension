@@ -19,14 +19,7 @@
     activeVersion: 2, // Default to Advanced V2
     telemetry: {
       ticksEvaluated: 0,
-      pmpOptimalControlCalls: 0,
-      spectralCutsExecuted: 0,
-      poissonStreamlinesSampled: 0,
-      kktAllocationsComputed: 0,
-      voronoiPartitionsSolved: 0,
-      lanchesterVetoesApplied: 0,
-      coalitionEquilibriaSolved: 0,
-      eikonalGeodesicWavefrontsComputed: 0
+      methodCalls: {}
     },
 
     setVersion: function (ver) {
@@ -47,11 +40,12 @@
         activeVersion: this.activeVersion,
         activeEngine: this.activeVersion === 2 ? (cfg.ENGINE_VERSION || 'V2.7') : 'V1',
         engineSource: this.activeVersion === 2 ? (cfg.ENGINE_SOURCE || 'content/engine-core-v2-advanced.js') : 'content/engine-core-v1.js',
-        engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-10-04 10:50:25 EDT',
-        extensionVersion: cfg.VERSION || '10.2.4',
+        engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-10-04 11:29:34 EDT',
+        extensionVersion: cfg.VERSION || '10.2.5',
         v1Available: !!v1,
         v2Available: !!v2,
-        telemetry: Object.assign({}, this.telemetry)
+        telemetry: { ticksEvaluated: this.telemetry.ticksEvaluated,
+          methodCalls: Object.assign({}, this.telemetry.methodCalls) }
       };
     },
 
@@ -64,6 +58,7 @@
   };
 
   // Build Proxy Handler for transparent drop-in compatibility
+  const wrappers = new Map();
   const EngineProxy = new Proxy({}, {
     get: function (target, prop) {
       const engine = EngineAdapter.getActive();
@@ -71,22 +66,17 @@
 
       const val = engine[prop];
       if (typeof val === 'function') {
-        return function (...args) {
+        const cached = wrappers.get(prop);
+        if (cached && cached.engine === engine && cached.val === val) return cached.wrapper;
+        const metric = 'engine.' + String(prop);
+        const wrapper = function (...args) {
           EngineAdapter.telemetry.ticksEvaluated++;
-          if (prop === 'rankTargets') {
-            EngineAdapter.telemetry.spectralCutsExecuted++;
-            EngineAdapter.telemetry.poissonStreamlinesSampled++;
-            EngineAdapter.telemetry.eikonalGeodesicWavefrontsComputed++;
-          } else if (prop === 'planSpend') {
-            EngineAdapter.telemetry.pmpOptimalControlCalls++;
-            EngineAdapter.telemetry.kktAllocationsComputed++;
-          } else if (prop === 'decide') {
-            EngineAdapter.telemetry.coalitionEquilibriaSolved++;
-          } else if (prop === 'computeVoronoiPartition') {
-            EngineAdapter.telemetry.voronoiPartitionsSolved++;
-          }
-          return val.apply(engine, args);
+          const counts = EngineAdapter.telemetry.methodCalls;
+          counts[prop] = (counts[prop] || 0) + 1;
+          return root.TIOProfiler ? root.TIOProfiler.measureCall(metric, val, engine, args) : val.apply(engine, args);
         };
+        wrappers.set(prop, { engine, val, wrapper });
+        return wrapper;
       }
       return val;
     },
@@ -102,11 +92,11 @@
   root.TIOSetEngineVersion = EngineAdapter.setVersion.bind(EngineAdapter);
   root.TIOGetEngineStatus = EngineAdapter.getStatus.bind(EngineAdapter);
   root.TIOEngineCoreProxy = EngineProxy;
-  // Route all extension callers through the adapter; V2 (experiments/) is default.
+  // Route all extension callers through the adapter; shipped V2 is default.
   root.TIOEngineCore = EngineProxy;
   root.TIOHardMode = EngineProxy;
   console.log(
-    '[TIO Engine Adapter] Default kernel: V2.7 Capital-Preserving Policy (Updated: 2026-10-04 10:50:25 EDT) · V1 available via TIOSetEngineVersion(1)'
+    '[TIO Engine Adapter] Default kernel: V2.7 Capital-Preserving Policy (Updated: 2026-10-04 11:29:34 EDT) · V1 available via TIOSetEngineVersion(1)'
   );
 
   if (typeof module !== 'undefined' && module.exports) {

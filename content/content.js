@@ -1,5 +1,5 @@
 /**
- * Territorial.io Orchestrator v10.2.4 — internal-first, vision fallback
+ * Territorial.io Orchestrator v10.2.5 — internal-first, vision fallback
  *
  * - MAIN-world brain ports dump dF/dJ/cE/dU (expand-empty → crush-weak)
    * - Exact source economics with one mutation in flight
@@ -23,7 +23,7 @@
 
   const CFG = window.TIOConfig;
   const CORE = window.TIOEngineCore || window.TIOHardMode;
-  const AGENT_VERSION = CFG ? CFG.VERSION : '10.2.4';
+  const AGENT_VERSION = CFG ? CFG.VERSION : '10.2.5';
   const DEFAULT_SETTINGS = CFG ? CFG.DEFAULT_SETTINGS : {
     botEnabled: true, autoExpand: true, autoAttack: true, clickSpeed: 4,
     sliderPercentage: 0, hotkeysEnabled: true, strategy: 'aggressive',
@@ -51,6 +51,7 @@
         ? new window.AdaptiveScheduler(DEFAULT_SETTINGS.visionFps || 12)
         : { shouldRunFrame: () => true, measuredFps: 0 };
       this.internalRefreshAt = 0;
+      this.internalPlanningGate = window.InternalPlanningGate ? new window.InternalPlanningGate(100) : null;
       this.internalFailStreak = 0;
       this.smoothedCommit = 0.34;
       this.lastCommitMeta = null;
@@ -119,6 +120,9 @@
      * Returns the FOREIGN cell coords (click targets), never deep inland.
      */
     scanMineBorders(typeMatrix, w, h, maxFind) {
+      return window.TIOProfiler ? window.TIOProfiler.measureCall('border.scan', this.scanMineBordersImpl, this, arguments) : this.scanMineBordersImpl(typeMatrix, w, h, maxFind);
+    }
+    scanMineBordersImpl(typeMatrix, w, h, maxFind) {
       const out = [];
       if (!typeMatrix || !w || !h) return out;
       maxFind = maxFind || 40;
@@ -620,6 +624,7 @@
       this.internalAreaTrend = 0;
       this.internalShrinkFrames = 0;
       this.controller.clearQueue();
+      if (this.internalPlanningGate) this.internalPlanningGate.reset();
       try {
         if (this.internal && this.internal.setArmed) this.internal.setArmed(false);
       } catch (_) { /* ignore */ }
@@ -796,6 +801,9 @@
 
     /** Fast path: exact game state and native actuator; no canvas readback. */
     executeInternalPipeline(now) {
+      return window.TIOProfiler ? window.TIOProfiler.measureCall('control.internal', this.executeInternalPipelineImpl, this, arguments) : this.executeInternalPipelineImpl(now);
+    }
+    executeInternalPipelineImpl(now) {
       const st = this.internal && this.internal.lastState;
       if (!st || !st.ready) return;
 
@@ -809,6 +817,16 @@
         return;
       }
       this.internalNotAliveSince = 0;
+
+      const userDriving = this.controller ? this.controller.userPointerDown === true : false;
+      const interval = CFG ? CFG.actionIntervalMs(this.settings) : 160;
+      const bankInterval = balanceKnown && balance < 800 ? 280 : 160;
+      const due = now - this.lastAttackDispatchTime >= Math.max(interval, bankInterval);
+      const busy = this.internal.isBusy && this.internal.isBusy();
+      const engineVersion = window.TIOEngineAdapter ? window.TIOEngineAdapter.activeVersion : 2;
+      const controls = Number(userDriving) | (Number(!!busy) << 1) | (Number(due) << 2) | (engineVersion << 3);
+      if (this.internalPlanningGate && !this.internalPlanningGate.shouldRun(st, now,
+          this.internalAttackCount, this.settings, controls)) return;
 
       const adjacentEnemies = Array.isArray(st.enemies)
         ? st.enemies.filter((enemy) => enemy && enemy.adjacent)
@@ -919,11 +937,6 @@
         ratio = safeRatio > 0 ? Math.min(ratio, safeRatio) : 0;
       }
 
-      const userDriving = this.controller ? this.controller.userPointerDown === true : false;
-      const interval = CFG ? CFG.actionIntervalMs(this.settings) : 160;
-      const bankInterval = balanceKnown && balance < 800 ? 280 : 160;
-      const due = now - this.lastAttackDispatchTime >= Math.max(interval, bankInterval);
-      const busy = this.internal.isBusy && this.internal.isBusy();
       const canFire = this.settings.botEnabled !== false && !userDriving && !busy && due &&
         budget.canAfford && ratio > 0 && decision.action !== 'hold' &&
         (decision.action !== 'expand' || neutralAvailable);

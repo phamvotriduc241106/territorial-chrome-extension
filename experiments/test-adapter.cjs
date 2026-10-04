@@ -74,14 +74,14 @@ const decV2 = proxy.decide(stateCtx);
 assert(decV2 != null && typeof decV2.action === 'string', 'Proxy calls decide() on active engine');
 status = adapter.getStatus();
 assert(status.telemetry.ticksEvaluated > 0, 'telemetry.ticksEvaluated increments');
-assert(status.telemetry.coalitionEquilibriaSolved > 0, 'telemetry.coalitionEquilibriaSolved increments');
+assert(status.telemetry.methodCalls.decide > 0, 'actual decide calls increment');
 
 // Test 3: planSpend telemetry
 const plan = proxy.planSpend(stateCtx);
 assert(plan != null && typeof plan.ratio === 'number', 'Proxy calls planSpend() on active engine');
 status = adapter.getStatus();
-assert(status.telemetry.pmpOptimalControlCalls > 0, 'telemetry.pmpOptimalControlCalls increments');
-assert(status.telemetry.kktAllocationsComputed > 0, 'telemetry.kktAllocationsComputed increments');
+assert(status.telemetry.methodCalls.planSpend > 0, 'actual planSpend calls increment');
+assert(!('kktAllocationsComputed' in status.telemetry), 'proxy calls do not fabricate KKT executions');
 
 // Test 4: rankTargets telemetry
 const targets = proxy.rankTargets([
@@ -90,7 +90,7 @@ const targets = proxy.rankTargets([
 ], stateCtx, decV2, 2);
 assert(Array.isArray(targets), 'Proxy calls rankTargets()');
 status = adapter.getStatus();
-assert(status.telemetry.spectralCutsExecuted > 0, 'telemetry.spectralCutsExecuted increments');
+assert(status.telemetry.methodCalls.rankTargets > 0, 'actual rankTargets calls increment');
 
 // Test 5: Hot-swap to V1
 adapter.setVersion(1);

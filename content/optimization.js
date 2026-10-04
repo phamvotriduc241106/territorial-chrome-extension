@@ -2,7 +2,7 @@
  * Territorial.io Comprehensive Performance Optimization Engine v5.0.0
  * 
  * Production-Grade Memory Pooling & Dynamic Scheduler (~300 lines):
- * 1. High-Performance TypedArray Memory Pooling (Zero Garbage Collection allocations in render loop)
+ * 1. Bounded TypedArray reuse (reduces allocations; does not guarantee zero GC)
  * 2. Spatial Hash Indexing for O(1) Candidate Neighborhood Queries
  * 3. Dynamic Frame-Skipping & Adaptive FPS Budgeting
  * 4. Dirty Rectangle Tracking & Partial Refresh Invalidation Scheduler
@@ -20,53 +20,39 @@
   // CLASS 1: TYPEDARRAY MEMORY POOL
   // ==========================================
   class MemoryPool {
-    constructor() {
+    constructor(maxRetainedBytes = 8 * 1024 * 1024) {
       this.uint8Pools = new Map();
       this.int32Pools = new Map();
       this.float32Pools = new Map();
+      this.retainedBytes = 0;
+      this.maxRetainedBytes = maxRetainedBytes;
+      this.retained = new WeakSet();
     }
-
-    getUint8Array(size) {
-      let pool = this.uint8Pools.get(size);
-      if (!pool || pool.length === 0) {
-        return new Uint8Array(size);
-      }
-      return pool.pop();
+    get(poolMap, Constructor, size) {
+      const pool = poolMap.get(size);
+      if (!pool || !pool.length) return new Constructor(size);
+      const array = pool.pop();
+      if (!pool.length) poolMap.delete(size);
+      this.retained.delete(array);
+      this.retainedBytes -= array.byteLength;
+      return array;
     }
-
-    releaseUint8Array(arr) {
-      if (!arr) return;
-      const size = arr.length;
-      let pool = this.uint8Pools.get(size);
-      if (!pool) {
-        pool = [];
-        this.uint8Pools.set(size, pool);
-      }
-      if (pool.length < 20) {
-        pool.push(arr);
-      }
+    release(poolMap, Constructor, array) {
+      if (!(array instanceof Constructor) || !array.byteLength || this.retained.has(array) ||
+          this.retainedBytes + array.byteLength > this.maxRetainedBytes) return;
+      let pool = poolMap.get(array.length);
+      if (pool && pool.length >= 20) return;
+      if (!pool) poolMap.set(array.length, pool = []);
+      pool.push(array);
+      this.retained.add(array);
+      this.retainedBytes += array.byteLength;
     }
-
-    getInt32Array(size) {
-      let pool = this.int32Pools.get(size);
-      if (!pool || pool.length === 0) {
-        return new Int32Array(size);
-      }
-      return pool.pop();
-    }
-
-    releaseInt32Array(arr) {
-      if (!arr) return;
-      const size = arr.length;
-      let pool = this.int32Pools.get(size);
-      if (!pool) {
-        pool = [];
-        this.int32Pools.set(size, pool);
-      }
-      if (pool.length < 20) {
-        pool.push(arr);
-      }
-    }
+    getUint8Array(size) { return this.get(this.uint8Pools, Uint8Array, size); }
+    releaseUint8Array(array) { this.release(this.uint8Pools, Uint8Array, array); }
+    getInt32Array(size) { return this.get(this.int32Pools, Int32Array, size); }
+    releaseInt32Array(array) { this.release(this.int32Pools, Int32Array, array); }
+    getFloat32Array(size) { return this.get(this.float32Pools, Float32Array, size); }
+    releaseFloat32Array(array) { this.release(this.float32Pools, Float32Array, array); }
   }
 
   // ==========================================
@@ -99,10 +85,10 @@
       bucket.push(data);
     }
 
-    queryNeighborhood(x, y, radiusCells = 1) {
+    queryNeighborhood(x, y, radiusCells = 1, results = []) {
       const cx = Math.floor(x / this.cellWidth);
       const cy = Math.floor(y / this.cellHeight);
-      const results = [];
+      results.length = 0;
 
       for (let dy = -radiusCells; dy <= radiusCells; dy++) {
         for (let dx = -radiusCells; dx <= radiusCells; dx++) {
@@ -116,6 +102,28 @@
         }
       }
       return results;
+    }
+  }
+
+  // Skip only an unchanged snapshot between real control/time events. No plan
+  // or native command is reused, and the time backstop keeps opening FSM live.
+  class InternalPlanningGate {
+    constructor(maxAgeMs = 100) {
+      this.maxAgeMs = maxAgeMs;
+      this.evaluations = 0;
+      this.skipped = 0;
+      this.reset();
+    }
+    reset() { this.state = null; this.at = -Infinity; this.sequence = -1; this.settings = null; this.controls = -1; }
+    shouldRun(state, now, sequence, settings, controls) {
+      if (state !== this.state || sequence !== this.sequence || settings !== this.settings || controls !== this.controls ||
+          now < this.at || now - this.at >= this.maxAgeMs) {
+        this.state = state; this.at = now; this.sequence = sequence; this.settings = settings; this.controls = controls;
+        this.evaluations++;
+        return true;
+      }
+      this.skipped++;
+      return false;
     }
   }
 
@@ -188,6 +196,7 @@
   window.MemoryPool = MemoryPool;
   window.SpatialHashGrid = SpatialHashGrid;
   window.AdaptiveScheduler = AdaptiveScheduler;
+  window.InternalPlanningGate = InternalPlanningGate;
 
   console.log('%c[TIO Optimization Engine v5.0] Memory Pool & Adaptive Scheduler Loaded.', 'color: #10b981;');
 })();

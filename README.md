@@ -2,7 +2,7 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.2.4 · **Engine:** V2.7 · **Updated:** 2026-10-04 10:50:25 EDT
+**Release:** v10.2.5 · **Engine:** V2.7 · **Updated:** 2026-10-04 11:29:34 EDT
 
 ## Install
 
@@ -31,13 +31,14 @@ npm run package
 
 The shipped kernel is [`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js), loaded in both browser worlds. V2.7 includes neutral-first expansion, lobby-wide duel detection, a 55%-capacity combat-bank target, incoming-aware targeting, timed opening recovery and native-boundary reserve protection.
 
-Approximate paired simulation: **367/800 wins (45.875%)**, versus **353/800 (44.125%)** with the new policy disabled. **Real Hard-mode win rate is unmeasured.** This release reorganizes the repository without changing strategy. See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
+Approximate paired simulation: **367/800 wins (45.875%)**, versus **353/800 (44.125%)** with the new policy disabled. **Real Hard-mode win rate is unmeasured.** This release adds CPU profiling, duplicate-planning suppression and typed-array grid updates; it does not introduce a new strategic algorithm. See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
 
 ## Repository
 
 - [Architecture and ownership](docs/ARCHITECTURE.md)
 - [Validation and benchmark limits](docs/VALIDATION.md)
 - [20-match Very Hard test standard](docs/VERY_HARD_TEST.md)
+- [Measured CPU optimization and profiler](docs/CPU_OPTIMIZATION.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Historical source map](docs/SOURCE_MAP.md)
 - [Historical reports](docs/archive/)

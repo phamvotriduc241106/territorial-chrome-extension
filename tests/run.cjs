@@ -56,7 +56,7 @@ const server = http.createServer((request, response) => {
     }
     if (live) {
       const page = await context.newPage();
-      await page.addInitScript({ content: ['shared/config.js', 'content/engine-core-v1.js',
+      await page.addInitScript({ content: ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
         'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js',
         'content/preloader.js', 'content/main-hook.js'].map(read).join('\n') });
       await page.goto(base + '/live');

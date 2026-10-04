@@ -24,6 +24,7 @@ assert.equal(manifest.content_scripts.filter(s => s.js.includes(engine)).length,
 assert.equal(manifest.content_scripts.filter(s => s.world === 'MAIN').length, 1);
 for (const script of manifest.content_scripts) {
   assert.equal(script.js[0], 'shared/config.js');
+  assert.equal(script.js[1], 'shared/performance.js');
   assert.ok(script.js.indexOf(engine) < script.js.indexOf('content/engine-adapter.js'));
 }
 for (const file of files) assert.ok(!file.startsWith('experiments/'));

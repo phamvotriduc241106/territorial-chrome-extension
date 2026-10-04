@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "10.2.4",
-  "description": "V2.7 Territorial.io autonomous engine; native commands, predictive planning, no mouse/camera. Updated 2026-10-04 10:50:25 EDT.",
+  "version": "10.2.5",
+  "description": "V2.7 Territorial.io autonomous engine; native commands, predictive planning, no mouse/camera. Updated 2026-10-04 11:29:34 EDT.",
   "permissions": [
     "storage"
   ],
@@ -33,6 +33,7 @@
       ],
       "js": [
         "shared/config.js",
+        "shared/performance.js",
         "content/engine-core-v1.js",
         "content/engine-core-v2-advanced.js",
         "content/engine-adapter.js",
@@ -52,6 +53,7 @@
       ],
       "js": [
         "shared/config.js",
+        "shared/performance.js",
         "content/engine-core-v1.js",
         "content/engine-core-v2-advanced.js",
         "content/engine-adapter.js",

@@ -64,6 +64,29 @@
     }
   }
 
+  const TERRAIN_NAMES = ['UNKNOWN', 'WATER', 'NEUTRAL', 'MINE', 'ENEMY'];
+  const TERRAIN_COST_VALUES = [100, 9999, 10, 0, 80];
+  class GridCellView {
+    constructor(data, index, x, y) { this.data = data; this.index = index; this.x = x; this.y = y; this.owner = null; }
+    get type() { return TERRAIN_NAMES[this.typeEnum] || 'UNKNOWN'; }
+    set type(value) { const type = TERRAIN_NAMES.indexOf(value); this.typeEnum = type < 0 ? 0 : type; }
+    get typeEnum() { return this.data.type[this.index]; }
+    set typeEnum(value) { this.data.type[this.index] = value; }
+    get accessible() { return this.data.accessible[this.index] === 1; }
+    set accessible(value) { this.data.accessible[this.index] = value ? 1 : 0; }
+    reset(x, y) {
+      this.x = x; this.y = y; this.typeEnum = 0; this.cost = TERRAIN_COST.UNKNOWN;
+      this.confidence = 0; this.lastSeen = 0; this.owner = null; this.danger = 0;
+      this.accessible = true; this.bitmask = 0;
+    }
+  }
+  for (const field of ['cost', 'danger', 'confidence', 'lastSeen', 'bitmask']) {
+    Object.defineProperty(GridCellView.prototype, field, {
+      get() { return this.data[field][this.index]; },
+      set(value) { this.data[field][this.index] = value; }
+    });
+  }
+
   class OccupancyGrid {
     constructor(width = 0, height = 0) {
       this.width = width;
@@ -98,78 +121,43 @@
       this.dangerMatrix = new Float32Array(this.size);
       this.accessibilityMatrix = new Uint8Array(this.size);
       this.bitmaskMatrix = new Uint16Array(this.size);
-
-      for (let i = 0; i < this.size; i++) {
-        const x = i % w;
-        const y = Math.floor(i / w);
-        this.cells[i] = new GridCell(x, y);
-      }
+      this.confidenceMatrix = new Float32Array(this.size);
+      this.lastSeenMatrix = new Float64Array(this.size);
+      this.costMatrix.fill(TERRAIN_COST.UNKNOWN);
+      this.accessibilityMatrix.fill(1);
+      // Cell objects are lazy compatibility views, not a duplicate hot-path store.
+      this.cellData = { type: this.typeMatrix, cost: this.costMatrix, danger: this.dangerMatrix,
+        accessible: this.accessibilityMatrix, bitmask: this.bitmaskMatrix,
+        confidence: this.confidenceMatrix, lastSeen: this.lastSeenMatrix };
     }
 
     updateFromVision(visionData) {
-      if (!visionData || !visionData.typeMatrix) return false;
-
+      return window.TIOProfiler ? window.TIOProfiler.measureCall('grid.update', this.updateFromVisionImpl, this, arguments) : this.updateFromVisionImpl(visionData);
+    }
+    updateFromVisionImpl(visionData) {
+      if (!visionData || !visionData.typeMatrix || !visionData.confidenceMatrix) return false;
       const { typeMatrix, confidenceMatrix, width, height } = visionData;
+      if (typeMatrix.length !== width * height || confidenceMatrix.length !== width * height) return false;
       this.allocate(width, height);
-
       const now = performance.now();
       this.lastUpdateTimestamp = now;
       this.frameUpdateCount++;
-
+      this.typeMatrix.set(typeMatrix);
+      this.confidenceMatrix.set(confidenceMatrix);
+      this.lastSeenMatrix.fill(now);
       for (let i = 0; i < this.size; i++) {
-        const tEnum = typeMatrix[i];
-        const conf = confidenceMatrix[i];
-        const cell = this.cells[i];
-
-        cell.typeEnum = tEnum;
-        cell.confidence = conf;
-        cell.lastSeen = now;
-
-        this.typeMatrix[i] = tEnum;
-
-        let typeStr = 'UNKNOWN';
-        let costVal = TERRAIN_COST.UNKNOWN;
-        let accessibleVal = 1;
-        let bitVal = 0;
-
-        if (tEnum === 1) { // WATER
-          typeStr = 'WATER';
-          costVal = TERRAIN_COST.WATER;
-          accessibleVal = 0;
-          bitVal = 1 << 0;
-        } else if (tEnum === 2) { // NEUTRAL
-          typeStr = 'NEUTRAL';
-          costVal = TERRAIN_COST.NEUTRAL;
-          accessibleVal = 1;
-          bitVal = (1 << 1) | (1 << 4);
-        } else if (tEnum === 3) { // MINE
-          typeStr = 'MINE';
-          costVal = TERRAIN_COST.MINE;
-          accessibleVal = 1;
-          bitVal = (1 << 2) | (1 << 4);
-        } else if (tEnum === 4) { // ENEMY
-          typeStr = 'ENEMY';
-          costVal = TERRAIN_COST.ENEMY;
-          accessibleVal = 1;
-          bitVal = (1 << 3) | (1 << 4);
-        }
-
-        cell.type = typeStr;
-        cell.cost = costVal;
-        cell.accessible = (accessibleVal === 1);
-        cell.bitmask = bitVal;
-
-        this.costMatrix[i] = costVal;
-        this.accessibilityMatrix[i] = accessibleVal;
-        this.bitmaskMatrix[i] = bitVal;
+        const type = typeMatrix[i];
+        this.costMatrix[i] = TERRAIN_COST_VALUES[type] == null ? TERRAIN_COST.UNKNOWN : TERRAIN_COST_VALUES[type];
+        this.accessibilityMatrix[i] = type === CELL_TYPE.WATER ? 0 : 1;
+        this.bitmaskMatrix[i] = type === 1 ? 1 : type === 2 ? 18 : type === 3 ? 20 : type === 4 ? 24 : 0;
       }
-
       return true;
     }
 
     getCell(x, y) {
       if (x < 0 || x >= this.width || y < 0 || y >= this.height) return null;
-      return this.cells[y * this.width + x];
+      const index = y * this.width + x;
+      return this.cells[index] || (this.cells[index] = new GridCellView(this.cellData, index, x, y));
     }
 
     getType(x, y) {
@@ -226,10 +214,10 @@
 
     get4Neighbors(x, y) {
       const neighbors = [];
-      if (x > 0) neighbors.push(this.cells[y * this.width + (x - 1)]);
-      if (x < this.width - 1) neighbors.push(this.cells[y * this.width + (x + 1)]);
-      if (y > 0) neighbors.push(this.cells[(y - 1) * this.width + x]);
-      if (y < this.height - 1) neighbors.push(this.cells[(y + 1) * this.width + x]);
+      if (x > 0) neighbors.push(this.getCell(x - 1, y));
+      if (x < this.width - 1) neighbors.push(this.getCell(x + 1, y));
+      if (y > 0) neighbors.push(this.getCell(x, y - 1));
+      if (y < this.height - 1) neighbors.push(this.getCell(x, y + 1));
       return neighbors;
     }
 
@@ -240,7 +228,7 @@
           if (dx === 0 && dy === 0) continue;
           const nx = x + dx, ny = y + dy;
           if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
-            neighbors.push(this.cells[ny * this.width + nx]);
+            neighbors.push(this.getCell(nx, ny));
           }
         }
       }

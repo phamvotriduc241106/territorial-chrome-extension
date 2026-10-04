@@ -37,7 +37,7 @@
   var SRC = PROTOCOL.requestSource || 'tio-engine-isolated';
   var REPLY = PROTOCOL.responseSource || 'tio-engine-main';
   var BRIDGE_VER = PROTOCOL.version || 1;
-  var HOOK_VER = CFG.VERSION || '10.2.4';
+  var HOOK_VER = CFG.VERSION || '10.2.5';
   var _armed = false;
 
   function core() {
@@ -1499,6 +1499,9 @@
 
   // Execute one decision, without selecting a new intent or target after failure.
   function attackSmart(opts) {
+    return window.TIOProfiler ? window.TIOProfiler.measureCall('command.dispatch', executeAttackSmart, null, arguments) : executeAttackSmart(opts);
+  }
+  function executeAttackSmart(opts) {
     opts = opts || {};
     var g = G();
     if (!trustedContract(g)) return { ok: false, err: 'unsupported-contract' };
@@ -1560,7 +1563,11 @@
       results: [result], last: result, err: result.err };
   }
 
+  var EMPTY_PROFILE_ARGS = [];
   function getState() {
+    return window.TIOProfiler ? window.TIOProfiler.measureCall('state.extract', extractState, null, EMPTY_PROFILE_ARGS) : extractState();
+  }
+  function extractState() {
     var g = G();
     var me = myPlayer();
     var contract = g && g.contract || 'unmapped';

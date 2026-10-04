@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.2.4
+ * Territorial.io deterministic policy kernel v10.2.5
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -36,6 +36,10 @@
   'use strict';
 
   const root = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
+
+  function profileKernel(name, fn, args) {
+    return root.TIOProfiler ? root.TIOProfiler.measureCall(name, fn, null, args) : fn.apply(null, args);
+  }
   if (root.__TIO_ENGINE_CORE_V2_LOADED__) return;
   root.__TIO_ENGINE_CORE_V2_LOADED__ = true;
 
@@ -680,7 +684,8 @@
    *   dA/dt = kappa * u * B
    *   dB/dt = r(A, B)*B - u*B - tau(B)
    */
-  function solvePontryaginOptimalControl(ctx) {
+  function solvePontryaginOptimalControl() { return profileKernel('kernel.pmp', solvePontryaginOptimalControlImpl, arguments); }
+  function solvePontryaginOptimalControlImpl(ctx) {
     ctx = ctx || {};
     const rawB = Number(ctx.balance);
     const B = isFinite(rawB) && rawB > 0 ? Math.floor(rawB) : 0;
@@ -1218,7 +1223,8 @@
   /**
    * Model Predictive Control (MPC) Action Evaluation
    */
-  function evaluateMPCAction(state, candidateActions, horizon) {
+  function evaluateMPCAction() { return profileKernel('kernel.mpc', evaluateMPCActionImpl, arguments); }
+  function evaluateMPCActionImpl(state, candidateActions, horizon) {
     horizon = horizon || 8;
     if (!candidateActions || !candidateActions.length) {
       return { bestAction: { type: 'hold', ratio: 0 }, expectedValue: 0.5 };
@@ -1648,7 +1654,8 @@
   /**
    * Genuine Multi-Step Monte Carlo Tree Search
    */
-  function runMultiStepMCTS(initialState, maxRollouts = 40, maxDepth = 4) {
+  function runMultiStepMCTS() { return profileKernel('kernel.multiStepMcts', runMultiStepMCTSImpl, arguments); }
+  function runMultiStepMCTSImpl(initialState, maxRollouts = 40, maxDepth = 4) {
     const root = new MCTSNode(initialState);
 
     for (let iter = 0; iter < maxRollouts; iter++) {
@@ -1760,6 +1767,9 @@
 
     let bestFoe = null;
     let bestFoeScore = -Infinity;
+    // This depends only on S, not on the candidate. Compute once per decision.
+    const coalitionForDecision = CONFIG.enableCoalition ? computeCoalitionEquilibrium(S)
+      : { hegemonActive: false, hegemonId: null, leaderShare: 0, coalitionIndices: {} };
     for (let i = 0; i < enemies.length; i++) {
       const e = enemies[i];
       if (!e || e.available === false) continue;
@@ -1791,7 +1801,7 @@
 
         // Priority 9: Cooperative Game-Theoretic Hegemonic Balancing (Shapley Anti-Snowball Index)
         if (CONFIG.enableCoalition) {
-          const coalition = computeCoalitionEquilibrium(S);
+          const coalition = coalitionForDecision;
           if (coalition.hegemonActive) {
             if (e.id === coalition.hegemonId) {
               sc += 3500; // Decisive priority: stop runaway hegemon before game is lost
@@ -2088,7 +2098,7 @@
       isLeading: typeof isLeading !== 'undefined' ? !!isLeading : false,
       myShare: typeof myShare !== 'undefined' ? parseFloat(myShare.toFixed(3)) : 0,
       strategy: strategy,
-      coalition: CONFIG.enableCoalition ? computeCoalitionEquilibrium(S) : { hegemonActive: false, hegemonId: null, leaderShare: 0, coalitionIndices: {} },
+      coalition: coalitionForDecision,
       mcts: mcts,
       objective: 'first-place-win'
     };
@@ -2140,7 +2150,8 @@
     return arr[k];
   }
 
-  function computeSpectralFiedler(candidates) {
+  function computeSpectralFiedler() { return profileKernel('kernel.spectral', computeSpectralFiedlerImpl, arguments); }
+  function computeSpectralFiedlerImpl(candidates) {
     if (!candidates || candidates.length < 2) return null;
     const n = candidates.length;
     if (n === 2) {
@@ -2293,7 +2304,8 @@
    * in the interior, guaranteeing that troop flow J = -\nabla \Phi never gets trapped
    * in concave terrain, fjords, or mountain dead-ends.
    */
-  function computePoissonPotentialField(sources, sinks, obstacles, gridSize) {
+  function computePoissonPotentialField() { return profileKernel('kernel.poisson', computePoissonPotentialFieldImpl, arguments); }
+  function computePoissonPotentialFieldImpl(sources, sinks, obstacles, gridSize) {
     const N = gridSize || 8;
     const numCells = N * N;
     const Phi = new Float64Array(numCells);
@@ -2595,7 +2607,8 @@
    *   chi_hegemon = -1.0 (Target for decisive coalition containment)
    *   chi_rival   = +0.85 (Implicit non-aggression truce to avoid Lanchester mutual destruction)
    */
-  function computeCoalitionEquilibrium(state) {
+  function computeCoalitionEquilibrium() { return profileKernel('kernel.coalition', computeCoalitionEquilibriumImpl, arguments); }
+  function computeCoalitionEquilibriumImpl(state) {
     if (!state || !state.adjEnemies || state.adjEnemies.length <= 1) {
       return { hegemonActive: false, hegemonId: null, leaderShare: 0, coalitionIndices: {} };
     }
@@ -2703,7 +2716,8 @@
    * on a discretized macro-grid via zero-GC typed-array priority-queue wavefront propagation.
    * Eliminates detour blindness around water bodies, straits, and impassable mountain ridges.
    */
-  function computeEikonalGeodesicField(gridW, gridH, sources, obstacles, speedGrid) {
+  function computeEikonalGeodesicField() { return profileKernel('kernel.eikonal', computeEikonalGeodesicFieldImpl, arguments); }
+  function computeEikonalGeodesicFieldImpl(gridW, gridH, sources, obstacles, speedGrid) {
     const W = gridW || 16;
     const H = gridH || 8;
     const numCells = W * H;
@@ -2882,7 +2896,8 @@
   const mctsActTargetIdxBuf = new Int32Array(MCTS_MAX_ACTIONS);
   const mctsActRatioBuf = new Float64Array(MCTS_MAX_ACTIONS);
 
-  function computeMCTSEndgameAction(state, maxRolloutsParam, timeBudgetMs) {
+  function computeMCTSEndgameAction() { return profileKernel('kernel.mcts', computeMCTSEndgameActionImpl, arguments); }
+  function computeMCTSEndgameActionImpl(state, maxRolloutsParam, timeBudgetMs) {
     if (!state) return { bestAction: 'hold', targetId: null, ratio: 0, winProb: 0.5, rollouts: 0 };
     const myTerr = state.territory || 1;
     const myBal = state.balance || 0;
@@ -3642,7 +3657,7 @@
   }
 
   const EngineCore = {
-    version: '10.2.4',
+    version: '10.2.5',
     DIFF,
     DUMP,
     LIVE,
@@ -3709,7 +3724,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.7] Capital-preserving policy · Updated: 2026-10-04 10:50:25 EDT',
+    '%c[TIO Engine Core V2.7] Capital-preserving policy · Updated: 2026-10-04 11:29:34 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {

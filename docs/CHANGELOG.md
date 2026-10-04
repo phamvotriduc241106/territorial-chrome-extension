@@ -1,5 +1,13 @@
 # Changelog
 
+## 10.2.5 — 2026-10-04 11:29:34 EDT
+
+- Added bounded per-world CPU profiling for actual kernel, state, vision, grid, border and command calls. Removed proxy telemetry that incorrectly inferred algorithm executions.
+- Added an internal planning gate: unchanged snapshots are skipped, with immediate reevaluation for new state/control/sequence changes and a 100 ms opening/safety backstop. Native target/debit/reserve checks remain synchronous.
+- Reused pure coalition evaluation once per decision and cached proxy wrappers.
+- Moved vision-grid updates to typed arrays with lazy compatibility cell views; added bounded Float32 pooling and reusable spatial-query output.
+- Added CPU regressions and a fixed-fixture baseline benchmark. No workers, GPU, WASM or real-game win-rate claim; see CPU_OPTIMIZATION.md.
+
 ## Test tooling — 2026-10-04 11:09:21 EDT
 
 - Added a prospective 20-match Very Hard protocol, frozen release/settings fingerprints, screenshot-integrity checks, recoverable match records and Wilson confidence-interval reporting.
