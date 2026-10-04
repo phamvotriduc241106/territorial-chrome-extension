@@ -37,7 +37,7 @@ function loadEngine(filePath) {
 const v1 = loadEngine(path.join(__dirname, '../content/engine-core-v1.js'));
 
 function createVariantEngine(variantName) {
-  const eng = loadEngine(path.join(__dirname, 'engine-core-v2-advanced.js'));
+  const eng = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 
   if (variantName === 'V2.0-PMP-Only') {
     eng.CONFIG.enableSpectral = false;

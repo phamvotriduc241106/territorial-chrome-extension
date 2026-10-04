@@ -39,7 +39,7 @@ function loadEngine(filePath) {
 }
 
 const v1 = loadEngine(path.join(__dirname, '../content/engine-core-v1.js'));
-const v2_1 = loadEngine(path.join(__dirname, './engine-core-v2-advanced.js'));
+const v2_1 = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 
 class BattleRoyaleSimulation {
   constructor(options = {}) {

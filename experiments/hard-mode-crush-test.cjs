@@ -30,7 +30,7 @@ function loadEngine(filePath) {
   return sandbox.window.TIOEngineCore;
 }
 
-const engine = loadEngine(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'engine-core-v2-advanced.js'));
+const engine = loadEngine(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 let assertions = 0;
 
 function assert(condition, message) {

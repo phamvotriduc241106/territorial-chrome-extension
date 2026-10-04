@@ -29,7 +29,7 @@ function loadEngine(filePath) {
   return sandbox.window.TIOEngineCore;
 }
 
-const v2 = loadEngine(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'engine-core-v2-advanced.js'));
+const v2 = loadEngine(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 let assertions = 0;
 
 function assert(condition, message) {
@@ -46,7 +46,8 @@ function equal(actual, expected, message) {
 console.log('Running V2 Advanced Engine Contract Tests...');
 
 // 1. Version & Exports
-assert(v2 && v2.version === '10.2.3', 'Engine core version is 10.2.3');
+assert(v2 && v2.version === JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8')).version,
+  'Engine core matches the package release version');
 assert(typeof v2.computeSpectralFiedler === 'function', 'computeSpectralFiedler exported');
 assert(typeof v2.computePoissonPotentialField === 'function', 'computePoissonPotentialField exported');
 assert(typeof v2.allocateKKTMultiFront === 'function', 'allocateKKTMultiFront exported');

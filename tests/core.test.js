@@ -14,8 +14,8 @@
     assert(actual === expected, `${message}: expected ${expected}, got ${actual}`);
   }
 
-  assert(core && core.version === '10.2.3', 'engine core loaded');
-  assert(config && config.VERSION === '10.2.3', 'shared config loaded');
+  assert(core && config && core.version === config.VERSION, 'engine core matches shared release version');
+  assert(config && /^\d+\.\d+\.\d+$/.test(config.VERSION), 'shared config loaded with a valid release version');
 
   equal(core.al(11 * 100, 5), 220, 'source rounding');
   equal(core.crushRequirement(100), 220, 'dJ crush requirement');

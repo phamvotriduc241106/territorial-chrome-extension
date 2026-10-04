@@ -46,9 +46,9 @@
       return {
         activeVersion: this.activeVersion,
         activeEngine: this.activeVersion === 2 ? (cfg.ENGINE_VERSION || 'V2.7') : 'V1',
-        engineSource: this.activeVersion === 2 ? (cfg.ENGINE_SOURCE || 'experiments/engine-core-v2-advanced.js') : 'content/engine-core-v1.js',
-        engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-10-04 10:36:33 EDT',
-        extensionVersion: cfg.VERSION || '10.2.3',
+        engineSource: this.activeVersion === 2 ? (cfg.ENGINE_SOURCE || 'content/engine-core-v2-advanced.js') : 'content/engine-core-v1.js',
+        engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-10-04 10:50:25 EDT',
+        extensionVersion: cfg.VERSION || '10.2.4',
         v1Available: !!v1,
         v2Available: !!v2,
         telemetry: Object.assign({}, this.telemetry)
@@ -106,7 +106,7 @@
   root.TIOEngineCore = EngineProxy;
   root.TIOHardMode = EngineProxy;
   console.log(
-    '[TIO Engine Adapter] Default kernel: V2.7 Capital-Preserving Policy (Updated: 2026-10-04 10:36:33 EDT) · V1 available via TIOSetEngineVersion(1)'
+    '[TIO Engine Adapter] Default kernel: V2.7 Capital-Preserving Policy (Updated: 2026-10-04 10:50:25 EDT) · V1 available via TIOSetEngineVersion(1)'
   );
 
   if (typeof module !== 'undefined' && module.exports) {

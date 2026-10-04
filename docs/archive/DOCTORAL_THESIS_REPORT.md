@@ -1,3 +1,5 @@
+> Historical research manuscript. Described algorithms and claims are not proof of shipped behavior or real-game win rate. See ../ARCHITECTURE.md and ../VALIDATION.md.
+
 # Deterministic Optimal Control, Non-Linear Potential Fields, and Game-Theoretic Synthesis for Autonomous Multi-Agent Systems
 ## Doctoral Treatise and Comprehensive Engineering Monograph on the Territorial.io Engine
 

@@ -1,19 +1,19 @@
 /**
  * Independent Benchmark Reproducer for Audit
- * Tests the SHIPPED engine (experiments/engine-core-v2-advanced.js)
- * and the unshipped candidate (content/engine-core.js) on seeds-final-test.json
+ * Tests the SHIPPED engine (content/engine-core-v2-advanced.js)
+ * and the unshipped candidate (experiments/legacy/engine-core.js) on seeds-final-test.json
  */
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const { performance } = require('perf_hooks');
-const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('./rigorous-simulator.cjs');
+const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('../experiments/rigorous-simulator.cjs');
 
-const shippedEngine = loadEngine(path.join(__dirname, 'engine-core-v2-advanced.js'));
-const unshippedEngine = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const shippedEngine = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
+const unshippedEngine = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
-const testSeeds = JSON.parse(fs.readFileSync(path.join(__dirname, 'seeds-final-test.json'), 'utf8'));
+const testSeeds = JSON.parse(fs.readFileSync(path.join(__dirname, '../experiments/seeds-final-test.json'), 'utf8'));
 
 function runHoldoutAudit(engine, engineName, matchCount = 50) {
   console.log(`\n================================================================================`);
@@ -92,8 +92,8 @@ function runHoldoutAudit(engine, engineName, matchCount = 50) {
   return { engineName, matchCount, wins, overallWR, landWins, landMatches, landWR, mapStats };
 }
 
-// 1. Benchmark the Shipped Engine (experiments/engine-core-v2-advanced.js)
+// 1. Benchmark the Shipped Engine (content/engine-core-v2-advanced.js)
 const shippedRes = runHoldoutAudit(shippedEngine, 'SHIPPED: engine-core-v2-advanced.js', 60);
 
-// 2. Benchmark the Unshipped Engine (content/engine-core.js)
-const unshippedRes = runHoldoutAudit(unshippedEngine, 'UNSHIPPED: content/engine-core.js', 60);
+// 2. Benchmark the Unshipped Engine (experiments/legacy/engine-core.js)
+const unshippedRes = runHoldoutAudit(unshippedEngine, 'UNSHIPPED: experiments/legacy/engine-core.js', 60);

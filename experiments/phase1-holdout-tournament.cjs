@@ -11,7 +11,7 @@ const path = require('path');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('./rigorous-simulator.cjs');
 
 // Load shipped V2.5 engine
-const v2_5 = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const v2_5 = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
 function computeWilsonCI(wins, total, z = 1.96) {
   if (total === 0) return { lower: 0, upper: 0 };
@@ -36,7 +36,7 @@ function runHoldoutTournament(numMatches = 200) {
   console.log('================================================================================');
   console.log(' PHASE 1: HOLDOUT TOURNAMENT (200 UNBIASED MATCHES vs VERY HARD BOTS)');
   console.log('================================================================================');
-  console.log('Loading production engine: content/engine-core.js (as shipped)');
+  console.log('Loading production engine: experiments/legacy/engine-core.js (as shipped)');
   console.log('Opponent Archetype: Dump dU/dD Very Hard Bot (dI=90%, dK=0%, crush, tapering)');
   console.log('Map classes: Europe, World, Archipelago, Procedural Voronoi (various sizes)');
   console.log('Spawn positions: 100% randomized asymmetric placement');

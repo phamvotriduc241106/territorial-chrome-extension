@@ -1,5 +1,5 @@
 /**
- * Territorial.io Orchestrator v10.2.3 — internal-first, vision fallback
+ * Territorial.io Orchestrator v10.2.4 — internal-first, vision fallback
  *
  * - MAIN-world brain ports dump dF/dJ/cE/dU (expand-empty → crush-weak)
    * - Exact source economics with one mutation in flight
@@ -23,7 +23,7 @@
 
   const CFG = window.TIOConfig;
   const CORE = window.TIOEngineCore || window.TIOHardMode;
-  const AGENT_VERSION = CFG ? CFG.VERSION : '10.2.3';
+  const AGENT_VERSION = CFG ? CFG.VERSION : '10.2.4';
   const DEFAULT_SETTINGS = CFG ? CFG.DEFAULT_SETTINGS : {
     botEnabled: true, autoExpand: true, autoAttack: true, clickSpeed: 4,
     sliderPercentage: 0, hotkeysEnabled: true, strategy: 'aggressive',

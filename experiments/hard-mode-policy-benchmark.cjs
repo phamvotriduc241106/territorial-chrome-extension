@@ -2,7 +2,7 @@
 'use strict';
 const path = require('node:path');
 const { loadEngine, VeryHardBot, RigorousMatchSimulation } = require('./rigorous-simulator.cjs');
-const file = path.join(__dirname, 'engine-core-v2-advanced.js');
+const file = path.join(__dirname, '../content/engine-core-v2-advanced.js');
 const count = Number(process.argv[2] || 400);
 const seedStart = Number(process.argv[3] || 1700000);
 if (!Number.isInteger(count) || count < 1 || count > 5000 || !Number.isSafeInteger(seedStart))

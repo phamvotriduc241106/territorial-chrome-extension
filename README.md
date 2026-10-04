@@ -1,100 +1,59 @@
-# Territorial.io Auto Commander (v10.2.3)
+# Territorial.io Auto Commander
 
-Chrome **Manifest V3** extension for [Territorial.io](https://territorial.io).
+Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-## v10.2.3 — capital-preserving policy and native-context repairs
+**Release:** v10.2.4 · **Engine:** V2.7 · **Updated:** 2026-10-04 10:50:25 EDT
 
-Last updated: **2026-10-04 10:36:33 EDT**
+## Install
 
-Built from the supplied readable game dump plus the current live-site contract.
+1. Open `chrome://extensions/`, enable Developer mode, and select **Load unpacked** → this repository.
+2. Open a fresh Territorial.io tab, select a single-player game, and choose your spawn.
+3. The bot arms after your spawn selection. Reload the extension and open a fresh tab after updates.
 
-### What the bot does (single-player INTERNAL)
+For a clean runtime-only folder, run `npm run package` and load the printed `dist/territorial-v…` directory. No bundler or npm installation is needed to load the repository directly.
 
-| Priority | Dump symbol | Action |
-| :--- | :--- | :--- |
-| 1 | `dF` / empty `b1` | Expand free land first |
-| 2 | `dJ` + `cl` | Crush weakest (if `me/8 > enemy`, force finish troops) |
-| 3 | `co` | Pressure closest/smallest |
-| 4 | `cE` tax | `al(3·B, 256)` overhead respected |
-| Act | mapped human command | Live human path — **no canvas mouse** |
+## Development
 
-The V2.7 planner uses:
+Requires Node.js 20+; npm dependencies are development-only.
 
-- A timed opening FSM that cannot remain permanently stuck after a rejected command
-- A dynamic crush barrier using both visible enemy bank and incoming attack troops
-- Up to **4** simultaneous strategic land fronts
-- Exact live human command tax: `floor(12 × bank / 1024)`
-- Live soft cap: `min(100 × territory, 1,000,000,000)`
-- Lobby-wide survivor count, not local neighbor count, to distinguish duels from multi-player games
-- Neutral-first intent even while a neutral front is settling; no accidental war because that target is busy
-- Capital accumulation below 55% of soft cap before ordinary multi-player combat; crush opportunities remain eligible
-- Incoming troops in target scoring, and full opening-time / territory-loss / threat context at the native command boundary
+```sh
+npm ci
+npm test
+npx playwright install chromium
+npm run test:browser
+npm run test:live
+npm run package
+```
 
-### Validation and limits
+`test:live` fetches the official page and tests it locally; no online match is joined. CI uses deterministic fixtures, not the changing live website. See [contributing](CONTRIBUTING.md) for browser overrides and release rules.
 
-On 2026-10-04, the fresh official `live-modern-v3` source passed local single-player initialization and exact native attack-debit checks. No online match was joined.
+## Engine and evidence
 
-Paired approximate-simulator runs: 800 seeds per policy, 2/3/4/6/10-player lobbies, four map families, three map sizes, 250-tick limit, defense multiplier 1.30. Baseline disables the new policy on the otherwise identical current kernel; this isolates policy effects, not the command-boundary repairs.
+The shipped kernel is [`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js), loaded in both browser worlds. V2.7 includes neutral-first expansion, lobby-wide duel detection, a 55%-capacity combat-bank target, incoming-aware targeting, timed opening recovery and native-boundary reserve protection.
 
-| Metric | Policy disabled | V2.7 policy |
-| :--- | ---: | ---: |
-| Wins / matches | 353 / 800 | 367 / 800 |
-| Win rate | 44.125% | 45.875% |
-| Mean final rank | 2.2165 | 2.0400 |
-| Survived to match end | 87.25% | 89.875% |
+Approximate paired simulation: **367/800 wins (45.875%)**, versus **353/800 (44.125%)** with the new policy disabled. **Real Hard-mode win rate is unmeasured.** This release reorganizes the repository without changing strategy. See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
 
-The +1.75 percentage-point gain is modest, with regressions on some lobby subsets. These are approximate-simulator results, **not an official Hard-mode win-rate measurement**. The 55% bank threshold is empirical, not a proved optimum; no win guarantee is claimed.
+## Repository
 
-Reproduce with `node experiments/hard-mode-policy-benchmark.cjs 400 1700000` and `node experiments/hard-mode-policy-benchmark.cjs 400 2300000`. Use `TIO_FETCH_LIVE=1` with `tests/run.cjs` to verify the current official source (requires Playwright and Chrome).
+- [Architecture and ownership](docs/ARCHITECTURE.md)
+- [Validation and benchmark limits](docs/VALIDATION.md)
+- [20-match Very Hard test standard](docs/VERY_HARD_TEST.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Historical source map](docs/SOURCE_MAP.md)
+- [Historical reports](docs/archive/)
 
-### Control flow
+Runtime: `content/`, `shared/`, `background/`, `popup/`, `icons/`. Research: `experiments/`. Verification: `tests/`. Release tooling: `tools/`. Generated artifacts: ignored `dist/`.
 
-1. **MAIN world** (`main-hook.js` at `document_start`) maps the recognized game contract and submits native commands.
-2. **Isolated world** (`internal.js`) talks through `postMessage` and never touches the OS mouse.
-3. **Orchestrator** (`content.js`) arms only after **you** click spawn on the map.
+## Controls and diagnostics
 
-HUD: `NO-MOUSE` / `INTERNAL` / policy (`expand-empty`, `crush-N`) / path (`hg`/`dF`/`dJ`/`cE`)
+`Z`: toggle bot · `C`: ~25% commit · `V`: 40% commit · `B`: adaptive ratio.
 
-## Install / reload
-
-1. Open `chrome://extensions/`
-2. Enable **Developer mode**
-3. **Load unpacked** → this folder (or **Reload** if already loaded)
-4. Open a **new** tab → https://territorial.io (hard refresh: Cmd+Shift+R)
-5. Click **Play**, then click your **spawn on the map** (not menus)
-6. Bot runs INTERNAL — your mouse stays free
-
-### Debug if stuck on HOOK?
-
-In DevTools console:
+In the game tab's DevTools console:
 
 ```js
-document.documentElement.getAttribute('data-tio-internal')  // want "1"
-document.documentElement.getAttribute('data-tio-paths')     // e.g. "hg" or "hg+cE"
-window.__TIO_HOOK_API__ && window.__TIO_HOOK_API__.state()
+window.__TIO_HOOK_API__?.state()
+window.TIOGetEngineStatus?.()
+document.documentElement.getAttribute('data-tio-internal') // "1" when ready
 ```
 
-| Value | Meaning |
-| :--- | :--- |
-| `0` | Script patch missed — new tab + hard refresh |
-| `patched` | Export injected, game not ready / not in match |
-| `1` | Ready — INTERNAL attacks work |
-
-### Hotkeys
-
-| Key | Action |
-| :--- | :--- |
-| **Z** | Toggle bot ON/OFF |
-| **C** | Soft-cap commit ~25% |
-| **V** | Lock 40% commit |
-| **B** | Return to adaptive ratio |
-
-## Architecture
-
-See `docs/SOURCE_MAP.md` for full dump ↔ live symbol map.
-
-```
-Sense (vision, optional) → Decide (phase + free land) → Act (MAIN dF/dJ/hg)
-```
-
-Clicks are **disabled** when internal is ready (`useInternalOnly = true`).
+If the hook is not ready, reload the extension and open a fresh game tab. Do not post access tokens, credential-helper output or downloaded game source in issues.

@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { VeryHardBot, RigorousMatchSimulation } = require('./rigorous-simulator.cjs');
 const candidateEngine = require('./engine-core-v2-6-candidate.js');
-const baselineEngine = require('../content/engine-core.js');
+const baselineEngine = require('../experiments/legacy/engine-core.js');
 
 const seedsValidation = JSON.parse(fs.readFileSync(path.join(__dirname, 'seeds-validation.json'), 'utf8'));
 

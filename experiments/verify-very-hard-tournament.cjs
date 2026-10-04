@@ -32,7 +32,7 @@ function loadEngine(filePath) {
 }
 
 const candidateEngine = loadEngine(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'engine-core-v2-mpc.js'));
-const baselineEngine = loadEngine(path.join(__dirname, 'engine-core-v2-advanced.js'));
+const baselineEngine = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 const v1Engine = loadEngine(path.join(__dirname, '../content/engine-core-v1.js'));
 
 function runTournament(engineToTest, engineName, rounds = 25) {

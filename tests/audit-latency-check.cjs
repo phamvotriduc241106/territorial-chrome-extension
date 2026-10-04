@@ -6,10 +6,10 @@
 
 const path = require('path');
 const { performance } = require('perf_hooks');
-const { loadEngine } = require('./rigorous-simulator.cjs');
+const { loadEngine } = require('../experiments/rigorous-simulator.cjs');
 
-const shipped = loadEngine(path.join(__dirname, 'engine-core-v2-advanced.js'));
-const unshipped = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const shipped = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
+const unshipped = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
 const testSituation = {
   balance: 1500,
@@ -67,4 +67,4 @@ function benchmarkLatency(engine, name, iterations = 100000) {
 
 console.log('=== BENCHMARKING DECISION LATENCY ===');
 benchmarkLatency(shipped, 'SHIPPED: engine-core-v2-advanced.js');
-benchmarkLatency(unshipped, 'UNSHIPPED: content/engine-core.js');
+benchmarkLatency(unshipped, 'UNSHIPPED: experiments/legacy/engine-core.js');

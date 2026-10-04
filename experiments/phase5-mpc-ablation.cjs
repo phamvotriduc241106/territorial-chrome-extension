@@ -18,7 +18,7 @@ const path = require('path');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('./rigorous-simulator.cjs');
 const { evaluateMPCAction, runMultiStepMCTS } = require('./predictive-mpc-engine.js');
 
-const v2_5 = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const v2_5 = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
 function createVariantEngine(variantName) {
   const engine = Object.create(v2_5);

@@ -1,3 +1,5 @@
+> Historical report, not current release documentation. Its performance claims are not verified for the shipped engine and are disputed by the archived audit. See ../VALIDATION.md.
+
 # Comprehensive Product Report: Territorial.io Autonomous Agent
 **Product Version:** Extension v10.2.2 (Manifest V3) | **Engine Core:** V2.6 Deterministic Synthesis  
 **Date:** September 2026  

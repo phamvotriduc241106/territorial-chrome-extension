@@ -3,3 +3,11 @@
 *.swp
 *~
 node_modules/
+dist/
+scratch/
+test-results/
+playwright-report/
+.env
+.env.*
+!.env.example
+*.log

@@ -1,8 +1,8 @@
 /**
  * Adversarial Audit Test Suite
  * Systematically falsifies and stress-tests all reported capabilities
- * across both the SHIPPED engine (experiments/engine-core-v2-advanced.js)
- * and the UNSHIPPED engine (content/engine-core.js).
+ * across both the SHIPPED engine (content/engine-core-v2-advanced.js)
+ * and the UNSHIPPED engine (experiments/legacy/engine-core.js).
  */
 'use strict';
 
@@ -83,7 +83,7 @@ function auditAssert(description, condition, details = '') {
   }
 }
 
-const shippedBox = setupSandbox('experiments/engine-core-v2-advanced.js');
+const shippedBox = setupSandbox('content/engine-core-v2-advanced.js');
 const shippedCore = shippedBox.TIOEngineCore;
 
 // -----------------------------------------------------------------------------

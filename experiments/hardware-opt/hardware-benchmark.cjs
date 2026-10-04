@@ -18,7 +18,7 @@ const path = require('path');
 
 // ── Load Baseline Engine ──
 const engineSrc = fs.readFileSync(
-  path.join(__dirname, '..', 'engine-core-v2-advanced.js'), 'utf8'
+  path.join(__dirname, '..', '..', 'content', 'engine-core-v2-advanced.js'), 'utf8'
 );
 const sandbox = { window: {}, console, Math, performance, parseInt, parseFloat, isNaN, isFinite, Infinity, NaN, undefined, Number, Array, Object, Float32Array, Float64Array, Int32Array, Uint8Array, Uint16Array, String, Error, TypeError, RangeError, JSON, Date, Map, Set, RegExp, Promise };
 vm.createContext(sandbox);

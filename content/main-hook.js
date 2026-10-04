@@ -37,7 +37,7 @@
   var SRC = PROTOCOL.requestSource || 'tio-engine-isolated';
   var REPLY = PROTOCOL.responseSource || 'tio-engine-main';
   var BRIDGE_VER = PROTOCOL.version || 1;
-  var HOOK_VER = CFG.VERSION || '10.2.3';
+  var HOOK_VER = CFG.VERSION || '10.2.4';
   var _armed = false;
 
   function core() {

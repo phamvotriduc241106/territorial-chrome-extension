@@ -13,8 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('./rigorous-simulator.cjs');
 
-const v2_5 = loadEngine(path.join(__dirname, '../content/engine-core.js'));
-const devEngine = loadEngine(path.join(__dirname, 'engine-core-v2-advanced.js'));
+const v2_5 = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
+const devEngine = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 
 function auditSimulatorBiases() {
   console.log('================================================================================');

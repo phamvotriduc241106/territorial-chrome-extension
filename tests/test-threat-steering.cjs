@@ -9,7 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('../experiments/rigorous-simulator.cjs');
 
-const baseEngine = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const baseEngine = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
 // Read Kingmaker seeds from phase 7 results
 const phase7 = JSON.parse(fs.readFileSync(path.join(__dirname, '../experiments/phase7-results.json'), 'utf8'));

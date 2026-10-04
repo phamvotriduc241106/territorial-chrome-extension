@@ -267,7 +267,7 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const useVm = args.includes('--vm');
   const pathArg = args.find(a => !a.startsWith('--'));
-  const enginePath = pathArg || path.join(__dirname, '..', 'content', 'engine-core.js');
+  const enginePath = pathArg || path.join(__dirname, 'legacy', 'engine-core.js');
   console.log(`Benchmarking: ${enginePath} (${useVm ? 'V8 vm.createContext' : 'Native Chrome/Node Runtime'})`);
   const engine = useVm ? loadEngine(enginePath) : loadEngineNative(enginePath);
   const stats = benchmarkPipeline(engine);

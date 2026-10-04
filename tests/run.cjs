@@ -3,36 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const http = require('node:http');
-const { chromium } = require(process.env.TIO_PLAYWRIGHT || 'playwright-core');
+const { chromium } = require(process.env.TIO_PLAYWRIGHT || 'playwright');
 const root = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
-global.window = global;
-global.print = console.log;
-for (const p of ['shared/config.js', 'content/engine-core-v1.js',
-  'experiments/engine-core-v2-advanced.js', 'content/engine-adapter.js',
-  'content/source-adapter.js', 'tests/core.test.js']) {
-  vm.runInThisContext(read(p), { filename: p });
-}
-const assert = require('node:assert/strict');
-const manifest = JSON.parse(read('manifest.json'));
-assert.equal(manifest.version, TIOConfig.VERSION, 'manifest/config version mismatch');
-assert.equal(TIOEngineCore.version, TIOConfig.VERSION, 'runtime/config version mismatch');
-for (const p of ['manifest.json', 'popup/popup.html', 'README.md',
-  'content/engine-adapter.js', 'experiments/engine-core-v2-advanced.js']) {
-  assert.ok(read(p).includes(TIOConfig.ENGINE_UPDATED_AT), 'update timestamp missing: ' + p);
-}
-console.log('Release metadata: PASS (7 assertions)');
-const dump = process.env.TIO_LEGACY_SOURCE;
-if (dump) {
-  global.SOURCE_TEXT = fs.readFileSync(dump, 'utf8');
-  vm.runInThisContext(read('tests/source-adapter.test.js'), { filename: 'tests/source-adapter.test.js' });
-}
-for (const directory of ['content', 'shared', 'background', 'popup']) {
-  for (const name of fs.readdirSync(path.join(root, directory)).filter(p => p.endsWith('.js'))) {
-    new vm.Script(read(directory + '/' + name), { filename: name });
-  }
-}
-console.log('JavaScript syntax: PASS');
+require('./unit.cjs');
 let live = process.env.TIO_LIVE_SOURCE && fs.readFileSync(process.env.TIO_LIVE_SOURCE, 'utf8');
 let liveKind = null;
 if (live) {
@@ -54,7 +28,7 @@ const server = http.createServer((request, response) => {
 (async () => {
   let browser;
   try {
-    if (process.env.TIO_FETCH_LIVE === '1') {
+    if (process.env.TIO_FETCH_LIVE === '1' || process.argv.includes('--live')) {
       const response = await fetch('https://territorial.io/', { signal: AbortSignal.timeout(30000) });
       if (!response.ok) throw Error('Official source fetch: HTTP ' + response.status);
       live = await response.text();
@@ -65,8 +39,9 @@ const server = http.createServer((request, response) => {
     }
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const base = 'http://127.0.0.1:' + server.address().port;
-    browser = await chromium.launch({ headless: true,
-      executablePath: process.env.TIO_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' });
+    const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const executablePath = process.env.TIO_CHROME || (fs.existsSync(systemChrome) ? systemChrome : undefined);
+    browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
     const context = await browser.newContext();
     // Keep source verification local; never join an online match.
     await context.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
@@ -82,7 +57,7 @@ const server = http.createServer((request, response) => {
     if (live) {
       const page = await context.newPage();
       await page.addInitScript({ content: ['shared/config.js', 'content/engine-core-v1.js',
-        'experiments/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js',
+        'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js',
         'content/preloader.js', 'content/main-hook.js'].map(read).join('\n') });
       await page.goto(base + '/live');
       await page.waitForFunction(() => window.__TIO_GAME__ && window.__TIO_GAME__.modern);

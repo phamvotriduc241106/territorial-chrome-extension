@@ -35,7 +35,7 @@ function loadEngine(filePath) {
   return sandbox.window.TIOEngineCore;
 }
 
-const v2 = loadEngine(path.join(__dirname, 'engine-core-v2-advanced.js'));
+const v2 = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 
 function profileSubsystem(name, iterations, fn) {
   // Warmup V8 JIT

@@ -59,10 +59,10 @@ function runTestWithEngine(engineFile, name) {
 }
 
 // 1. Shipped in manifest.json
-const resShipped = runTestWithEngine('experiments/engine-core-v2-advanced.js', 'SHIPPED IN MANIFEST (engine-core-v2-advanced.js)');
+const resShipped = runTestWithEngine('content/engine-core-v2-advanced.js', 'SHIPPED IN MANIFEST (engine-core-v2-advanced.js)');
 
-// 2. Unshipped content/engine-core.js
-const resEngineCore = runTestWithEngine('content/engine-core.js', 'UNSHIPPED (content/engine-core.js)');
+// 2. Unshipped experiments/legacy/engine-core.js
+const resEngineCore = runTestWithEngine('experiments/legacy/engine-core.js', 'UNSHIPPED (experiments/legacy/engine-core.js)');
 
 // 3. experiments/engine-core-v2-6-candidate.js
 const resV26 = runTestWithEngine('experiments/engine-core-v2-6-candidate.js', 'CANDIDATE (engine-core-v2-6-candidate.js)');

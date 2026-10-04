@@ -32,7 +32,7 @@ function loadEngine(filePath) {
   return sandbox.window.TIOEngineCore;
 }
 
-const v2Path = path.join(__dirname, 'engine-core-v2-advanced.js');
+const v2Path = path.join(__dirname, '../content/engine-core-v2-advanced.js');
 const EngineV2 = loadEngine(v2Path);
 
 const { BattleRoyaleSimulation } = require('./battle-royale-runner.cjs');

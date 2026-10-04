@@ -13,7 +13,7 @@
 
 const assert = require('assert');
 const path = require('path');
-const engineModule = process.argv[2] ? require(path.resolve(process.argv[2])) : require('./engine-core-v2-advanced.js');
+const engineModule = process.argv[2] ? require(path.resolve(process.argv[2])) : require('../content/engine-core-v2-advanced.js');
 const {
   allocateKKTMarginalUtility,
   computeEikonalGodunovIsotropic,

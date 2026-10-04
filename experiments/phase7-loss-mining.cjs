@@ -28,7 +28,7 @@ const fs = require('fs');
 const path = require('path');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('./rigorous-simulator.cjs');
 
-const v2_5 = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const v2_5 = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
 function mineLosses(totalTargetLosses = 60) {
   console.log('================================================================================');

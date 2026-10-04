@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadEngine } = require('../experiments/rigorous-simulator.cjs');
-const engine = loadEngine(path.join(__dirname, '../experiments/engine-core-v2-advanced.js'));
+const engine = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 const state = { balance: 2000, balanceKnown: true, territory: 100, softCap: 10000,
   hasAdjFree: false, freeLandRatio: 0, playersRemaining: 8, globalRank: 2,
   adjEnemies: [{ id: 2, bal: 1500, terr: 110 }], gameTimeSec: 30 };

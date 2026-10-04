@@ -28,7 +28,7 @@ function loadEngine(filePath) {
 }
 
 const v1 = loadEngine(path.join(__dirname, '../content/engine-core-v1.js'));
-const v2_1 = loadEngine(path.join(__dirname, './engine-core-v2-advanced.js'));
+const v2_1 = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 
 function runScalingTest(playerCount, mapWidth, mapHeight, ticks = 100) {
   const memBefore = process.memoryUsage().heapUsed;

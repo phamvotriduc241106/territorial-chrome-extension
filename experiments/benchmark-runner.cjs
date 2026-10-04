@@ -48,7 +48,7 @@ function loadEngine(filePath) {
 }
 
 const v1 = loadEngine(path.join(__dirname, '../content/engine-core-v1.js'));
-const v2_1 = loadEngine(path.join(__dirname, './engine-core-v2-advanced.js'));
+const v2_1 = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 const v2_0 = Object.assign({}, v2_1, {
   rankTargets: function (candidates, S, decision, maxN) {
     maxN = maxN || 8;
@@ -350,4 +350,3 @@ console.log(`  Total V2.1 Frame Budget Used:     ${(totalUs / 1000 * 100).toFixe
 console.log('================================================================================');
 console.log('                         BENCHMARK COMPLETE                                     ');
 console.log('================================================================================');
-

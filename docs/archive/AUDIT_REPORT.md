@@ -1,3 +1,5 @@
+> Historical audit, preserved for reference. Paths and measurements describe the older checkout, not the current release. See ../VALIDATION.md for current evidence.
+
 # Comprehensive Read-Only Audit Report: Territorial.io Autonomous Engine
 
 **Audit Date:** September 18, 2026  

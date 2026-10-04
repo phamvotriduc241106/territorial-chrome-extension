@@ -9,7 +9,7 @@
   window.__TIO_HUD_ENGINE_V5_LOADED__ = true;
 
   const CFG = window.TIOConfig || {};
-  const HUD_VERSION = CFG.VERSION || '10.2.3';
+  const HUD_VERSION = CFG.VERSION || '10.2.4';
   const HUD_ENGINE_VERSION = CFG.ENGINE_VERSION || 'V2.7';
   const HUD_ENGINE_UPDATED = CFG.ENGINE_UPDATED_AT || '—';
 

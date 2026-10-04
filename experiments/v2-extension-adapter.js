@@ -46,7 +46,7 @@
       return {
         activeVersion: this.activeVersion,
         activeEngine: this.activeVersion === 2 ? (cfg.ENGINE_VERSION || 'V2.5') : 'V1',
-        engineSource: this.activeVersion === 2 ? (cfg.ENGINE_SOURCE || 'content/engine-core.js') : 'content/engine-core-v1.js',
+        engineSource: this.activeVersion === 2 ? (cfg.ENGINE_SOURCE || 'experiments/legacy/engine-core.js') : 'content/engine-core-v1.js',
         engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-09-13 10:00 EDT',
         extensionVersion: cfg.VERSION || '10.1.0',
         v1Available: !!v1,

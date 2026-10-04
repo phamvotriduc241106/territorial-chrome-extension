@@ -14,14 +14,14 @@
 'use strict';
 
 const path = require('path');
-const { loadEngine } = require('/Users/phamvotriduc/territorial-chrome-extension/experiments/rigorous-simulator.cjs');
+const { loadEngine } = require('../experiments/rigorous-simulator.cjs');
 
-const enginePath = '/Users/phamvotriduc/territorial-chrome-extension/experiments/engine-core-v2-advanced.js';
+const enginePath = path.join(__dirname, '../content/engine-core-v2-advanced.js');
 const engine = loadEngine(enginePath);
 
 console.log('======================================================================');
 console.log('REGRESSION TEST SUITE: B* = 0.555K SPENDING INVARIANTS');
-console.log('Target: experiments/engine-core-v2-advanced.js');
+console.log('Target: content/engine-core-v2-advanced.js');
 console.log('======================================================================\n');
 
 let passed = 0, failed = 0;

@@ -34,10 +34,10 @@ function loadEngine(filePath) {
 }
 
 const v1 = loadEngine(path.join(__dirname, '../content/engine-core-v1.js'));
-const v2_bellman = loadEngine(path.join(__dirname, './engine-core-v2-advanced.js'));
+const v2_bellman = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 v2_bellman.CONFIG.enableNavalBellman = true;
 
-const v2_voronoi = loadEngine(path.join(__dirname, './engine-core-v2-advanced.js'));
+const v2_voronoi = loadEngine(path.join(__dirname, '../content/engine-core-v2-advanced.js'));
 v2_voronoi.CONFIG.enableNavalBellman = false; // Ablates Bellman, falls back to Voronoi
 
 function runNavalMatch(round, maxTicks = 320) {

@@ -8,7 +8,7 @@
 const path = require('path');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('../experiments/rigorous-simulator.cjs');
 
-const baseEngine = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const baseEngine = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 
 // The 13 seeds mined as TIMING_ERROR in Phase 7
 const timeoutSeeds = [

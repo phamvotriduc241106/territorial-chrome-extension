@@ -31,7 +31,7 @@ function setupTestEnvironment() {
   vm.runInContext(v1Code, sandbox);
 
   // Load V2
-  const v2Code = fs.readFileSync(path.join(__dirname, 'engine-core-v2-advanced.js'), 'utf8');
+  const v2Code = fs.readFileSync(path.join(__dirname, '../content/engine-core-v2-advanced.js'), 'utf8');
   vm.runInContext(v2Code, sandbox);
 
   // Load Adapter
@@ -55,8 +55,8 @@ assert(proxy != null, 'TIOEngineCoreProxy exists');
 // Test 1: Initial state is V2
 let status = adapter.getStatus();
 assert.strictEqual(status.activeVersion, 2, 'Default version is V2');
-assert.strictEqual(status.activeEngine, 'V2.7', 'Active engine string is V2.7');
-assert.strictEqual(status.engineUpdatedAt, '2026-10-04 10:36:33 EDT', 'Engine update date, time, and timezone are exposed');
+assert.strictEqual(status.activeEngine, env.TIOConfig.ENGINE_VERSION, 'Active engine matches shared config');
+assert.strictEqual(status.engineUpdatedAt, env.TIOConfig.ENGINE_UPDATED_AT, 'Engine update date, time, and timezone are exposed');
 assert.strictEqual(status.v1Available, true, 'V1 is available');
 assert.strictEqual(status.v2Available, true, 'V2 is available');
 

@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const { VeryHardBot, RigorousMatchSimulation, loadEngine } = require('./rigorous-simulator.cjs');
 
-const v2_5 = loadEngine(path.join(__dirname, '../content/engine-core.js'));
+const v2_5 = loadEngine(path.join(__dirname, '../experiments/legacy/engine-core.js'));
 const valSeeds = JSON.parse(fs.readFileSync(path.join(__dirname, 'seeds-validation.json'), 'utf8')).slice(0, 50);
 
 function createDuelCandidateEngine() {

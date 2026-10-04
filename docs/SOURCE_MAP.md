@@ -1,3 +1,5 @@
+> Historical readable-dump map. Modern contracts are maintained in content/source-adapter.js and checked by the browser tests.
+
 # Territorial.io source map (v9.0 — your dump + live site)
 
 Source dump: `~/Downloads/source code.html`
