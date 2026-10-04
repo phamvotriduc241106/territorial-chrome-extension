@@ -8,7 +8,10 @@
   if (window.__TIO_HUD_ENGINE_V5_LOADED__) return;
   window.__TIO_HUD_ENGINE_V5_LOADED__ = true;
 
-  const HUD_VERSION = '9.9.9';
+  const CFG = window.TIOConfig || {};
+  const HUD_VERSION = CFG.VERSION || '10.2.3';
+  const HUD_ENGINE_VERSION = CFG.ENGINE_VERSION || 'V2.7';
+  const HUD_ENGINE_UPDATED = CFG.ENGINE_UPDATED_AT || '—';
 
   class TimestampFormatter {
     static getFormattedTimestamp() {
@@ -79,6 +82,16 @@
       this.container = panel;
       const ver = panel.querySelector('#tio-hud-version');
       if (ver) ver.textContent = `v${this.version}`;
+      this.refreshEngineDetails();
+    }
+
+    refreshEngineDetails() {
+      const cfg = window.TIOConfig || {};
+      const status = window.TIOGetEngineStatus ? window.TIOGetEngineStatus() : null;
+      const engineVer = status && status.activeEngine ? status.activeEngine : (cfg.ENGINE_VERSION || HUD_ENGINE_VERSION);
+      const updatedAt = cfg.ENGINE_UPDATED_AT || HUD_ENGINE_UPDATED;
+      const el = document.getElementById('tio-hud-engine-details');
+      if (el) el.textContent = `${engineVer} · Updated ${updatedAt}`;
     }
 
     _css() {
@@ -123,6 +136,9 @@
           background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5);
           color: #34d399; font-size: 10px; font-weight: 700;
         }
+        #tio-hud-v5-panel .tio-hud-engine-details {
+          margin-top: 4px; font-size: 9px; color: #64748b; line-height: 1.35;
+        }
         #tio-hud-v5-panel .tio-hud-fps { color: #94a3b8; font-size: 10px; white-space: nowrap; }
         #tio-hud-v5-panel .tio-hud-timestamp {
           font-size: 10px; color: #64748b; margin-bottom: 8px; text-align: right;
@@ -154,6 +170,7 @@
           <div class="tio-hud-brand">
             <div class="tio-hud-brand-main">TIO INTERNAL SP</div>
             <span class="tio-hud-version-badge" id="tio-hud-version">v${HUD_VERSION}</span>
+            <div class="tio-hud-engine-details" id="tio-hud-engine-details">${HUD_ENGINE_VERSION} · Updated ${HUD_ENGINE_UPDATED}</div>
           </div>
           <span class="tio-hud-fps" id="tio-hud-fps">FPS: --</span>
         </div>
@@ -244,6 +261,13 @@
       setText('tio-hud-time', TimestampFormatter.getFormattedTimestamp());
       if (telemetry.version) this.setVersion(telemetry.version);
       else setText('tio-hud-version', `v${this.version}`);
+      if (telemetry.engineVersion || telemetry.engineUpdatedAt) {
+        const engineVer = telemetry.engineVersion || (window.TIOGetEngineStatus && window.TIOGetEngineStatus().activeEngine) || HUD_ENGINE_VERSION;
+        const updatedAt = telemetry.engineUpdatedAt || HUD_ENGINE_UPDATED;
+        setText('tio-hud-engine-details', `${engineVer} · Updated ${updatedAt}`);
+      } else {
+        this.refreshEngineDetails();
+      }
 
       if (telemetry.fps !== undefined) setText('tio-hud-fps', `FPS: ${telemetry.fps}`);
       if (telemetry.state) setText('tio-hud-state', telemetry.state);

@@ -88,7 +88,7 @@
 
       // Game: softCap ≈ min(100 * gx, globalCap)
       const capPerPx = this.profile.densityCapPerPixel || 100;
-      this.softCap = Math.min(capPerPx * Math.max(1, area), 80000);
+      this.softCap = Math.min(capPerPx * Math.max(1, area), 1000000000);
       this.maxTroopCap = Math.max(this.softCap, area * 80);
       this.emergencyDefenseReserve = Math.floor(this.softCap * 0.08);
       this.landValueScore = parseFloat((1.0 + Math.log1p(area) / 7).toFixed(3));
@@ -305,7 +305,8 @@
       this.refreshProfile();
       const p = this.profile;
       let waveCount = p.multiFront || 4;
-      let burstPacingMs = p.pulseMs || 340;
+      // Uncapped attack pacing — only hardware / rAF limits throughput
+      let burstPacingMs = 0;
       let attackRatio = p.attackRatio || 0.29;
 
       if (phase === 'OPENING' || phase === 'LAND_RUSH') {
@@ -314,30 +315,22 @@
           : (p.attackRatioExpand || 0.21);
         // Use all fronts when map is open (Hard ki=4)
         waveCount = neutralRatio > 0.04 ? (p.multiFront || 4) : Math.max(2, (p.multiFront || 4) - 1);
-        burstPacingMs = phase === 'OPENING' ? 300 : 340;
       } else if (phase === 'KILL') {
         attackRatio = p.attackRatioKill || 0.4;
         waveCount = Math.min(3, p.multiFront || 4);
-        burstPacingMs = 300;
       } else if (phase === 'PRESSURE') {
         attackRatio = p.attackRatio * 0.9;
         waveCount = 2;
-        burstPacingMs = 360;
       } else if (phase === 'STACK') {
         attackRatio = p.attackRatioExpand || 0.2;
         waveCount = 1;
-        burstPacingMs = 500;
       } else if (phase === 'SURVIVE') {
         attackRatio = 0.15;
         waveCount = 1;
-        burstPacingMs = 450;
       }
 
       // Cap fronts for vision reliability (4 is game Hard max concurrent)
       waveCount = Math.min(4, Math.max(1, waveCount));
-      if (pacingMs && pacingMs > 50) {
-        burstPacingMs = Math.max(260, Math.min(burstPacingMs, pacingMs + 200));
-      }
 
       return { waveCount, burstPacingMs, attackRatio, version: VERSION };
     }

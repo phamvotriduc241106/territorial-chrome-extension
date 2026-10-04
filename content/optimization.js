@@ -120,31 +120,48 @@
   }
 
   // ==========================================
-  // CLASS 3: ADAPTIVE FRAME SCHEDULER
+  // CLASS 3: FRAME SCHEDULER (hardware-uncapped)
   // ==========================================
+  // targetFPS <= 0  → every requestAnimationFrame (display refresh / hardware)
+  // targetFPS > 0   → optional soft cap (legacy)
   class AdaptiveScheduler {
-    constructor(targetFPS = 15) {
-      this.targetFPS = targetFPS;
-      this.frameIntervalMs = 1000 / targetFPS;
+    constructor(targetFPS = 0) {
+      this.targetFPS = targetFPS > 0 ? targetFPS : 0;
+      this.frameIntervalMs = this.targetFPS > 0 ? (1000 / this.targetFPS) : 0;
       this.lastFrameTimestamp = 0;
       this.frameDropCount = 0;
       this.totalFrameCount = 0;
+      this.measuredFps = 0;
+      this._fpsFrames = 0;
+      this._fpsWindowStart = 0;
 
       // Dirty region bounding box for partial updates
       this.dirtyBox = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
       this.isDirty = true;
     }
 
+    /** Uncapped: run every rAF tick. Optional targetFPS soft-caps only if > 0. */
     shouldRunFrame(now) {
       this.totalFrameCount++;
-      const elapsed = now - this.lastFrameTimestamp;
 
-      if (elapsed < this.frameIntervalMs) {
-        this.frameDropCount++;
-        return false;
+      if (this.frameIntervalMs > 0) {
+        const elapsed = now - this.lastFrameTimestamp;
+        if (elapsed < this.frameIntervalMs) {
+          this.frameDropCount++;
+          return false;
+        }
       }
 
       this.lastFrameTimestamp = now;
+      this._fpsFrames++;
+      if (!this._fpsWindowStart) this._fpsWindowStart = now;
+      if (now - this._fpsWindowStart >= 1000) {
+        this.measuredFps = Math.round(
+          (this._fpsFrames * 1000) / Math.max(1, now - this._fpsWindowStart)
+        );
+        this._fpsFrames = 0;
+        this._fpsWindowStart = now;
+      }
       return true;
     }
 
@@ -158,7 +175,8 @@
 
     getSchedulerTelemetry() {
       return {
-        targetFPS: this.targetFPS,
+        targetFPS: this.targetFPS || 'uncapped',
+        measuredFps: this.measuredFps,
         frameDropRatio: parseFloat((this.frameDropCount / Math.max(1, this.totalFrameCount)).toFixed(3)),
         isDirty: this.isDirty,
         dirtyBox: this.dirtyBox

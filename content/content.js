@@ -1,8 +1,8 @@
 /**
- * Territorial.io Master Orchestrator v9.0.0 — SOURCE-FAITHFUL INTERNAL
+ * Territorial.io Orchestrator v10.2.3 — internal-first, vision fallback
  *
  * - MAIN-world brain ports dump dF/dJ/cE/dU (expand-empty → crush-weak)
- * - Hard bot tables for commit ratio + multi-front burst (ki=4)
+   * - Exact source economics with one mutation in flight
  * - Arms only after YOU click spawn on the map
  * - Zero canvas mouse when internal ready
  */
@@ -12,19 +12,24 @@
   if (window.__TIO_MASTER_ORCHESTRATOR_V5_LOADED__) return;
   window.__TIO_MASTER_ORCHESTRATOR_V5_LOADED__ = true;
 
-  const AGENT_VERSION = '9.9.9';
-  console.log(`%c[TIO v${AGENT_VERSION}] adjacent-only land + ship islands`, 'color: #f59e0b; font-weight: bold; font-size: 16px;');
+  // Strict Hardware Shield: Prohibit any camera or media capture
+  try {
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+      navigator.mediaDevices.getUserMedia = function () {
+        return Promise.reject(new DOMException('Camera/media access is strictly prohibited by security policy.', 'NotAllowedError'));
+      };
+    }
+  } catch (_) {}
 
-  const DEFAULT_SETTINGS = {
-    botEnabled: true,
-    autoExpand: true,
-    autoAttack: true,
-    clickSpeed: 18,
-    sliderPercentage: 0, // 0 = fully adaptive (C/V/B still override)
-    humanJitter: true,
-    hotkeysEnabled: true,
-    strategy: 'aggressive'
+  const CFG = window.TIOConfig;
+  const CORE = window.TIOEngineCore || window.TIOHardMode;
+  const AGENT_VERSION = CFG ? CFG.VERSION : '10.2.3';
+  const DEFAULT_SETTINGS = CFG ? CFG.DEFAULT_SETTINGS : {
+    botEnabled: true, autoExpand: true, autoAttack: true, clickSpeed: 4,
+    sliderPercentage: 0, hotkeysEnabled: true, strategy: 'aggressive',
+    allowVisionFallback: true, visionFps: 12, allowCameraAccess: false
   };
+  console.log(`%c[TIO v${AGENT_VERSION}] internal-first deterministic engine (Zero Mouse/Camera Takeover Shield Active)`, 'color:#f59e0b;font-weight:bold');
 
   class TerritorialMasterOrchestrator {
     constructor() {
@@ -36,23 +41,15 @@
       this.neutral = window.NeutralLandEngine
         ? new window.NeutralLandEngine()
         : null;
-      this.world = new window.WorldModel();
       this.enemy = new window.EnemyTracker();
       this.economy = new window.EconomyAnalyzer();
       this.heatmap = new window.HeatmapEngine(120, 120);
-      this.strategy = new window.StrategyEngine();
-      this.utility = new window.UtilityEvaluator();
-      this.prediction = new window.PredictionEngine();
-      this.smoothing = new window.TemporalSmoothing(400, 0.05);
-      this.pathfinder = new window.PathfindingEngine(this.grid);
       this.hud = window.__TIO_HUD_EARLY__ || new window.HUDEngine();
       this.controller = new window.MouseController();
       this.internal = window.__TIO_internal || (window.InternalActuator ? new window.InternalActuator() : null);
       this.scheduler = window.AdaptiveScheduler
-        ? new window.AdaptiveScheduler(16)
-        : { shouldRunFrame: () => true };
-      // Prefer INTERNAL, but NEVER sit idle if hook missing — click-expand like VH bots
-      this.useInternalOnly = false;
+        ? new window.AdaptiveScheduler(DEFAULT_SETTINGS.visionFps || 12)
+        : { shouldRunFrame: () => true, measuredFps: 0 };
       this.internalRefreshAt = 0;
       this.internalFailStreak = 0;
       this.smoothedCommit = 0.34;
@@ -63,6 +60,16 @@
       this.frameCount = 0;
       this.lastTickTime = performance.now();
       this.lastAttackDispatchTime = 0;
+      this.matchStartTime = performance.now();
+      this.lastInternalHudAt = 0;
+      this.internalNotAliveSince = 0;
+      this.internalArmPending = false;
+      this.internalAttackCount = 0;
+      this.lastSuccessfulGameTick = -1;
+      this.lastStrategicTerritory = null;
+      this.lastStrategicGameTick = -1;
+      this.internalAreaTrend = 0;
+      this.internalShrinkFrames = 0;
 
       this.playerSpawnScreen = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       this.playerSpawnGrid = { x: 0, y: 0 };
@@ -107,29 +114,42 @@
       return n * step;
     }
 
-    /** Find any MINE border cell by scanning type matrix (fallback if border empty). */
+    /**
+     * Fallback: foreign cells (neutral/enemy) that share an EDGE with mine.
+     * Returns the FOREIGN cell coords (click targets), never deep inland.
+     */
     scanMineBorders(typeMatrix, w, h, maxFind) {
       const out = [];
       if (!typeMatrix || !w || !h) return out;
-      const step = Math.max(1, Math.floor(Math.min(w, h) / 80));
+      maxFind = maxFind || 40;
+      const step = Math.max(1, Math.floor(Math.min(w, h) / 100));
+      const nbs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      const seen = new Set();
       for (let y = 1; y < h - 1 && out.length < maxFind; y += step) {
         for (let x = 1; x < w - 1 && out.length < maxFind; x += step) {
           if (typeMatrix[y * w + x] !== 3) continue;
-          let touchesN = false, touchesE = false, touchesW = false;
-          const nbs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
           for (let k = 0; k < 4; k++) {
-            const t = typeMatrix[(y + nbs[k][1]) * w + (x + nbs[k][0])];
-            if (t === 2) touchesN = true;
-            if (t === 4) touchesE = true;
-            if (t === 1) touchesW = true;
-          }
-          if (touchesN || touchesE) {
+            const fx = x + nbs[k][0];
+            const fy = y + nbs[k][1];
+            const t = typeMatrix[fy * w + fx];
+            if (t !== 2 && t !== 4) continue;
+            if (!this.isLandAttackCell(typeMatrix, w, h, fx, fy)) continue;
+            const key = fx + ',' + fy;
+            if (seen.has(key)) continue;
+            seen.add(key);
             out.push({
-              x, y,
-              touchesNeutral: touchesN,
-              touchesEnemy: touchesE,
-              touchesWater: touchesW,
-              type: touchesE && !touchesN ? 'ENEMY' : 'NEUTRAL'
+              x: fx,
+              y: fy,
+              targetX: fx,
+              targetY: fy,
+              mineX: x,
+              mineY: y,
+              dx: nbs[k][0],
+              dy: nbs[k][1],
+              touchesNeutral: t === 2,
+              touchesEnemy: t === 4,
+              type: t === 4 ? 'ENEMY' : 'NEUTRAL',
+              perimeterOnly: true
             });
           }
         }
@@ -138,21 +158,178 @@
     }
 
     /**
-     * Land attacks only work on cells adjacent to our territory.
-     * type: 2=neutral 3=mine 4=enemy 1=water
+     * STRICT: foreign pixel (neutral=2 / enemy=4) with 4-connected mine (3) neighbor.
+     * Diagonal-only contact is NOT enough — must share an edge with our border.
+     * Inland free land and non-adjacent empires are uncapturable.
      */
     isLandAttackCell(typeMatrix, w, h, x, y) {
-      if (!typeMatrix || x < 1 || y < 1 || x >= w - 1 || y >= h - 1) return false;
+      x = x | 0;
+      y = y | 0;
+      if (!typeMatrix || x < 0 || y < 0 || x >= w || y >= h) return false;
       const t = typeMatrix[y * w + x];
-      if (t !== 2 && t !== 4) return false; // only neutral or enemy
-      const nbs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-      for (let k = 0; k < 4; k++) {
-        if (typeMatrix[(y + nbs[k][1]) * w + (x + nbs[k][0])] === 3) return true;
-      }
+      if (t !== 2 && t !== 4) return false;
+      // 4-connected only (edge-touch with OUR land)
+      if (x + 1 < w && typeMatrix[y * w + (x + 1)] === 3) return true;
+      if (x - 1 >= 0 && typeMatrix[y * w + (x - 1)] === 3) return true;
+      if (y + 1 < h && typeMatrix[(y + 1) * w + x] === 3) return true;
+      if (y - 1 >= 0 && typeMatrix[(y - 1) * w + x] === 3) return true;
       return false;
     }
 
-    /** Spray fallback: click outward from centroid into non-mine */
+    /**
+     * Keep only perimeter-attackable foreign cells (edge-adjacent to mine).
+     * Accepts cells that store aim in x/y, targetX/Y, enemyTarget*, neutralTarget*.
+     */
+    filterPerimeterOnly(cells, typeMatrix, w, h) {
+      if (!cells || !cells.length || !typeMatrix) return [];
+      const out = [];
+      const seen = new Set();
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i];
+        if (!c) continue;
+        const aims = [];
+        if (c.enemyTargetX != null) aims.push([c.enemyTargetX, c.enemyTargetY, 'ENEMY']);
+        if (c.neutralTargetX != null) aims.push([c.neutralTargetX, c.neutralTargetY, 'NEUTRAL']);
+        if (c.targetX != null) aims.push([c.targetX, c.targetY, c.type]);
+        aims.push([c.x, c.y, c.type]);
+
+        let kept = null;
+        for (let a = 0; a < aims.length; a++) {
+          const fx = aims[a][0] | 0;
+          const fy = aims[a][1] | 0;
+          if (!this.isLandAttackCell(typeMatrix, w, h, fx, fy)) continue;
+          const ft = typeMatrix[fy * w + fx];
+          kept = {
+            x: fx,
+            y: fy,
+            targetX: fx,
+            targetY: fy,
+            type: ft === 4 ? 'ENEMY' : 'NEUTRAL',
+            touchesNeutral: ft === 2,
+            touchesEnemy: ft === 4,
+            touchesMine: true,
+            score: c.score,
+            perimeterOnly: true,
+            mineX: c.mineX,
+            mineY: c.mineY
+          };
+          break;
+        }
+        if (!kept) continue;
+        const key = kept.x + ',' + kept.y;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(kept);
+      }
+      return out;
+    }
+
+    /**
+     * Perimeter foreign cells: mine pixel → 4-neighbor neutral/enemy.
+     * mode: 'neutral' | 'enemy' | 'any'
+     * stepScale < 1 = denser scan (use for enemy late-game borders).
+     */
+    collectBorderTouchTargets(typeMatrix, w, h, mode, maxN, stepScale) {
+      const out = [];
+      if (!typeMatrix || !w || !h) return out;
+      maxN = maxN || 24;
+      mode = mode || 'any';
+      const scale = stepScale != null ? stepScale : 1;
+      const step = Math.max(1, Math.floor((Math.min(w, h) / 100) * scale));
+      const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      const seen = new Set();
+
+      for (let y = 1; y < h - 1 && out.length < maxN; y += step) {
+        for (let x = 1; x < w - 1 && out.length < maxN; x += step) {
+          if (typeMatrix[y * w + x] !== 3) continue;
+          for (let d = 0; d < 4; d++) {
+            const fx = x + dirs[d][0];
+            const fy = y + dirs[d][1];
+            const ft = typeMatrix[fy * w + fx];
+            if (ft !== 2 && ft !== 4) continue;
+            if (mode === 'neutral' && ft !== 2) continue;
+            if (mode === 'enemy' && ft !== 4) continue;
+            const key = fx + ',' + fy;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({
+              x: fx,
+              y: fy,
+              type: ft === 4 ? 'ENEMY' : 'NEUTRAL',
+              touchesEnemy: ft === 4,
+              touchesNeutral: ft === 2,
+              targetX: fx,
+              targetY: fy,
+              mineX: x,
+              mineY: y,
+              dx: dirs[d][0],
+              dy: dirs[d][1]
+            });
+            if (out.length >= maxN) break;
+          }
+        }
+      }
+      return out;
+    }
+
+    /**
+     * Fast pack: perimeter foreign cell → screen.
+     * opts.enemyLoosen: only hard chrome block (allow lower-map enemy borders).
+     */
+    packPerimeterClick(seed, typeMatrix, w, h, opts) {
+      if (!seed || !typeMatrix) return null;
+      opts = opts || {};
+      const fx = (seed.targetX != null ? seed.targetX : seed.x) | 0;
+      const fy = (seed.targetY != null ? seed.targetY : seed.y) | 0;
+      if (fx < 0 || fy < 0 || fx >= w || fy >= h) return null;
+      const ft = typeMatrix[fy * w + fx];
+      if (ft !== 2 && ft !== 4) return null;
+      if (!this.isLandAttackCell(typeMatrix, w, h, fx, fy)) return null;
+
+      this.coords.gridWidth = w;
+      this.coords.gridHeight = h;
+      let gx = fx;
+      let gy = fy;
+      if (seed.dx != null && seed.dy != null) {
+        gx = fx + seed.dx * 0.2;
+        gy = fy + seed.dy * 0.2;
+      }
+      const screen = this.coords.gridToScreen(gx, gy);
+      if (!screen) return null;
+
+      const isEnemy = ft === 4 || seed.type === 'ENEMY' || opts.enemyLoosen;
+      // Always block Quit-logo chrome; enemy targets may sit lower on map
+      if (this.coords && typeof this.coords.isUiChromePoint === 'function') {
+        if (this.coords.isUiChromePoint(screen.x, screen.y)) return null;
+      }
+      if (!isEnemy && this.coords && typeof this.coords.isSafeScreenPoint === 'function') {
+        if (!this.coords.isSafeScreenPoint(screen.x, screen.y)) return null;
+      } else if (isEnemy) {
+        // Looser bounds for enemy: only reject true canvas exterior + hard chrome
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+          const r = canvas.getBoundingClientRect();
+          const nx = (screen.x - r.left) / Math.max(1, r.width);
+          const ny = (screen.y - r.top) / Math.max(1, r.height);
+          if (nx < 0.02 || nx > 0.98 || ny < 0.05 || ny > 0.93) return null;
+          if (nx < 0.14 && ny > 0.80) return null; // Quit logo corner
+        }
+      } else {
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+          const r = canvas.getBoundingClientRect();
+          if (screen.x < r.left || screen.x > r.right ||
+              screen.y < r.top || screen.y > r.bottom) return null;
+        }
+      }
+      return {
+        cell: { x: fx, y: fy, type: ft === 4 ? 'ENEMY' : 'NEUTRAL' },
+        screen,
+        type: ft === 4 ? 'ENEMY' : 'NEUTRAL'
+      };
+    }
+
+    /** Spray: first foreign cell along ray that touches our land (attackable). */
     sprayTargets(typeMatrix, w, h, centroid, count) {
       const targets = [];
       if (!typeMatrix || !w || !h) return targets;
@@ -160,17 +337,23 @@
       const cy = centroid.y || (h / 2);
       for (let i = 0; i < count; i++) {
         const ang = this.sprayAngle + (i * (Math.PI * 2 / Math.max(3, count)));
-        // Walk out until non-mine or edge
-        for (let r = 3; r < Math.min(w, h) / 2; r += 2) {
+        for (let r = 2; r < Math.min(w, h) / 2; r += 1) {
           const x = Math.round(cx + Math.cos(ang) * r);
           const y = Math.round(cy + Math.sin(ang) * r);
           if (x < 1 || y < 1 || x >= w - 1 || y >= h - 1) break;
           const t = typeMatrix[y * w + x];
-          if (t === 2 || t === 4) {
-            targets.push({ x, y, type: t === 4 ? 'ENEMY' : 'NEUTRAL', touchesNeutral: t === 2, touchesEnemy: t === 4 });
+          if (t === 1) break;
+          if ((t === 2 || t === 4) && this.isLandAttackCell(typeMatrix, w, h, x, y)) {
+            targets.push({
+              x, y,
+              type: t === 4 ? 'ENEMY' : 'NEUTRAL',
+              touchesNeutral: t === 2,
+              touchesEnemy: t === 4,
+              targetX: x,
+              targetY: y
+            });
             break;
           }
-          if (t === 1) break; // water wall
         }
       }
       this.sprayAngle += 0.7;
@@ -193,10 +376,10 @@
           if (window.__TIO_HUD_EARLY__) this.hud = window.__TIO_HUD_EARLY__;
           this.hud.init();
           this.hud.setVersion(AGENT_VERSION);
-          this.controller.setPacing(55); // VH multi-front needs fast synthetic clicks
+          this.controller.setPacing(CFG ? CFG.actionIntervalMs(this.settings) : 250);
           this.startIdleLoop();
           console.log(
-            `%c[TIO v${AGENT_VERSION}] STAND BY — Play, then click spawn. VH expand engine arms after territory confirms.`,
+            `%c[TIO v${AGENT_VERSION}] STAND BY — ${this.settings.clickSpeed}/s command ceiling, ${this.settings.visionFps} FPS vision fallback.`,
             'color: #f59e0b; font-weight: bold;'
           );
         }
@@ -207,12 +390,32 @@
       try {
         if (!chrome || !chrome.storage || !chrome.storage.local) return;
         chrome.storage.local.get(DEFAULT_SETTINGS, (data) => {
-          this.settings = { ...DEFAULT_SETTINGS, ...data };
-          // Force aggressive defaults if somehow off
-          if (this.settings.botEnabled === undefined) this.settings.botEnabled = true;
-          this.controller.setPacing(Math.round(1000 / Math.max(8, this.settings.clickSpeed || 14)));
+          this.applySettings(data);
         });
       } catch (e) { /* ignore */ }
+    }
+
+    applySettings(raw) {
+      this.settings = CFG
+        ? CFG.normalizeSettings({ ...this.settings, ...(raw || {}) })
+        : { ...DEFAULT_SETTINGS, ...this.settings, ...(raw || {}) };
+      const interval = CFG
+        ? CFG.actionIntervalMs(this.settings)
+        : Math.round(1000 / Math.max(1, this.settings.clickSpeed | 0));
+      this.controller.setPacing(interval);
+      if (this.scheduler) {
+        const fps = Math.max(4, this.settings.visionFps | 0 || 12);
+        this.scheduler.targetFPS = fps;
+        this.scheduler.frameIntervalMs = 1000 / fps;
+      }
+      if (typeof window !== 'undefined' && typeof window.TIOSetEngineVersion === 'function' && this.settings.engineVersion) {
+        window.TIOSetEngineVersion(this.settings.engineVersion);
+      }
+    }
+
+    persistSettings(partial) {
+      this.applySettings(partial);
+      try { chrome.storage.local.set(this.settings); } catch (_) { /* ignore */ }
     }
 
     bindSettingsListeners() {
@@ -223,13 +426,43 @@
             for (const key of Object.keys(changes)) {
               if (key in this.settings) this.settings[key] = changes[key].newValue;
             }
-            this.controller.setPacing(Math.round(1000 / Math.max(8, this.settings.clickSpeed || 14)));
+            this.applySettings(this.settings);
           });
         }
         if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-          chrome.runtime.onMessage.addListener((msg) => {
+          chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (msg && msg.action === 'STATE_CHANGED' && msg.settings) {
-              this.settings = { ...this.settings, ...msg.settings };
+              this.applySettings(msg.settings);
+            } else if (msg && msg.action === 'SET_ENGINE_VERSION') {
+              const ver = Number(msg.version) || 2;
+              this.persistSettings({ engineVersion: ver });
+              if (typeof window !== 'undefined' && typeof window.TIOSetEngineVersion === 'function') {
+                window.TIOSetEngineVersion(ver);
+              }
+              sendResponse({ success: true, version: ver });
+              return true;
+            } else if (msg && msg.action === 'GET_STATUS') {
+              const adapterStatus = (typeof window !== 'undefined' && typeof window.TIOGetEngineStatus === 'function')
+                ? window.TIOGetEngineStatus()
+                : null;
+              sendResponse({
+                success: true,
+                status: {
+                  inGame: !!this.isGameActive,
+                  armed: !!this.matchArmed,
+                  botEnabled: !!this.settings.botEnabled,
+                  engineVersion: adapterStatus ? adapterStatus.activeVersion : (this.settings.engineVersion || 2),
+                  engineName: adapterStatus ? adapterStatus.activeEngine : 'V2.7-Advanced',
+                  strategy: this.settings.strategy || 'aggressive',
+                  internalReady: !!(this.internal && this.internal.isReady && this.internal.isReady()),
+                  path: this._lastPath || 'hy/hg',
+                  policy: this._lastPolicy || 'standby',
+                  balance: this.economy ? (this.economy.estimatedTroopBalance | 0) : 0,
+                  softCap: this.economy ? (this.economy.softCap | 0) : 0,
+                  fps: 60
+                }
+              });
+              return true;
             }
           });
         }
@@ -242,15 +475,17 @@
         const tag = (e.target && e.target.tagName) || '';
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         if (e.key === 'z' || e.key === 'Z') {
-          this.settings.botEnabled = !this.settings.botEnabled;
-          try { chrome.storage.local.set({ botEnabled: this.settings.botEnabled }); } catch (_) {}
+          this.persistSettings({ botEnabled: !this.settings.botEnabled });
           if (!this.settings.botEnabled) this.controller.clearQueue();
           console.log('[TIO] Bot', this.settings.botEnabled ? 'ON' : 'OFF');
         }
+        if (e.key === 'x' || e.key === 'X') {
+          this.persistSettings({ autoExpand: !this.settings.autoExpand });
+        }
         // Manual troop overrides (0 / unset = full auto-adaptive)
-        if (e.key === 'c' || e.key === 'C') this.settings.sliderPercentage = 25;
-        if (e.key === 'v' || e.key === 'V') this.settings.sliderPercentage = 50;
-        if (e.key === 'b' || e.key === 'B') this.settings.sliderPercentage = 0; // back to adaptive
+        if (e.key === 'c' || e.key === 'C') this.persistSettings({ sliderPercentage: 25 });
+        if (e.key === 'v' || e.key === 'V') this.persistSettings({ sliderPercentage: 40 });
+        if (e.key === 'b' || e.key === 'B') this.persistSettings({ sliderPercentage: 0 });
       }, true);
     }
 
@@ -286,52 +521,89 @@
       });
     }
 
-    /** Confirm pending spawn only when mine pixels appear (not menu Play). */
+    /** Finish the trusted-click arm handshake once a live territory is proven. */
+    armConfirmedMatch(source) {
+      if (this.matchArmed || !this.pendingSpawn) return false;
+      this.playerSpawnScreen = { x: this.pendingSpawn.x, y: this.pendingSpawn.y };
+      this.isPlayerSpawnCalibrated = true;
+      this.matchArmed = true;
+      this.noTerritoryFrames = 0;
+      this.pendingSpawn = null;
+      this.matchStartTime = performance.now();
+      if (this.economy.resetMatch) this.economy.resetMatch();
+      this.smoothedCommit = 0.30;
+      this.engineStarted = true;
+      this.lastAttackDispatchTime = 0;
+      this.internalFailStreak = 0;
+      this.internalAttackCount = 0;
+      this.lastSuccessfulGameTick = -1;
+      this.lastStrategicTerritory = null;
+      this.lastStrategicGameTick = -1;
+      this.internalAreaTrend = 0;
+      this.internalShrinkFrames = 0;
+
+      try {
+        if (this.internal && this.internal.setArmed) {
+          this.internalArmPending = true;
+          this.internal.setArmed(true).then((result) => {
+            this.internalArmPending = false;
+            if (result && result.ok && this.internal.setTroopRatio) {
+              this.internal.setTroopRatio(0.30).catch(() => {});
+            }
+          }).catch(() => {
+            this.internalArmPending = false;
+          });
+        }
+      } catch (_) {
+        this.internalArmPending = false;
+      }
+      console.log(
+        `%c[TIO v${AGENT_VERSION}] Spawn confirmed (${source || 'territory'}) — engine armed`,
+        'color: #34d399; font-weight: bold;'
+      );
+      return true;
+    }
+
+    /** Confirm pending spawn directly from the exact internal game state. */
+    tryConfirmSpawnFromInternal() {
+      if (this.matchArmed || !this.pendingSpawn || !this.internal) return false;
+      const st = this.internal.lastState;
+      if (!st || !st.ready || st.player == null || st.player < 0 ||
+          st.alive === false || !(Number(st.territory) > 0)) return false;
+      return this.armConfirmedMatch(`internal territory=${Number(st.territory) | 0}`);
+    }
+
+    /** Confirm pending spawn when mine pixels appear (fallback path). */
     tryConfirmSpawnFromVision(visionResult) {
       if (this.matchArmed || !this.pendingSpawn || !visionResult) return false;
       const age = performance.now() - this.pendingSpawn.t;
-      if (age > 10000) {
-        // Menu click / no spawn — clear
+      if (age > 12000) {
         this.pendingSpawn = null;
         return false;
       }
-      // Need time after click for the match to place you on the map
-      if (age < 400) return false;
+      // Very short wait so we can open fire ASAP after spawn
+      if (age < 80) return false;
 
-      // 1) Calibrate player color AT the click first (otherwise mineCount is wrong)
       try {
         this.vision.sampleAndCalibratePlayerColor(this.pendingSpawn.x, this.pendingSpawn.y);
       } catch (_) { /* ignore */ }
 
-      // 2) Re-scan with calibrated color
       const vr = this.vision.processFrame() || visionResult;
       const hist = vr.histogram || {};
       const mine = hist.mineCount || 0;
       const water = hist.waterCount || 0;
       const neutral = hist.neutralCount || 0;
       const total = Math.max(1, (vr.width || 1) * (vr.height || 1));
-      const mapish = (water + neutral) / total;
+      const mapish = (water + neutral + mine) / total;
 
-      // Real map has oceans/neutral fill; pure menus usually don't
-      if (mapish < 0.08) return false;
-      // Need a real spawn blob, not a 1px UI tint match
-      if (mine < 20) return false;
+      // Loose gates: early game spawn blob can be tiny
+      if (mapish < 0.03 && age < 1500) return false;
+      if (mine < 4 && age < 800) return false;
+      // After 800ms, arm on any mine signal
+      if (mine < 2 && age < 2500) return false;
+      if (mine < 1) return false;
 
-      this.playerSpawnScreen = { x: this.pendingSpawn.x, y: this.pendingSpawn.y };
-      this.isPlayerSpawnCalibrated = true;
-      this.matchArmed = true;
-      this.noTerritoryFrames = 0;
-      this.pendingSpawn = null;
-      this.world.resetMatchTime();
-      this.smoothing.reset();
-      if (this.economy.resetMatch) this.economy.resetMatch();
-      this.smoothedCommit = 0.28; // start efficient, not 79%
-      this.engineStarted = true;
-      console.log(
-        `%c[TIO v${AGENT_VERSION}] Spawn confirmed (mine=${mine}) — engine ON.`,
-        'color: #34d399; font-weight: bold;'
-      );
-      return true;
+      return this.armConfirmedMatch(`vision mine=${mine}`);
     }
 
     disarmMatch(reason) {
@@ -340,8 +612,45 @@
       this.isPlayerSpawnCalibrated = false;
       this.pendingSpawn = null;
       this.engineStarted = false;
+      this.internalArmPending = false;
+      this.internalAttackCount = 0;
+      this.lastSuccessfulGameTick = -1;
+      this.lastStrategicTerritory = null;
+      this.lastStrategicGameTick = -1;
+      this.internalAreaTrend = 0;
+      this.internalShrinkFrames = 0;
       this.controller.clearQueue();
+      try {
+        if (this.internal && this.internal.setArmed) this.internal.setArmed(false);
+      } catch (_) { /* ignore */ }
       console.log(`[TIO] Match disarmed (${reason || 'reset'}) — engine idle`);
+    }
+
+    /**
+     * Strip Territorial main-menu username INPUT if it appears mid-match.
+     * Trigger: bot click on bottom-left logo → Quit → jD.bi() shows name field.
+     */
+    suppressUsernamePopup() {
+      try {
+        const inputs = document.querySelectorAll('body > input[type="text"]');
+        for (let i = 0; i < inputs.length; i++) {
+          const el = inputs[i];
+          if (!el || !el.parentNode) continue;
+          const pos = (el.style && el.style.position) || '';
+          // Game name field is absolute-positioned over the canvas
+          if (pos === 'absolute' || getComputedStyle(el).position === 'absolute') {
+            try {
+              if (document.activeElement === el) el.blur();
+            } catch (_) {}
+            try {
+              el.parentNode.removeChild(el);
+            } catch (_) {
+              el.style.display = 'none';
+              el.style.pointerEvents = 'none';
+            }
+          }
+        }
+      } catch (_) { /* ignore */ }
     }
 
     /** Lightweight loop: no vision until pending spawn or armed. */
@@ -357,12 +666,28 @@
       const now = performance.now();
       const dtSec = (now - this.lastTickTime) / 1000.0;
       try {
+        if (this.matchArmed && this.internal && now - this.internalRefreshAt >= 200) {
+          this.internalRefreshAt = now;
+          this.internal.refresh().catch(() => {});
+        }
         if (!this.matchArmed && !this.pendingSpawn) {
           // Pure standby — do not read canvas / run vision / attack
           this.runStandbyHud(now);
         } else if (!this.matchArmed && this.pendingSpawn) {
           // Only after a map click: light vision to confirm territory
+          if (this.internal && now - this.internalRefreshAt >= 100) {
+            this.internalRefreshAt = now;
+            this.internal.refresh().catch(() => {});
+          }
           this.runPendingSpawnCheck(now);
+        } else if (this.internal && this.internal.isReady && this.internal.isReady() && this.internal.armed) {
+          this.executeInternalPipeline(now);
+          this.lastTickTime = now;
+        } else if (this.internalArmPending) {
+          // Never race physical fallback clicks against the MAIN-world arm RPC.
+          this.runHookPendingHud(now);
+        } else if (this.settings.allowVisionFallback === false) {
+          this.runHookPendingHud(now);
         } else if (this.scheduler.shouldRunFrame(now)) {
           this.executePipeline(now, dtSec);
           this.lastTickTime = now;
@@ -372,6 +697,22 @@
         this.failReason = String(err && err.message || err);
       }
       this.loopId = requestAnimationFrame(() => this.loop());
+    }
+
+    runHookPendingHud(now) {
+      if (now - this.idleHudAt < 400) return;
+      this.idleHudAt = now;
+      const telemetry = this.internal && this.internal.getTelemetry
+        ? this.internal.getTelemetry()
+        : { mode: 'unavailable' };
+      this.hud.updateDashboard({
+        version: AGENT_VERSION, fps: 0,
+        state: this.internalArmPending ? 'ARMING INTERNAL' : 'HOOK PENDING', aggression: 'SAFE HOLD',
+        myArea: 0, compactness: 0, ecoHealth: telemetry.mode, troopBalance: 0,
+        growthPerSec: 0, attackROI: 0, enemyCount: 0, primaryThreat: '-',
+        dangerScore: 0, targetCoord: '-', smoothingLock: 'vision-fallback-off', waves: '0',
+        pincer: 'NO ACTION', hint: 'Internal hook unavailable; vision fallback is disabled.'
+      });
     }
 
     runStandbyHud(now) {
@@ -402,15 +743,27 @@
     }
 
     runPendingSpawnCheck(now) {
-      // Throttle vision while waiting for confirm
-      if (now - this.lastTickTime < 200) return;
+      // Check often so we arm the moment territory appears
+      if (now - this.lastTickTime < 50) return;
       this.lastTickTime = now;
-      this.controller.clearQueue();
+
+      // Prefer exact game state. This avoids making internal mode depend on
+      // color calibration or canvas readback succeeding first.
+      if (this.tryConfirmSpawnFromInternal()) return;
 
       const visionResult = this.vision.processFrame();
       if (visionResult && visionResult.typeMatrix) {
         if (this.tryConfirmSpawnFromVision(visionResult)) {
-          return; // next frames run full pipeline
+          // If MAIN is usable, wait for its arm handshake to avoid dual-path
+          // execution. Otherwise the next frame enters the vision fallback.
+          if (!(this.internal && this.internal.isReady && this.internal.isReady())) {
+            try {
+              this.executePipeline(performance.now(), 0.05);
+            } catch (e) {
+              console.warn('[TIO] first-fire', e);
+            }
+          }
+          return;
         }
       }
 
@@ -439,6 +792,213 @@
         pincer: 'PENDING',
         hint: 'Map click noted. Waiting for your territory to appear (Play→spawn). Menu clicks auto-clear.'
       });
+    }
+
+    /** Fast path: exact game state and native actuator; no canvas readback. */
+    executeInternalPipeline(now) {
+      const st = this.internal && this.internal.lastState;
+      if (!st || !st.ready) return;
+
+      const balance = Number(st.balance) | 0;
+      const balanceKnown = st.balanceKnown === true;
+      const territory = Math.max(0, Number(st.territory) | 0);
+      const alive = st.alive !== false && territory > 0;
+      if (!alive) {
+        if (!this.internalNotAliveSince) this.internalNotAliveSince = now;
+        if (now - this.internalNotAliveSince > 2500) this.disarmMatch('internal-match-ended');
+        return;
+      }
+      this.internalNotAliveSince = 0;
+
+      const adjacentEnemies = Array.isArray(st.enemies)
+        ? st.enemies.filter((enemy) => enemy && enemy.adjacent)
+        : [];
+      const enemies = adjacentEnemies.filter((enemy) => enemy.available !== false);
+      const neighbors = Array.isArray(st.neighbors) ? st.neighbors : [];
+      const physicalNeighbors = Array.isArray(st.physicalNeighbors) ? st.physicalNeighbors : neighbors;
+      const hasAdjFree = st.neutralId != null && physicalNeighbors.indexOf(st.neutralId) >= 0;
+      const neutralAvailable = st.neutralId != null && neighbors.indexOf(st.neutralId) >= 0;
+      const largestEnemy = adjacentEnemies.reduce((max, enemy) =>
+        Math.max(max, Number(enemy.effectiveBal) || Number(enemy.bal) || 0), 0);
+      const incomingTroops = adjacentEnemies.reduce((sum, enemy) =>
+        sum + Math.max(0, Number(enemy.incoming) || 0), 0);
+      const danger = largestEnemy > 0 ? largestEnemy / Math.max(1, balance + largestEnemy) : 0;
+      const relativePower = largestEnemy > 0 ? balance / largestEnemy : 1;
+      const freeHint = hasAdjFree ? 0.08 : 0;
+      const gameTimeSec = Math.max(0, (now - this.matchStartTime) / 1000);
+      const gameTick = Math.max(0, Number(st.gameTick) | 0);
+      if (this.lastStrategicTerritory == null) {
+        this.lastStrategicTerritory = territory;
+        this.lastStrategicGameTick = gameTick;
+      } else if (gameTick !== this.lastStrategicGameTick) {
+        const delta = territory - this.lastStrategicTerritory;
+        this.internalAreaTrend = delta;
+        if (delta < 0) this.internalShrinkFrames++;
+        else if (delta > 0) this.internalShrinkFrames = 0;
+        else this.internalShrinkFrames = Math.max(0, this.internalShrinkFrames - 1);
+        this.lastStrategicTerritory = territory;
+        this.lastStrategicGameTick = gameTick;
+      }
+      const activeFronts = Math.max(0, Number(st.activeFronts) | 0);
+      const frontCap = Math.max(1, Math.min(4, Number(st.humanFrontCap || st.multiFront || 4) | 0));
+      const situation = {
+        balance,
+        balanceKnown,
+        territory,
+        softCap: st.softCap || (CORE && CORE.softCapFor
+          ? CORE.softCapFor(territory)
+          : Math.min(100 * Math.max(1, territory), 1000000000)),
+        freeLandRatio: freeHint,
+        hasAdjFree,
+        adjEnemies: enemies,
+        perimeterNeutral: hasAdjFree ? 1 : 0,
+        perimeterEnemy: enemies.length,
+        totalEnemyTerr: st.totalEnemyTerritory != null
+          ? Math.max(0, Number(st.totalEnemyTerritory) | 0)
+          : adjacentEnemies.reduce((sum, enemy) => sum + Math.max(0, enemy.terr | 0), 0),
+        globalRank: st.globalRank,
+        leaderTerritory: st.leaderTerritory,
+        playersRemaining: st.alivePlayers,
+        areaTrend: this.internalAreaTrend,
+        shrinkFrames: this.internalShrinkFrames,
+        incoming: incomingTroops,
+        tick: gameTick,
+        attackSequence: this.internalAttackCount,
+        activeFronts,
+        primaryDanger: danger,
+        relativePower,
+        gameTimeSec,
+        strategy: this.settings.strategy
+      };
+
+      let decision = CORE && CORE.decide
+        ? CORE.decide(situation)
+        : { action: hasAdjFree ? 'expand' : (enemies.length ? 'fight' : 'hold'), phaseLabel: 'LAND_RUSH', reason: 'fallback' };
+
+      if (decision.action === 'expand' && this.settings.autoExpand === false) {
+        decision = this.settings.autoAttack !== false && enemies.length
+          ? Object.assign({}, decision, { action: 'fight', wantEnemy: true, preferNeutral: false, phaseLabel: 'PRESSURE', reason: 'expand-disabled' })
+          : Object.assign({}, decision, { action: 'hold', wantEnemy: false, preferNeutral: false, reason: 'expand-disabled' });
+      } else if (decision.action === 'fight' && this.settings.autoAttack === false) {
+        decision = this.settings.autoExpand !== false && hasAdjFree
+          ? Object.assign({}, decision, { action: 'expand', wantEnemy: false, preferNeutral: true, phaseLabel: 'LAND_RUSH', reason: 'attack-disabled' })
+          : Object.assign({}, decision, { action: 'hold', wantEnemy: false, preferNeutral: false, reason: 'attack-disabled' });
+      }
+
+      const wantEnemy = decision.action === 'fight';
+      const enemyBalance = decision.enemyBal != null
+        ? decision.enemyBal
+        : (enemies[0] ? enemies[0].bal : 0);
+      let budget = CORE && CORE.planSpend
+        ? CORE.planSpend({
+            balance, balanceKnown, territory, softCap: situation.softCap,
+            freeLandRatio: freeHint, wantEnemy, crushable: !!decision.crushable,
+            enemyBal: enemyBalance, adjEnemyCount: enemies.length,
+            primaryDanger: danger, relativePower: enemyBalance > 0 ? balance / enemyBalance : 1, fronts: 1,
+            activeFronts, frontCap, attackSequence: this.internalAttackCount,
+            adjEnemies: adjacentEnemies, incoming: incomingTroops,
+            areaTrend: this.internalAreaTrend, shrinkFrames: this.internalShrinkFrames,
+            gameTick,
+            phase: decision.phaseLabel,
+            gameTimeSec
+          })
+        : { canAfford: balance > 30, ratio: 0.2, fronts: 1, minRemaining: 1, reason: 'fallback' };
+
+      if (decision.action === 'hold' || this.settings.botEnabled === false) {
+        budget = Object.assign({}, budget, { canAfford: false, fronts: 0 });
+      }
+
+      let ratio = budget.ratio || 0;
+      const manualRatio = (this.settings.sliderPercentage | 0) / 100;
+      if (manualRatio > 0) ratio = manualRatio;
+      ratio = manualRatio > 0
+        ? Math.max(0.08, Math.min(0.40, ratio))
+        : Math.max(0.06, Math.min(0.72, ratio));
+      if (balanceKnown && balance > 0 && CORE && CORE.maxSafeRatio) {
+        const safeRatio = CORE.maxSafeRatio(balance, Math.max(1, budget.minRemaining | 0));
+        ratio = safeRatio > 0 ? Math.min(ratio, safeRatio) : 0;
+      }
+
+      const userDriving = this.controller ? this.controller.userPointerDown === true : false;
+      const interval = CFG ? CFG.actionIntervalMs(this.settings) : 160;
+      const bankInterval = balanceKnown && balance < 800 ? 280 : 160;
+      const due = now - this.lastAttackDispatchTime >= Math.max(interval, bankInterval);
+      const busy = this.internal.isBusy && this.internal.isBusy();
+      const canFire = this.settings.botEnabled !== false && !userDriving && !busy && due &&
+        budget.canAfford && ratio > 0 && decision.action !== 'hold' &&
+        (decision.action !== 'expand' || neutralAvailable);
+
+      this._decision = decision;
+      this.lastCommitMeta = {
+        ratio, reason: `${budget.reason || ''}|${decision.reason || ''}`,
+        minRemaining: budget.minRemaining | 0, maxSpend: budget.maxSpendTotal | 0,
+        canAfford: !!budget.canAfford, action: decision.action, scores: decision.scores,
+        urgency: budget.urgency
+      };
+
+      if (canFire) {
+        // Reserve immediately; completion time is too late to prevent rAF request floods.
+        this.lastAttackDispatchTime = now;
+        this.internal.attack({
+          ratio,
+          preferNeutral: decision.action === 'expand',
+          phase: decision.phaseLabel || (wantEnemy ? 'PRESSURE' : 'LAND_RUSH'),
+          freeLand: freeHint,
+          target: wantEnemy ? decision.focusEnemyId : null,
+          autoExpand: this.settings.autoExpand,
+          autoAttack: this.settings.autoAttack,
+          minRemaining: budget.minRemaining,
+          primaryDanger: danger,
+          attackSequence: this.internalAttackCount,
+          gameTimeSec,
+          areaTrend: this.internalAreaTrend,
+          shrinkFrames: this.internalShrinkFrames
+        }).then((result) => {
+          if (result && result.ok) {
+            this.internalFailStreak = 0;
+            this.internalAttackCount++;
+            this.lastSuccessfulGameTick = Number(st.gameTick) | 0;
+            this._lastPath = result.path || (result.last && result.last.path) || 'native';
+            this._lastPolicy = result.policy || decision.reason;
+          } else if (result && ['below-reserve', 'unsafe-spend', 'spend-lock', 'target-busy', 'zero-troops', 'negative-troops'].indexOf(result.err) < 0) {
+            this.internalFailStreak++;
+            this._lastPolicy = result.err || 'internal-failed';
+          }
+        }).catch(() => {
+          this.internalFailStreak++;
+        });
+      }
+
+      if (now - this.lastInternalHudAt >= 200) {
+        this.lastInternalHudAt = now;
+        const block = this.settings.botEnabled === false ? 'bot-off'
+          : userDriving ? 'user-hold'
+            : busy ? 'single-flight'
+              : decision.action === 'expand' && !neutralAvailable ? 'neutral-settlement'
+              : !budget.canAfford ? budget.reason
+                : !due ? 'pacing'
+                  : decision.action === 'hold' ? decision.reason : '';
+        this.hud.updateDashboard({
+          version: AGENT_VERSION,
+          fps: 0,
+          state: `${decision.action.toUpperCase()} · ${block || this._lastPolicy || 'native'}`,
+          aggression: hasAdjFree ? 'FREE BORDER' : `${enemies.length} ENEMY BORDER`,
+          myArea: territory,
+          compactness: 0,
+          ecoHealth: `dens=${Number(st.density || 0).toFixed(2)} · ${this.settings.strategy}`,
+          troopBalance: balance,
+          growthPerSec: 0,
+          attackROI: 0,
+          enemyCount: enemies.length,
+          primaryThreat: enemies[0] ? enemies[0].id : 'NONE',
+          dangerScore: danger,
+          targetCoord: this._lastPolicy || decision.reason,
+          smoothingLock: block || this._lastPath || 'ready',
+          waves: `${activeFronts}/${frontCap} + 1×${Math.round(ratio * 100)}%`,
+          pincer: 'INTERNAL · NO VISION',
+          hint: `Native engine · ${decision.reason} · bal=${balance} · hook=${st.hookVer || '—'}`
+        });
+      }
     }
 
     executePipeline(now, dtSec) {
@@ -509,11 +1069,15 @@
         this.vision.sampleAndCalibratePlayerColor(this.playerSpawnScreen.x, this.playerSpawnScreen.y);
       }
 
+      // If Quit-logo was hit, main-menu username INPUT can reappear — strip it mid-match
+      if (this.matchArmed && this.frameCount % 20 === 0) {
+        this.suppressUsernamePopup();
+      }
+
       this.playerSpawnGrid = this.coords.screenToGrid(this.playerSpawnScreen.x, this.playerSpawnScreen.y);
       this.grid.updateFromVision(visionResult);
       this.region.setGrid(this.grid);
       this.border.setGrid(this.grid);
-      this.pathfinder.setGrid(this.grid);
 
       const regionStats = this.region.detectConnectedComponents(
         this.playerSpawnGrid.x,
@@ -537,9 +1101,7 @@
       }
 
       this.myCentroid = this.computeMyCentroid(visionResult.typeMatrix, visionResult.width, visionResult.height);
-      if (this.utility.setMyCentroid) this.utility.setMyCentroid(this.myCentroid.x, this.myCentroid.y);
-
-      const gameTimeSec = (now - this.world.matchStartTime) / 1000.0;
+      const gameTimeSec = (now - this.matchStartTime) / 1000.0;
 
       // ---- UNCAPTURED LAND AWARENESS ----
       const landSnap = this.neutral
@@ -555,38 +1117,51 @@
       // NO auto-start. Territory only matters after you chose spawn.
       const mineEst = this.countMine(visionResult.typeMatrix, visionResult.width, visionResult.height);
       const histMine = visionHist.mineCount || 0;
-      const hasTerritory = borderStats.totalTerritoryArea > 0 || mineEst > 20 || histMine > 30;
+      // Early spawn can be tiny — arm attacks as soon as any mine is seen
+      const hasTerritory = borderStats.totalTerritoryArea > 0 || mineEst > 2 || histMine > 3
+        || (this.matchArmed && (histMine > 0 || mineEst > 0));
 
       if (!hasTerritory) {
         this.noTerritoryFrames++;
-        // After match ends / back to menu, disarm so we don't click lobby buttons
-        if (this.noTerritoryFrames > 90) {
+        // Time-based: ~2.5s without territory → disarm (frame count varies with uncapped FPS)
+        if (!this._noTerrSince) this._noTerrSince = now;
+        if (now - this._noTerrSince > 2500) {
           this.disarmMatch('no-territory');
+          this._noTerrSince = 0;
           return;
         }
       } else {
         this.noTerritoryFrames = 0;
+        this._noTerrSince = 0;
       }
 
-      const mapArea = Math.max(1, visionResult.width * visionResult.height);
-      // Prefer neutral-engine free ratio (more accurate than largest-region only)
-      const freeLandRatio = landSnap
-        ? Math.max(landSnap.freeLandRatio, (visionHist.neutralCount || 0) / mapArea * 0.9)
-        : Math.max(
-          regionStats ? regionStats.largestNeutralArea / mapArea : 0,
-          (visionHist.neutralCount || 0) / mapArea
-        );
-      const settingsRatio = (this.settings.sliderPercentage > 0)
-        ? Math.max(0.15, Math.min(0.7, this.settings.sliderPercentage / 100))
-        : 0; // 0 → fully adaptive
+      // ONLY perimeter-claimable free land (edge-adjacent to us) — not map-wide neutral
+      const freeLandRatio = landSnap && landSnap.freeLandRatio != null
+        ? landSnap.freeLandRatio
+        : (() => {
+            // Fallback: count edge-adjacent neutrals only
+            const tm = visionResult.typeMatrix;
+            const w = visionResult.width;
+            const h = visionResult.height;
+            if (!tm || !w || !h) return 0;
+            let adjN = 0;
+            let mine = 0;
+            const step = Math.max(1, Math.floor(Math.min(w, h) / 100));
+            for (let y = 1; y < h - 1; y += step) {
+              for (let x = 1; x < w - 1; x += step) {
+                const t = tm[y * w + x];
+                if (t === 3) mine++;
+                else if (t === 2 && this.isLandAttackCell(tm, w, h, x, y)) adjN++;
+              }
+            }
+            return adjN / Math.max(1, mine + adjN);
+          })();
       const landPhase = (landSnap && landSnap.phase) || 'OPENING';
       const landPolicy = this.neutral
         ? this.neutral.getPhasePolicy()
-        : { preferNeutral: true, wantEnemy: false, multiFront: 4, pulseMs: 90, ratio: 0.25, label: 'OPEN' };
+        : { preferNeutral: true, wantEnemy: false, multiFront: 4, pulseMs: 0, ratio: 0.25, label: 'OPEN' };
 
       // Hard bot tables — adaptive commit computed after we know wantEnemy / phase
-      const hm = (window.TIOHardMode && window.TIOHardMode.active) || null;
-
       const avgEnemy = (() => {
         const list = enemyAnalytics.opponentsList || [];
         if (!list.length) return 0;
@@ -597,237 +1172,346 @@
 
       this.economy.updateEconomy(borderStats.totalTerritoryArea, dtSec, avgEnemy);
       // Prefer real balance from game hook when available (better density/commit)
-      if (this.internal && this.internal.lastState && this.internal.lastState.balance > 0) {
+      // Sync economy with live balance including 0 / negative (do not keep stale positive)
+      if (this.internal && this.internal.lastState && this.internal.lastState.balance != null) {
         this.economy.estimatedTroopBalance = this.internal.lastState.balance;
         if (this.internal.lastState.density != null) {
           this.economy.density = this.internal.lastState.density;
         } else if (this.internal.lastState.territory > 0) {
-          const cap = Math.min(100 * this.internal.lastState.territory, 80000);
+          const cap = CORE && CORE.softCapFor
+            ? CORE.softCapFor(this.internal.lastState.territory)
+            : Math.min(100 * this.internal.lastState.territory, 1000000000);
           this.economy.density = this.internal.lastState.balance / Math.max(1, cap);
         }
       }
-      const strategyConfig = this.strategy.evaluateTransitions(
-        gameTimeSec,
-        freeLandRatio,
-        this.economy.economicHealth,
-        borderStats.totalTerritoryArea,
-        borderStats.isoperimetricQuotient,
-        enemyAnalytics,
-        regionStats || {},
-        this.economy.growthPerSec
-      );
-      const aggrVal = 1.0;
-      const ecoDecisions = this.economy.getEconomicDecisions(
-        freeLandRatio, aggrVal, settingsRatio, gameTimeSec,
-        borderStats.totalTerritoryArea, enemyAnalytics
-      );
-
-      // ---- VH dD policy: empty first, else 90% weakest ----
-      let wantEnemy = false;
-      let brainPhase = landPhase === 'OPENING' ? 'OPENING' : 'LAND_RUSH';
-      if (hm && window.TIOHardMode.decideTargetPolicy) {
-        const pol = window.TIOHardMode.decideTargetPolicy(
-          hm,
-          freeLandRatio,
-          this.economy.relativePower || 1,
-          this.economy.areaTrend || 0
-        );
-        wantEnemy = !pol.preferNeutral;
-        brainPhase = pol.phase || brainPhase;
-      } else {
-        // Fallback mirrors dump dD
-        if (this.economy.areaTrend < -12 || this.economy.consecutiveShrinkFrames > 4) {
-          wantEnemy = true;
-          brainPhase = 'SURVIVE';
-        } else if (freeLandRatio > 0.025) {
-          wantEnemy = false;
-          brainPhase = freeLandRatio > 0.1 ? 'OPENING' : 'LAND_RUSH';
-        } else {
-          wantEnemy = true;
-          brainPhase = 'PRESSURE';
-        }
-      }
-      // Over-dense → expand (interest soft-cap)
-      if (this.economy.density > 0.85 && freeLandRatio > 0.015) {
-        wantEnemy = false;
-        brainPhase = 'LAND_RUSH';
-      }
-
-      // Filter: only cells that map into safe playable screen (no UI)
-      const safeFilter = (cells) => {
-        if (!cells || !cells.length) return [];
-        return cells.filter((c) => {
-          const gx = c.targetX != null ? c.targetX : c.x;
-          const gy = c.targetY != null ? c.targetY : c.y;
-          return this.coords.isSafeGridCell(gx, gy);
-        });
-      };
-
-      // Primary candidates = reachable uncaptured cells (click on free land)
-      let candidateCells = [];
-      if (landSnap && landSnap.topTargets && landSnap.topTargets.length) {
-        candidateCells = landSnap.topTargets.map((t) => ({
-          x: t.x,
-          y: t.y,
-          type: 'NEUTRAL',
-          touchesNeutral: true,
-          touchesEnemy: !!t.touchesEnemy,
-          score: t.score
-        }));
-      }
-      if (this.border.expansionFrontier && this.border.expansionFrontier.length) {
-        const mapped = this.border.expansionFrontier.map((c) => ({
-          x: (c.targetX != null ? c.targetX : c.x),
-          y: (c.targetY != null ? c.targetY : c.y),
-          type: 'NEUTRAL',
-          touchesNeutral: true,
-          touchesEnemy: !!c.touchesEnemy,
-          fromBorder: true
-        }));
-        candidateCells = candidateCells.concat(mapped);
-      }
-      if (wantEnemy && this.border.enemyFrontier && this.border.enemyFrontier.length) {
-        candidateCells = candidateCells.concat(this.border.enemyFrontier);
-      }
-      if (!candidateCells.length) {
-        candidateCells = this.scanMineBorders(
-          visionResult.typeMatrix, visionResult.width, visionResult.height, 50
-        );
-      }
-      candidateCells = safeFilter(candidateCells);
-
-      const bestCandidate = candidateCells.length
-        ? this.utility.evaluateCandidates(
-          candidateCells,
-          this.myCentroid.x ? this.myCentroid : this.playerSpawnGrid,
-          this.world.getRAMTelemetry ? this.world.getRAMTelemetry() : {},
-          enemyAnalytics,
-          borderStats.isoperimetricQuotient,
-          this.heatmap,
-          1.0,
-          {
-            phase: landPhase === 'LATE' ? 'PRESSURE' : 'LAND_RUSH',
-            preferNeutral: !wantEnemy,
-            typeMatrix: visionResult.typeMatrix,
-            width: visionResult.width,
-            height: visionResult.height
-          }
-        )
-        : null;
-
-      // Prefer highest-score neutral-engine target when expanding
-      let lockedTarget = this.smoothing.filterCandidate(bestCandidate, false);
-      if (!lockedTarget && bestCandidate) lockedTarget = bestCandidate;
-      if (!lockedTarget && landSnap && landSnap.topTargets && landSnap.topTargets[0]) {
-        lockedTarget = landSnap.topTargets[0];
-      }
-
-      let spray = [];
-      if (!lockedTarget) {
-        spray = this.sprayTargets(
-          visionResult.typeMatrix, visionResult.width, visionResult.height,
-          this.myCentroid, 4
-        );
-        if (spray.length) lockedTarget = spray[0];
-      }
-
-      let attackCell = lockedTarget
-        ? (this.coords.resolveAttackCell(
-          lockedTarget,
-          visionResult.typeMatrix,
-          wantEnemy || lockedTarget.type === 'ENEMY'
-        ) || lockedTarget)
-        : null;
-
-      // If target is already a neutral cell adjacent to mine, click it directly
-      if (lockedTarget && lockedTarget.type === 'NEUTRAL') {
-        attackCell = { x: lockedTarget.x, y: lockedTarget.y, type: 'NEUTRAL' };
-      }
-
-      const userDriving = this.controller.userPointerDown === true;
-      const botOn = this.settings.botEnabled !== false;
-      // Must be armed by YOUR spawn click AND have territory
-      const isGameActive = this.matchArmed && this.isPlayerSpawnCalibrated && hasTerritory;
-
-      // VERY HARD pacing
-      const pulseMs = hm
-        ? Math.max(55, hm.pulseMs || 85)
-        : Math.max(55, landPolicy.pulseMs || 85);
-
-      // ---- ADAPTIVE TROOP % (situation-aware) ----
+      // ============================================================
+      // PURE SITUATION LOOP: Sense → decide(S) → planSpend → Act
+      // No phase playbook. Phases are labels only.
+      // ============================================================
       const stEarly = (this.internal && this.internal.lastState) || {};
-      const crushableEnemy = !!(stEarly.enemies && stEarly.enemies.some((e) => e.crushable));
-      const realBal = stEarly.balance != null ? stEarly.balance : this.economy.estimatedTroopBalance;
+      // balanceKnown distinguishes "couldn't read" (play) vs "truly 0/debt" (hold)
+      let balKnown = stEarly.balanceKnown === true;
+      let realBal = 0;
+      if (stEarly.balance != null && isFinite(Number(stEarly.balance))) {
+        realBal = Number(stEarly.balance) | 0;
+        // If hook says known, trust it; if flag missing but balance non-zero, treat known
+        if (stEarly.balanceKnown === true || realBal !== 0) balKnown = true;
+        if (stEarly.balanceKnown === false) balKnown = false;
+      } else if (this.economy.estimatedTroopBalance > 0) {
+        realBal = this.economy.estimatedTroopBalance | 0;
+        balKnown = false; // estimate only
+      }
+      try {
+        const domBal = document.documentElement.getAttribute('data-tio-bal');
+        if (domBal != null && domBal !== '' && stEarly.balanceKnown !== false) {
+          const db = parseInt(domBal, 10);
+          if (!isNaN(db)) {
+            realBal = db;
+            // DOM bal alone is known only if internal also has balanceKnown
+            if (stEarly.balanceKnown === true) balKnown = true;
+          }
+        }
+      } catch (_) { /* ignore */ }
       const realTerr = stEarly.territory != null && stEarly.territory > 0
         ? stEarly.territory
         : borderStats.totalTerritoryArea;
-      // Prefer live density from game balance when available
-      const liveDensity = stEarly.density != null
-        ? stEarly.density
+      const userDriving = this.controller ? this.controller.userPointerDown === true : false;
+      const botOn = this.settings.botEnabled !== false;
+      const isGameActive = this.matchArmed && this.isPlayerSpawnCalibrated && hasTerritory;
+      const pulseMs = CFG ? CFG.actionIntervalMs(this.settings) : 160;
+
+      const stForPolicy = stEarly;
+      const adjEnemyList = (stForPolicy.enemies || []).filter((e) => e && e.adjacent);
+      const hasAdjEnemy = adjEnemyList.length > 0;
+      const hasCrushAdj = adjEnemyList.some((e) => e.crushable);
+
+      // Perimeter-claimable free only (already in freeLandRatio from neutral engine)
+      let freeEff = freeLandRatio;
+      if (landSnap && landSnap.freeLandRatio != null) {
+        freeEff = landSnap.freeLandRatio;
+      }
+      freeEff = Math.max(0, Math.min(1, freeEff));
+
+      const liveDensEarly = stForPolicy.density != null
+        ? stForPolicy.density
         : this.economy.density;
+      const tm0 = visionResult.typeMatrix;
+      const tw0 = visionResult.width;
+      const th0 = visionResult.height;
+      this.coords.gridWidth = tw0;
+      this.coords.gridHeight = th0;
 
-      // Fronts: each click spends FULL bar — keep 2–4 so we don't empty stack
-      let waveCount = 3;
-      if (liveDensity > 0.95 && freeLandRatio > 0.05) waveCount = 4;
-      if (liveDensity < 0.45) waveCount = 2;
-      if (wantEnemy && freeLandRatio < 0.03) waveCount = 2;
+      // Collect ALL perimeter candidates (edge-adj neutral + enemy) — game-legal only
+      let allPerim = [];
+      allPerim = allPerim.concat(this.collectBorderTouchTargets(tm0, tw0, th0, 'any', 48, 0.65));
+      if (landSnap && landSnap.topTargets) allPerim = allPerim.concat(landSnap.topTargets);
+      if (this.border) {
+        if (this.border.expansionFrontier) allPerim = allPerim.concat(this.border.expansionFrontier);
+        if (this.border.enemyFrontier) allPerim = allPerim.concat(this.border.enemyFrontier);
+      }
+      allPerim = this.filterPerimeterOnly(allPerim, tm0, tw0, th0);
+      // Soft chrome filter
+      allPerim = allPerim.filter((c) => {
+        const gx = c.targetX != null ? c.targetX : c.x;
+        const gy = c.targetY != null ? c.targetY : c.y;
+        if (!this.isLandAttackCell(tm0, tw0, th0, gx, gy)) return false;
+        const scr = this.coords.gridToScreen(gx, gy);
+        if (!scr) return false;
+        if (this.coords.isUiChromePoint && this.coords.isUiChromePoint(scr.x, scr.y)) return false;
+        if (c.type === 'ENEMY' || c.touchesEnemy) return true;
+        return this.coords.isSafeScreenPoint(scr.x, scr.y);
+      });
 
-      let commitMeta = null;
-      let commitRatio = 0.34;
-      if (hm && window.TIOHardMode.computeAdaptiveCommit) {
-        commitMeta = window.TIOHardMode.computeAdaptiveCommit({
-          profile: hm,
-          phase: brainPhase,
-          freeLandRatio,
-          density: liveDensity,
-          relativePower: this.economy.relativePower || 1,
-          areaTrend: this.economy.areaTrend || 0,
-          gameTimeSec,
-          balance: realBal,
-          territory: realTerr,
-          wantEnemy,
-          crushable: crushableEnemy && wantEnemy,
-          enemyBal: stEarly.enemies && stEarly.enemies[0] ? stEarly.enemies[0].bal : null,
-          fronts: waveCount,
-          shrinkFrames: this.economy.consecutiveShrinkFrames || 0,
-          primaryDanger: enemyAnalytics.primaryThreat
-            ? (enemyAnalytics.primaryThreat.dangerScore || 0)
-            : 0
-        });
-        commitRatio = commitMeta.ratio;
-      } else if (hm && window.TIOHardMode.computeCommit) {
-        commitRatio = window.TIOHardMode.computeCommit(hm, brainPhase, freeLandRatio);
-        commitMeta = { ratio: commitRatio, reason: 'legacy' };
+      let perimNeutral = 0;
+      let perimEnemy = 0;
+      for (let i = 0; i < allPerim.length; i++) {
+        const c = allPerim[i];
+        if (c.type === 'ENEMY' || c.touchesEnemy) perimEnemy++;
+        else perimNeutral++;
+      }
+      const hasAdjFree = perimNeutral > 0
+        || !!(stForPolicy.neighbors && stForPolicy.neutralId != null
+          && stForPolicy.neighbors.indexOf(stForPolicy.neutralId) >= 0);
+
+      // Total enemy territory (for leaderboard rank / first-place objective)
+      let totalEnemyTerr = 0;
+      const allEnemies = stForPolicy.enemies || [];
+      for (let ei = 0; ei < allEnemies.length; ei++) {
+        if (allEnemies[ei] && allEnemies[ei].terr > 0) totalEnemyTerr += allEnemies[ei].terr | 0;
+      }
+      if (!totalEnemyTerr && enemyAnalytics.opponentsList) {
+        for (let oi = 0; oi < enemyAnalytics.opponentsList.length; oi++) {
+          totalEnemyTerr += (enemyAnalytics.opponentsList[oi].area | 0) || 0;
+        }
       }
 
-      // EMA smooth — avoid thrashing 20%↔50% every frame (still tracks situation)
-      const alpha = 0.35;
-      this.smoothedCommit = this.smoothedCommit * (1 - alpha) + commitRatio * alpha;
-      commitRatio = this.smoothedCommit;
+      const sitState = {
+        balance: realBal | 0,
+        balanceKnown: balKnown,
+        territory: realTerr,
+        softCap: stForPolicy.softCap > 0
+          ? stForPolicy.softCap
+          : (CORE && CORE.softCapFor
+            ? CORE.softCapFor(realTerr)
+            : Math.min(100 * Math.max(1, realTerr), 1000000000)),
+        freeLandRatio: freeEff,
+        hasAdjFree,
+        adjEnemies: adjEnemyList.length ? adjEnemyList : (stForPolicy.enemies || []).filter((e) => e && e.terr > 0),
+        perimeterNeutral: perimNeutral,
+        perimeterEnemy: perimEnemy,
+        totalEnemyTerr,
+        areaTrend: this.economy.areaTrend || 0,
+        shrinkFrames: this.economy.consecutiveShrinkFrames || 0,
+        primaryDanger: enemyAnalytics.primaryThreat
+          ? (enemyAnalytics.primaryThreat.dangerScore || 0)
+          : 0,
+        relativePower: this.economy.relativePower || 1,
+        gameTimeSec,
+        strategy: this.settings.strategy
+      };
 
-      // Manual slider only if user set C/V (25/50). B or 0 = full adaptive.
+      // ---- decide(S): expand | fight | hold ----
+      let decision = {
+        action: hasAdjFree ? 'expand' : (hasAdjEnemy || perimEnemy ? 'fight' : 'hold'),
+        wantEnemy: !hasAdjFree && (hasAdjEnemy || perimEnemy > 0),
+        preferNeutral: hasAdjFree,
+        crushable: hasCrushAdj,
+        phaseLabel: 'LAND_RUSH',
+        reason: 'fallback',
+        scores: {}
+      };
+      if (window.TIOHardMode && typeof window.TIOHardMode.decide === 'function') {
+        decision = window.TIOHardMode.decide(sitState);
+      }
+      if (decision.action === 'expand' && this.settings.autoExpand === false) {
+        decision = this.settings.autoAttack !== false && (hasAdjEnemy || perimEnemy > 0)
+          ? Object.assign({}, decision, { action: 'fight', wantEnemy: true, preferNeutral: false, phaseLabel: 'PRESSURE', reason: 'expand-disabled' })
+          : Object.assign({}, decision, { action: 'hold', wantEnemy: false, preferNeutral: false, reason: 'expand-disabled' });
+      } else if (decision.action === 'fight' && this.settings.autoAttack === false) {
+        decision = this.settings.autoExpand !== false && hasAdjFree
+          ? Object.assign({}, decision, { action: 'expand', wantEnemy: false, preferNeutral: true, phaseLabel: 'LAND_RUSH', reason: 'attack-disabled' })
+          : Object.assign({}, decision, { action: 'hold', wantEnemy: false, preferNeutral: false, reason: 'attack-disabled' });
+      }
+      // Force hold only when balance is KNOWN <= 0 (not unknown read)
+      if (balKnown && !(sitState.balance > 0)) {
+        decision = Object.assign({}, decision, {
+          action: 'hold',
+          wantEnemy: false,
+          preferNeutral: false,
+          phaseLabel: 'HOLD',
+          reason: sitState.balance < 0 ? 'negative-troops' : 'zero-troops'
+        });
+      }
+      const wantEnemy = decision.action === 'fight';
+      const brainPhase = decision.phaseLabel || 'LAND_RUSH';
+
+      // Rank perimeter targets by situation score
+      let ranked = allPerim;
+      if (window.TIOHardMode && typeof window.TIOHardMode.rankTargets === 'function') {
+        ranked = window.TIOHardMode.rankTargets(allPerim, sitState, decision, 24);
+      } else {
+        ranked = allPerim.slice().sort((a, b) => {
+          const ae = (a.type === 'ENEMY') ? 1 : 0;
+          const be = (b.type === 'ENEMY') ? 1 : 0;
+          if (wantEnemy && ae !== be) return be - ae;
+          if (!wantEnemy && ae !== be) return ae - be;
+          return 0;
+        });
+      }
+
+      // ---- planSpend(S): pure money (authority for ratio + fronts) ----
+      const planCtx = {
+        balance: sitState.balance,
+        balanceKnown: balKnown,
+        territory: sitState.territory,
+        softCap: sitState.softCap,
+        freeLandRatio: freeEff,
+        wantEnemy,
+        crushable: !!decision.crushable,
+        enemyBal: decision.enemyBal != null ? decision.enemyBal
+          : (adjEnemyList[0] ? adjEnemyList[0].bal : null),
+        adjEnemyCount: adjEnemyList.length,
+        primaryDanger: sitState.primaryDanger,
+        areaTrend: sitState.areaTrend,
+        shrinkFrames: sitState.shrinkFrames,
+        fronts: 4, // upper wish; planSpend caps by bank
+        activeFronts: 0,
+        frontCap: 4,
+        attackSequence: this.internalAttackCount,
+        phase: brainPhase,
+        gameTimeSec
+      };
+      // Hold → zero fronts
+      if (decision.action === 'hold') planCtx.fronts = 0;
+
+      let budget = null;
+      if (window.TIOHardMode && typeof window.TIOHardMode.planSpend === 'function') {
+        budget = window.TIOHardMode.planSpend(planCtx);
+      } else {
+        const balN0 = sitState.balance;
+        const rem = balN0 > 0 ? Math.max(8, Math.floor(balN0 * 0.18)) : 0;
+        const maxS = balN0 > 0 ? Math.max(0, balN0 - rem) : 0;
+        budget = {
+          canAfford: decision.action !== 'hold' && (!balKnown || (balN0 > 0 && maxS >= 8)),
+          minRemaining: rem,
+          maxSpendTotal: maxS,
+          ratio: balN0 > 0 ? Math.min(0.4, maxS / balN0) : 0.28,
+          fronts: decision.action === 'hold' ? 0 : 2,
+          reason: 'fallback',
+          density: liveDensEarly,
+          urgency: decision.urgency || 0.4
+        };
+      }
+      if (decision.action === 'hold') {
+        budget = Object.assign({}, budget, {
+          canAfford: false,
+          fronts: 0,
+          reason: decision.reason || 'hold'
+        });
+      }
+
+      const balN = sitState.balance | 0;
+      // troopsOk: known positive, OR unknown (let MAIN act). Block only known <=0.
+      const troopsOk = !balKnown || balN > 0;
+      let canAfford = troopsOk && !!budget.canAfford && decision.action !== 'hold';
+      const minRemaining = budget.minRemaining | 0;
+      const maxSpend = budget.maxSpendTotal | 0;
+      const maxSafeRatio = balKnown && balN > 0
+        ? Math.min(0.72, maxSpend / balN)
+        : (budget.ratio || 0.3);
+      // Fronts = budget only (not freeLand tables)
+      let waveCount = canAfford ? Math.max(0, budget.fronts | 0) : 0;
+
+      // Money: planSpend only — NO EMA inflation (EMA was causing overspend/debt)
+      let commitRatio = budget.ratio != null ? budget.ratio : 0.12;
       const slider = this.settings.sliderPercentage | 0;
       if (slider > 0 && slider < 100) {
-        // Soft blend toward user preference, still allow adaptive ±12%
-        const userR = slider / 100;
-        commitRatio = commitRatio * 0.55 + userR * 0.45;
-        if (commitMeta) commitMeta.reason = (commitMeta.reason || '') + '+slider';
+        commitRatio = Math.min(commitRatio, slider / 100);
+      }
+      commitRatio = slider > 0
+        ? Math.max(0.08, Math.min(0.40, commitRatio))
+        : Math.max(0.06, Math.min(0.72, commitRatio));
+      if (balKnown && maxSafeRatio > 0) {
+        commitRatio = Math.min(commitRatio, maxSafeRatio);
+      }
+      // Exact human-command debit cap.
+      if (balKnown && balN > 0 && window.TIOHardMode && window.TIOHardMode.maxSafeRatio) {
+        const leave = Math.max(
+          minRemaining | 0,
+          window.TIOHardMode.minLeaveFor ? window.TIOHardMode.minLeaveFor(balN) : Math.floor(balN * 0.14)
+        );
+        const sr = window.TIOHardMode.maxSafeRatio(balN, leave);
+        if (sr > 0) commitRatio = Math.min(commitRatio, sr);
+        else {
+          canAfford = false;
+          waveCount = 0;
+        }
+        // Absolute: cost must be < bal
+        if (window.TIOHardMode.estimateAttackCost) {
+          const cost = window.TIOHardMode.estimateAttackCost(balN, commitRatio);
+          if (cost >= balN || balN - cost < 1) {
+            canAfford = false;
+            waveCount = 0;
+          }
+        }
+      }
+      // Unknown balance: tiny bites only
+      if (!balKnown) {
+        commitRatio = Math.min(commitRatio, 0.12);
+        waveCount = Math.min(waveCount, 1);
+      }
+      // Zero-debt multi-front: only with fat known bank
+      if (balKnown && balN < 1200) waveCount = Math.min(waveCount, 1);
+      else if (balKnown && balN < 3000) waveCount = Math.min(waveCount, 2);
+
+      canAfford = canAfford && decision.action !== 'hold' && (!balKnown || balN > 0);
+      if (!canAfford) waveCount = 0;
+
+      // Pace attacks so balance can update (prevents frame-stack overspend)
+      const minGap = balKnown && balN < 800 ? 280 : 160;
+      if (canAfford && this.lastAttackDispatchTime && (performance.now() - this.lastAttackDispatchTime) < minGap) {
+        canAfford = false;
       }
 
-      // Hard clamp — never send 70%+ (user saw stuck 79% death spiral)
-      commitRatio = Math.max(0.12, Math.min(0.45, commitRatio));
-      this.lastCommitMeta = commitMeta
-        ? Object.assign({}, commitMeta, { ratio: commitRatio })
-        : { ratio: commitRatio, reason: 'fallback' };
+      this.lastCommitMeta = {
+        ratio: commitRatio,
+        reason: (budget.reason || '') + '|' + (decision.reason || ''),
+        minRemaining,
+        maxSpend,
+        canAfford,
+        action: decision.action,
+        scores: decision.scores,
+        urgency: budget.urgency
+      };
+      this._reserveDebug = {
+        bal: balN,
+        minRemaining,
+        maxSpend,
+        canAfford,
+        maxSafeRatio: parseFloat((maxSafeRatio || 0).toFixed(3)),
+        waveCount,
+        reason: budget.reason,
+        action: decision.action,
+        decide: decision.reason,
+        urgency: budget.urgency,
+        density: budget.density
+      };
+      this._decision = decision;
+      this._rankedTargets = ranked;
 
-      // FORCE game troop bar BEFORE any attack (click path uses aS.hd() → was stuck ~79%)
-      // Fire async; also set every attack burst
-      if (!this._troopSetAt || now - this._troopSetAt > 200) {
+      // Keep legacy vars used below
+      // FORCE game troop bar (must move visible % AND aS.hd spend code)
+      // Re-apply often — game may reset bar; drag path is throttled in MAIN
+      if (!this._troopSetAt || now - this._troopSetAt > 180) {
         this._troopSetAt = now;
         try {
           if (this.internal && this.internal.setTroopRatio) {
             this.internal.setTroopRatio(commitRatio).then((r) => {
               this._lastTroopSet = r;
+              // If live bar still >55%, force again harder
+              if (r && r.livePct != null && r.livePct > 55) {
+                this.internal.setTroopRatio(Math.min(0.3, commitRatio));
+              }
             }).catch(() => {});
           } else if (this.controller && this.controller.setTroopSliderRatio) {
             this.controller.setTroopSliderRatio(commitRatio);
@@ -844,9 +1528,16 @@
       else if (userDriving) blockWhy = 'user-hold';
       else if (!isGameActive) blockWhy = 'no-territory-yet';
       else if (now - this.lastAttackDispatchTime < pulseMs) blockWhy = 'pacing';
+      else if (!troopsOk) {
+        blockWhy = balN < 0 ? `debt bal=${balN} wait>0` : 'zero-troops wait>0';
+      } else if (this.internal && this.internal.isBusy && this.internal.isBusy()) {
+        blockWhy = 'single-flight';
+      } else if (!canAfford || waveCount < 1) {
+        blockWhy = `budget ${budget && budget.reason || 'hold'} bal=${balN} rem=${minRemaining}`;
+      }
 
-      // Refresh internal state occasionally
-      if (this.internal && (now - this.internalRefreshAt > 800)) {
+      // Refresh internal state often — need fresh adjacent-enemy list for late war
+      if (this.internal && (now - this.internalRefreshAt > 200)) {
         this.internalRefreshAt = now;
         this.internal.refresh().then((st) => {
           if (st && st.balance != null && st.balance > 0 && this.economy) {
@@ -860,174 +1551,155 @@
       let actMode = internalReady ? 'INTERNAL' : 'CLICK-VH';
 
       if (!blockWhy) {
-        const preferNeutral = !wantEnemy;
+        const tm = visionResult.typeMatrix;
+        const tw = visionResult.width;
+        const th = visionResult.height;
+        this.coords.gridWidth = tw;
+        this.coords.gridHeight = th;
 
-        // ---- 1) Try INTERNAL (source dF/dJ/hg) ----
-        let usedInternal = false;
-        if (internalReady) {
-          usedInternal = true;
-          const runInternal = async () => {
-            let okCount = 0;
-            let lastPolicy = '';
-            let lastPath = '';
-            try {
-              if (this.internal.attackBurst) {
-                const burst = await this.internal.attackBurst({
-                  ratio: commitRatio,
-                  preferNeutral,
-                  phase: brainPhase,
-                  freeLand: freeLandRatio,
-                  fronts: waveCount
-                });
-                if (burst && burst.ok) {
-                  okCount = burst.okCount || 1;
-                  const last = burst.last || (burst.results && burst.results[0]);
-                  if (last) {
-                    lastPolicy = last.policy || '';
-                    lastPath = last.path || '';
-                  }
-                }
-              } else {
-                for (let b = 0; b < waveCount; b++) {
-                  const r = await this.internal.attack({
-                    ratio: commitRatio,
-                    preferNeutral: preferNeutral || b === 0,
-                    phase: brainPhase,
-                    freeLand: freeLandRatio
-                  });
-                  if (r && r.ok) {
-                    okCount++;
-                    lastPolicy = r.policy || lastPolicy;
-                    lastPath = r.path || lastPath;
-                  } else break;
-                }
-              }
-            } catch (_) { /* ignore */ }
-
-            if (okCount > 0) {
-              this.internalFailStreak = 0;
-              this.economy.recordAttackDispatch(
-                commitRatio,
-                preferNeutral ? 'NEUTRAL' : 'ENEMY',
-                80 * okCount
-              );
-              this.lastAttackDispatchTime = performance.now();
-              this._lastInternalMode = `VH ${lastPath || 'hg'} ${lastPolicy || brainPhase}`;
-              this._lastPolicy = lastPolicy;
-              this._lastPath = lastPath;
-            } else {
-              this.internalFailStreak++;
-              this._lastInternalMode = 'INT-FAIL→CLICK';
-            }
-            this._lastInternalOk = okCount;
-          };
-          runInternal().catch(() => {});
-          // Do NOT set lastAttackDispatchTime until success — avoids fake pacing
-          // Still try click same frame if we already know internal is flaky
-          if (this.internalFailStreak === 0) {
-            enqueued = waveCount;
-            didAttack = true;
-            actMode = 'INTERNAL';
-            // optimistic only when streak clean; real timestamp set in async
-            this.lastAttackDispatchTime = now;
-          }
+        // Seeds = situation-ranked perimeter targets only
+        let seeds = (this._rankedTargets && this._rankedTargets.length)
+          ? this._rankedTargets.slice()
+          : [];
+        if (!seeds.length) {
+          seeds = this.collectBorderTouchTargets(
+            tm, tw, th, wantEnemy ? 'enemy' : 'any', waveCount * 8, 0.65
+          );
         }
+        seeds = seeds.filter((s) => {
+          const fx = (s.targetX != null ? s.targetX : s.x) | 0;
+          const fy = (s.targetY != null ? s.targetY : s.y) | 0;
+          return this.isLandAttackCell(tm, tw, th, fx, fy);
+        });
 
-        // ---- 2) CLICK FALLBACK — ONLY cells adjacent to our land ----
-        if (!didAttack || this.internalFailStreak > 0) {
-          const tm = visionResult.typeMatrix;
-          const tw = visionResult.width;
-          const th = visionResult.height;
-          const adjOnly = (cells) => (cells || []).filter((c) => {
-            const x = (c.targetX != null ? c.targetX : c.x) | 0;
-            const y = (c.targetY != null ? c.targetY : c.y) | 0;
-            return this.isLandAttackCell(tm, tw, th, x, y);
+        const clicks = [];
+        const seen = new Set();
+        for (let i = 0; i < seeds.length && clicks.length < waveCount; i++) {
+          const hit = this.packPerimeterClick(seeds[i], tm, tw, th, {
+            enemyLoosen: wantEnemy || seeds[i].type === 'ENEMY'
           });
+          if (!hit) continue;
+          if (!this.isLandAttackCell(tm, tw, th, hit.cell.x, hit.cell.y)) continue;
+          const key = hit.cell.x + ',' + hit.cell.y;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          clicks.push(hit);
+        }
 
-          let fronts = [];
-          // Free land next to us (reachable neutrals already touch mine)
-          if (this.neutral && preferNeutral) {
-            fronts = adjOnly(safeFilter(this.neutral.getMultiSectorTargets(waveCount) || []));
-          }
-          if (fronts.length < waveCount && this.border.expansionFrontier) {
-            fronts = fronts.concat(adjOnly(safeFilter(this.border.expansionFrontier.slice(0, waveCount * 2).map((c) => ({
-              x: c.targetX != null ? c.targetX : c.x,
-              y: c.targetY != null ? c.targetY : c.y,
-              type: 'NEUTRAL',
-              touchesNeutral: true
-            })))));
-          }
-          // Enemy frontier = already our border facing enemy (adjacent)
-          if (wantEnemy && this.border.enemyFrontier) {
-            fronts = fronts.concat(adjOnly(safeFilter(this.border.enemyFrontier.slice(0, 4))));
-          }
-          if (!fronts.length && lockedTarget) {
-            fronts = adjOnly(safeFilter([lockedTarget]));
-          }
-          if (!fronts.length) {
-            fronts = adjOnly(safeFilter(this.sprayTargets(tm, tw, th, this.myCentroid, waveCount * 2)));
-          }
-          // Extra scan: mine borders touching neutral/enemy
-          if (!fronts.length) {
-            fronts = adjOnly(this.scanMineBorders(tm, tw, th, 40).map((c) => ({
-              x: c.x, y: c.y,
-              type: c.touchesEnemy ? 'ENEMY' : 'NEUTRAL'
-            })));
-          }
+        let minePx = 0;
+        const sampleStep = Math.max(1, Math.floor((tw * th) / 4000));
+        for (let i = 0; i < tm.length; i += sampleStep) {
+          if (tm[i] === 3) minePx++;
+        }
 
-          const seen = new Set();
-          const unique = [];
-          for (let i = 0; i < fronts.length && unique.length < waveCount; i++) {
-            const f = fronts[i];
-            const key = `${f.x | 0},${f.y | 0}`;
-            if (seen.has(key)) continue;
-            // Final adjacency gate
-            if (!this.isLandAttackCell(tm, tw, th, f.x | 0, f.y | 0)) continue;
-            seen.add(key);
-            unique.push(f);
-          }
-          fronts = unique;
+        const mode = wantEnemy ? 'enemy' : (decision.action || 'expand');
+        this._perimDebug = {
+          mineSample: minePx,
+          seeds: seeds.length,
+          clicks: clicks.length,
+          mode,
+          free: freeEff,
+          wantEnemy,
+          adjE: adjEnemyList.length,
+          dens: liveDensEarly,
+          action: decision.action,
+          decide: decision.reason
+        };
 
-          for (let i = 0; i < fronts.length; i++) {
-            const borderT = fronts[i];
-            // Click the adjacent neutral/enemy cell itself (not deep inland)
-            const cell = { x: borderT.x | 0, y: borderT.y | 0, type: borderT.type || 'NEUTRAL' };
-            if (!this.coords.isSafeGridCell(cell.x, cell.y)) continue;
-            if (!this.isLandAttackCell(tm, tw, th, cell.x, cell.y)) continue;
-            const screen = this.coords.gridToScreen(cell.x, cell.y);
-            if (this.controller.fireNow(screen.x, screen.y)) enqueued++;
-          }
-          if (enqueued > 0) {
-            this.economy.recordAttackDispatch(commitRatio, wantEnemy ? 'ENEMY' : 'NEUTRAL', 70 * enqueued);
-            this.lastAttackDispatchTime = now;
-            didAttack = true;
-            actMode = usedInternal ? 'HYBRID' : 'CLICK-ADJ';
-            this._lastInternalMode = actMode + ` ×${enqueued}`;
-            this._lastPolicy = preferNeutral ? 'land-expand' : 'land-adj-enemy';
-          } else if (!didAttack) {
-            // No land-adjacent target — try ship if internal available
-            if (this.internal && this.internal.attackShip && wantEnemy) {
-              this.internal.attackShip(commitRatio).then((r) => {
-                if (r && r.ok) {
-                  this._lastPolicy = r.policy || 'ship';
-                  this._lastPath = 'pZ-ship';
-                  this.lastAttackDispatchTime = performance.now();
-                }
-              }).catch(() => {});
-              didAttack = true;
-              actMode = 'SHIP?';
-              this._lastInternalMode = 'try-ship';
-            } else {
-              blockWhy = 'no-adjacent-cell';
-              actMode = 'STUCK';
+        // NEVER dual-path; max 1 physical attack per paced tick (zero debt)
+        const useInternal = internalReady && canAfford;
+        const useClicks = canAfford && !useInternal;
+        const maxClicks = useClicks ? 1 : 0;
+        const burstFronts = 1;
+
+        if (useInternal) {
+          this.lastAttackDispatchTime = now;
+          const intPhase = brainPhase || (wantEnemy ? 'PRESSURE' : 'LAND_RUSH');
+          const intOpts = {
+            ratio: commitRatio,
+            preferNeutral: !wantEnemy,
+            phase: intPhase,
+            freeLand: freeEff,
+            allowShip: false,
+            attackSequence: this.internalAttackCount
+          };
+          const fireInt = () => {
+            if (burstFronts > 1 && this.internal.attackBurst) {
+              return this.internal.attackBurst(Object.assign({}, intOpts, {
+                fronts: burstFronts
+              }));
+            }
+            return this.internal.attack(intOpts);
+          };
+          fireInt().then((r) => {
+            if (r && r.ok) {
+              this.internalFailStreak = 0;
+              this.internalAttackCount++;
+              this._lastPath = r.path || (r.last && r.last.path) || 'hg';
+              this._lastPolicy = r.policy || decision.reason || 'int';
+              this.lastAttackDispatchTime = performance.now();
+            } else if (r && (r.err === 'below-reserve' || r.err === 'unsafe-spend' ||
+                r.err === 'negative-troops' || r.err === 'zero-troops' ||
+                r.err === 'spend-lock' || r.err === 'target-busy')) {
+              this._lastPolicy = r.err;
+              this.lastAttackDispatchTime = performance.now(); // back off
+            } else if (r && r.err === 'not-adjacent') {
+              /* clicks may handle */
+            } else if (r && r.err === 'no-border-neighbor' && wantEnemy && this.internal.attackEnemy) {
+              // only if still can afford
+              if (canAfford) {
+                this.internal.attackEnemy(commitRatio, intPhase).then((r2) => {
+                  if (r2 && r2.ok) {
+                    this.internalFailStreak = 0;
+                    this._lastPolicy = r2.policy || 'enemy-force';
+                    this.lastAttackDispatchTime = performance.now();
+                  } else if (r2 && r2.err) {
+                    this._lastPolicy = r2.err;
+                  }
+                }).catch(() => {});
+              }
+            } else if (r && !r.ok) {
+              this.internalFailStreak++;
+            }
+          }).catch(() => {});
+        }
+
+        if (useClicks) {
+          for (let i = 0; i < maxClicks; i++) {
+            const c = clicks[i];
+            if (!c) continue;
+            const fired = this.controller.fireAttack
+              ? this.controller.fireAttack(c.screen.x, c.screen.y)
+              : this.controller.fireNow(c.screen.x, c.screen.y);
+            if (fired) {
+              enqueued++;
+              this._lastClickCell = `${c.cell.x},${c.cell.y}:${c.type}`;
             }
           }
         }
-      }
 
-      // Clear click queue only when pure internal success (hybrid needs queue)
-      if (actMode === 'INTERNAL' && this.internalFailStreak === 0) {
-        this.controller.clearQueue();
+        if (enqueued > 0) {
+          this.internalAttackCount += enqueued;
+          this.economy.recordAttackDispatch(
+            commitRatio,
+            wantEnemy ? 'ENEMY' : 'NEUTRAL',
+            70 * enqueued
+          );
+          this.lastAttackDispatchTime = now;
+          didAttack = true;
+          actMode = 'PERIMETER';
+          this._lastInternalMode = `FIRE ×${enqueued}`;
+          this._lastPolicy = decision.reason || (wantEnemy ? 'perim-enemy' : 'perim-neutral');
+        } else if (internalReady && seeds.length > 0 && canAfford) {
+          actMode = 'INT-TRY';
+          this._lastInternalMode = `seeds=${seeds.length} ${decision.action}`;
+        } else if (!didAttack && decision.action === 'hold') {
+          blockWhy = `hold:${decision.reason}`;
+          actMode = 'HOLD';
+        } else if (!didAttack) {
+          blockWhy = `seek seeds=${seeds.length} act=${decision.action}`;
+          actMode = 'SEEK';
+        }
       }
 
       if (userDriving) {
@@ -1051,14 +1723,21 @@
       else if (!this.matchArmed) stateLabel = 'CLICK SPAWN ON MAP';
       else if (userDriving) stateLabel = 'USER HOLD';
       else if (!isGameActive) stateLabel = 'ARMED · wait territory';
-      else if (didAttack) stateLabel = `${landPolicy.label} ${modeLabel}`;
-      else stateLabel = `${landPolicy.label} · ${blockWhy || modeLabel}`;
+      else if (didAttack) {
+        const rk = this._decision && this._decision.rank != null ? `#${this._decision.rank}` : '';
+        stateLabel = `${rk} ${(this._decision && this._decision.action) || 'act'} ${modeLabel}`;
+      } else {
+        const rk = this._decision && this._decision.rank != null ? `#${this._decision.rank}` : '';
+        stateLabel = `${rk} ${(this._decision && this._decision.action) || landPolicy.label} · ${blockWhy || modeLabel}`;
+      }
 
       const st = intTel.lastState || {};
       const crushN = (st.enemies || []).filter((e) => e.crushable).length;
       this.hud.updateDashboard({
         version: AGENT_VERSION,
-        fps: visionResult.visionFPS || 12,
+        fps: visionResult.visionFPS
+          || (this.scheduler && this.scheduler.measuredFps)
+          || 0,
         state: stateLabel,
         aggression: this.matchArmed ? `FREE ${freePct}%` : 'STANDBY',
         myArea: st.territory != null && st.territory > 0
@@ -1066,7 +1745,7 @@
           : borderStats.totalTerritoryArea,
         compactness: borderStats.isoperimetricQuotient,
         ecoHealth: this.matchArmed
-          ? `${landPhase} · dens=${st.density != null ? st.density.toFixed(2) : '—'}`
+          ? `${(this._decision && this._decision.phaseLabel) || landPhase} · dens=${st.density != null ? st.density.toFixed(2) : '—'}`
           : 'await spawn',
         troopBalance: st.balance != null ? st.balance : Math.round(this.economy.estimatedTroopBalance),
         growthPerSec: this.economy.growthPerSec,
@@ -1074,19 +1753,19 @@
         enemyCount: st.enemies ? st.enemies.length : (enemyAnalytics.totalTracked || 0),
         primaryThreat: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.id : 'NONE',
         dangerScore: enemyAnalytics.primaryThreat ? enemyAnalytics.primaryThreat.dangerScore : 0,
-        targetCoord: policyTag || (attackCell ? `${attackCell.x|0},${attackCell.y|0}` : '—'),
+        targetCoord: policyTag || (this._lastClickCell || (this._decision ? this._decision.action : '—')),
         smoothingLock: blockWhy
           ? `BLOCK:${blockWhy}`
           : (didAttack
             ? `${pathTag || 'int'} ${policyTag || 'ok'}`
             : `free=${freePct}% crush=${crushN}`),
-        waves: `${waveCount}×${Math.round(commitRatio * 100)}% ${pathTag || modeLabel}`,
+        waves: `${waveCount}×${Math.round(commitRatio * 100)}% ${pathTag || modeLabel}${(this._reserveDebug && !this._reserveDebug.canAfford) ? ' HOLD' : ''}`,
         pincer: this.matchArmed
           ? (actMode.indexOf('CLICK') >= 0 || actMode === 'HYBRID' ? 'VH-CLICK' : 'NO-MOUSE')
           : 'STANDBY',
         hint: !this.matchArmed
           ? 'STANDBY. Play → spawn on map. Adaptive troop% arms with engine.'
-          : `TROOP ${Math.round(commitRatio * 100)}% force→game (${(this.lastCommitMeta && this.lastCommitMeta.reason) || '—'}) · dens=${liveDensity.toFixed(2)} · free ${freePct}% · ${actMode} · bar=${st.troopPct != null ? st.troopPct + '%' : '?'} · ×${waveCount}`
+          : `WIN#1 ${(this._decision && this._decision.isLeading) ? 'LEAD' : ('rank' + (this._decision && this._decision.rank || '?'))} · ${(this._decision && this._decision.action) || '—'} ${(this._decision && this._decision.reason) || ''} · ${Math.round(commitRatio * 100)}% · bal=${balN}`
       });
     }
   }
@@ -1098,4 +1777,3 @@
 
   console.log(`%c[TIO v${AGENT_VERSION}] Internal single-player mode.`, 'color: #10b981; font-weight: bold;');
 })();
-

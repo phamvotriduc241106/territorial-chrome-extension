@@ -277,12 +277,17 @@
           let touchesWater = false;
           let touchesNeutral = false;
           let touchesEnemy = false;
+          // Click targets must be ON neutral/enemy cells (not our own border pixel)
           let neutralClickX = x;
           let neutralClickY = y;
+          let enemyClickX = x;
+          let enemyClickY = y;
+          let hasNeutralAim = false;
+          let hasEnemyAim = false;
 
+          // 4-connected ONLY — diagonal contact is not a valid land-attack edge
           const offsets = [
-            [1, 0], [-1, 0], [0, 1], [0, -1],
-            [1, 1], [1, -1], [-1, 1], [-1, -1]
+            [1, 0], [-1, 0], [0, 1], [0, -1]
           ];
           for (let n = 0; n < offsets.length; n++) {
             const nx = x + offsets[n][0];
@@ -298,13 +303,20 @@
               if (nt === 1) touchesWater = true;
               if (nt === 2) {
                 touchesNeutral = true;
-                // Prefer storing the uncaptured cell itself for click targeting
-                if (n < 4) {
+                if (!hasNeutralAim) {
                   neutralClickX = nx;
                   neutralClickY = ny;
+                  hasNeutralAim = true;
                 }
               }
-              if (nt === 4) touchesEnemy = true;
+              if (nt === 4) {
+                touchesEnemy = true;
+                if (!hasEnemyAim) {
+                  enemyClickX = nx;
+                  enemyClickY = ny;
+                  hasEnemyAim = true;
+                }
+              }
             }
           }
 
@@ -316,9 +328,13 @@
             touchesNeutral,
             touchesEnemy,
             threatValue: 0.0,
-            // Where to aim when expanding into free land
-            targetX: neutralClickX,
-            targetY: neutralClickY
+            // Aim points: ON the foreign cell (required for attack to launch)
+            targetX: hasNeutralAim ? neutralClickX : (hasEnemyAim ? enemyClickX : x),
+            targetY: hasNeutralAim ? neutralClickY : (hasEnemyAim ? enemyClickY : y),
+            enemyTargetX: hasEnemyAim ? enemyClickX : null,
+            enemyTargetY: hasEnemyAim ? enemyClickY : null,
+            neutralTargetX: hasNeutralAim ? neutralClickX : null,
+            neutralTargetY: hasNeutralAim ? neutralClickY : null
           };
 
           if (threatHeatmap) {

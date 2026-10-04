@@ -1,0 +1,40 @@
+{
+  "structural": true,
+  "depthResults": [
+    {
+      "depth": 1,
+      "latencyUs": 12.28,
+      "wins": 35,
+      "matches": 40,
+      "winRate": 87.5
+    },
+    {
+      "depth": 2,
+      "latencyUs": 10.8,
+      "wins": 25,
+      "matches": 40,
+      "winRate": 62.5
+    },
+    {
+      "depth": 4,
+      "latencyUs": 10.55,
+      "wins": 31,
+      "matches": 40,
+      "winRate": 77.5
+    },
+    {
+      "depth": 6,
+      "latencyUs": 10.59,
+      "wins": 32,
+      "matches": 40,
+      "winRate": 80
+    }
+  ],
+  "optimalDepth": {
+    "depth": 1,
+    "latencyUs": 12.28,
+    "wins": 35,
+    "matches": 40,
+    "winRate": 87.5
+  }
+}

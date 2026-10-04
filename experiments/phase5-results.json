@@ -1,0 +1,50 @@
+{
+  "V2.5 FULL": {
+    "variant": "V2.5 FULL",
+    "wins": 21,
+    "matches": 30,
+    "winRate": 70,
+    "avgRank": "1.37",
+    "avgShare": "38.1%"
+  },
+  "V2.5 - MPC": {
+    "variant": "V2.5 - MPC",
+    "wins": 21,
+    "matches": 30,
+    "winRate": 70,
+    "avgRank": "1.37",
+    "avgShare": "38.2%"
+  },
+  "V2.5 - MCTS": {
+    "variant": "V2.5 - MCTS",
+    "wins": 20,
+    "matches": 30,
+    "winRate": 66.7,
+    "avgRank": "1.40",
+    "avgShare": "37.4%"
+  },
+  "V2.5 - MPC - MCTS": {
+    "variant": "V2.5 - MPC - MCTS",
+    "wins": 20,
+    "matches": 30,
+    "winRate": 66.7,
+    "avgRank": "1.40",
+    "avgShare": "37.4%"
+  },
+  "MPC Only": {
+    "variant": "MPC Only",
+    "wins": 21,
+    "matches": 30,
+    "winRate": 70,
+    "avgRank": "1.37",
+    "avgShare": "33.1%"
+  },
+  "MCTS Only": {
+    "variant": "MCTS Only",
+    "wins": 27,
+    "matches": 30,
+    "winRate": 90,
+    "avgRank": "1.13",
+    "avgShare": "43.5%"
+  }
+}

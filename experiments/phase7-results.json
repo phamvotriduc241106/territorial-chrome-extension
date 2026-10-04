@@ -1,0 +1,619 @@
+{
+  "totalMined": 60,
+  "clusters": {
+    "MODEL_ERROR": [],
+    "BELIEF_ERROR": [],
+    "PLANNING_HORIZON_ERROR": [
+      {
+        "matchSeed": 700747,
+        "ticks": 229,
+        "finalTerr": 649,
+        "finalBal": 0,
+        "winnerName": "VH-4",
+        "winnerTerr": 2051,
+        "detail": "H=8 horizon failed to foresee multi-tick territorial encirclement.",
+        "totalDecisions": 43
+      },
+      {
+        "matchSeed": 705395,
+        "ticks": 187,
+        "finalTerr": 453,
+        "finalBal": 0,
+        "winnerName": "VH-3",
+        "winnerTerr": 1836,
+        "detail": "H=8 horizon failed to foresee multi-tick territorial encirclement.",
+        "totalDecisions": 33
+      },
+      {
+        "matchSeed": 708300,
+        "ticks": 226,
+        "finalTerr": 528,
+        "finalBal": 0,
+        "winnerName": "VH-4",
+        "winnerTerr": 1744,
+        "detail": "H=8 horizon failed to foresee multi-tick territorial encirclement.",
+        "totalDecisions": 39
+      },
+      {
+        "matchSeed": 709877,
+        "ticks": 196,
+        "finalTerr": 544,
+        "finalBal": 0,
+        "winnerName": "VH-2",
+        "winnerTerr": 1860,
+        "detail": "H=8 horizon failed to foresee multi-tick territorial encirclement.",
+        "totalDecisions": 32
+      }
+    ],
+    "OPPONENT_MODEL_ERROR": [],
+    "TOPOLOGY_ERROR": [],
+    "RESOURCE_ALLOCATION_ERROR": [],
+    "KINGMAKER_ERROR": [
+      {
+        "matchSeed": 700332,
+        "ticks": 250,
+        "finalTerr": 601,
+        "finalBal": 0,
+        "winnerName": "VH-4",
+        "winnerTerr": 2461,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 48
+      },
+      {
+        "matchSeed": 700415,
+        "ticks": 250,
+        "finalTerr": 657,
+        "finalBal": 125,
+        "winnerName": "VH-3",
+        "winnerTerr": 1659,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 63
+      },
+      {
+        "matchSeed": 700664,
+        "ticks": 250,
+        "finalTerr": 537,
+        "finalBal": 0,
+        "winnerName": "VH-2",
+        "winnerTerr": 1188,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 29
+      },
+      {
+        "matchSeed": 700913,
+        "ticks": 250,
+        "finalTerr": 310,
+        "finalBal": 1880,
+        "winnerName": "VH-2",
+        "winnerTerr": 953,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 9
+      },
+      {
+        "matchSeed": 701162,
+        "ticks": 250,
+        "finalTerr": 413,
+        "finalBal": 2397,
+        "winnerName": "VH-2",
+        "winnerTerr": 958,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 5
+      },
+      {
+        "matchSeed": 701660,
+        "ticks": 250,
+        "finalTerr": 423,
+        "finalBal": 159,
+        "winnerName": "VH-3",
+        "winnerTerr": 1214,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 45
+      },
+      {
+        "matchSeed": 701992,
+        "ticks": 250,
+        "finalTerr": 728,
+        "finalBal": 187,
+        "winnerName": "VH-2",
+        "winnerTerr": 1477,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 77
+      },
+      {
+        "matchSeed": 702241,
+        "ticks": 250,
+        "finalTerr": 871,
+        "finalBal": 197,
+        "winnerName": "VH-4",
+        "winnerTerr": 1635,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 83
+      },
+      {
+        "matchSeed": 702407,
+        "ticks": 250,
+        "finalTerr": 1543,
+        "finalBal": 200,
+        "winnerName": "VH-4",
+        "winnerTerr": 1789,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 80
+      },
+      {
+        "matchSeed": 702656,
+        "ticks": 250,
+        "finalTerr": 433,
+        "finalBal": 46,
+        "winnerName": "VH-4",
+        "winnerTerr": 1507,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 46
+      },
+      {
+        "matchSeed": 703320,
+        "ticks": 250,
+        "finalTerr": 822,
+        "finalBal": 126,
+        "winnerName": "VH-3",
+        "winnerTerr": 2182,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 70
+      },
+      {
+        "matchSeed": 703652,
+        "ticks": 250,
+        "finalTerr": 681,
+        "finalBal": 838,
+        "winnerName": "VH-4",
+        "winnerTerr": 870,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 59
+      },
+      {
+        "matchSeed": 703735,
+        "ticks": 250,
+        "finalTerr": 799,
+        "finalBal": 215,
+        "winnerName": "VH-3",
+        "winnerTerr": 1214,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 83
+      },
+      {
+        "matchSeed": 704233,
+        "ticks": 250,
+        "finalTerr": 588,
+        "finalBal": 141,
+        "winnerName": "VH-4",
+        "winnerTerr": 1214,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 53
+      },
+      {
+        "matchSeed": 704316,
+        "ticks": 250,
+        "finalTerr": 646,
+        "finalBal": 200,
+        "winnerName": "VH-2",
+        "winnerTerr": 1120,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 82
+      },
+      {
+        "matchSeed": 704399,
+        "ticks": 250,
+        "finalTerr": 827,
+        "finalBal": 186,
+        "winnerName": "VH-4",
+        "winnerTerr": 1833,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 83
+      },
+      {
+        "matchSeed": 704565,
+        "ticks": 250,
+        "finalTerr": 933,
+        "finalBal": 183,
+        "winnerName": "VH-3",
+        "winnerTerr": 1207,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 79
+      },
+      {
+        "matchSeed": 704648,
+        "ticks": 250,
+        "finalTerr": 865,
+        "finalBal": 122,
+        "winnerName": "VH-4",
+        "winnerTerr": 1922,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 67
+      },
+      {
+        "matchSeed": 704897,
+        "ticks": 250,
+        "finalTerr": 916,
+        "finalBal": 168,
+        "winnerName": "VH-4",
+        "winnerTerr": 2593,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 82
+      },
+      {
+        "matchSeed": 704980,
+        "ticks": 250,
+        "finalTerr": 714,
+        "finalBal": 214,
+        "winnerName": "VH-3",
+        "winnerTerr": 2085,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 83
+      },
+      {
+        "matchSeed": 705146,
+        "ticks": 250,
+        "finalTerr": 598,
+        "finalBal": 164,
+        "winnerName": "VH-2",
+        "winnerTerr": 752,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 61
+      },
+      {
+        "matchSeed": 705727,
+        "ticks": 250,
+        "finalTerr": 603,
+        "finalBal": 190,
+        "winnerName": "VH-2",
+        "winnerTerr": 1207,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 78
+      },
+      {
+        "matchSeed": 706059,
+        "ticks": 250,
+        "finalTerr": 826,
+        "finalBal": 148,
+        "winnerName": "VH-4",
+        "winnerTerr": 1621,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 71
+      },
+      {
+        "matchSeed": 706474,
+        "ticks": 250,
+        "finalTerr": 936,
+        "finalBal": 179,
+        "winnerName": "VH-2",
+        "winnerTerr": 2053,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 83
+      },
+      {
+        "matchSeed": 706806,
+        "ticks": 250,
+        "finalTerr": 934,
+        "finalBal": 3248,
+        "winnerName": "VH-4",
+        "winnerTerr": 1214,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 9
+      },
+      {
+        "matchSeed": 706889,
+        "ticks": 250,
+        "finalTerr": 662,
+        "finalBal": 204,
+        "winnerName": "VH-4",
+        "winnerTerr": 1990,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 82
+      },
+      {
+        "matchSeed": 707221,
+        "ticks": 250,
+        "finalTerr": 579,
+        "finalBal": 165,
+        "winnerName": "VH-2",
+        "winnerTerr": 746,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 51
+      },
+      {
+        "matchSeed": 707304,
+        "ticks": 250,
+        "finalTerr": 473,
+        "finalBal": 67,
+        "winnerName": "VH-2",
+        "winnerTerr": 1527,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 51
+      },
+      {
+        "matchSeed": 707470,
+        "ticks": 250,
+        "finalTerr": 480,
+        "finalBal": 141,
+        "winnerName": "VH-2",
+        "winnerTerr": 1634,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 69
+      },
+      {
+        "matchSeed": 707885,
+        "ticks": 250,
+        "finalTerr": 487,
+        "finalBal": 163,
+        "winnerName": "VH-4",
+        "winnerTerr": 996,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 54
+      },
+      {
+        "matchSeed": 708051,
+        "ticks": 250,
+        "finalTerr": 603,
+        "finalBal": 184,
+        "winnerName": "VH-4",
+        "winnerTerr": 1705,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 73
+      },
+      {
+        "matchSeed": 708632,
+        "ticks": 250,
+        "finalTerr": 649,
+        "finalBal": 79,
+        "winnerName": "VH-4",
+        "winnerTerr": 1872,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 55
+      },
+      {
+        "matchSeed": 708798,
+        "ticks": 250,
+        "finalTerr": 658,
+        "finalBal": 151,
+        "winnerName": "VH-4",
+        "winnerTerr": 1676,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 74
+      },
+      {
+        "matchSeed": 709462,
+        "ticks": 250,
+        "finalTerr": 504,
+        "finalBal": 193,
+        "winnerName": "VH-4",
+        "winnerTerr": 1214,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 72
+      },
+      {
+        "matchSeed": 709545,
+        "ticks": 250,
+        "finalTerr": 628,
+        "finalBal": 127,
+        "winnerName": "VH-3",
+        "winnerTerr": 2428,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 71
+      },
+      {
+        "matchSeed": 709960,
+        "ticks": 250,
+        "finalTerr": 1032,
+        "finalBal": 255,
+        "winnerName": "VH-4",
+        "winnerTerr": 1214,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 84
+      },
+      {
+        "matchSeed": 710375,
+        "ticks": 250,
+        "finalTerr": 160,
+        "finalBal": 149,
+        "winnerName": "VH-3",
+        "winnerTerr": 1126,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-3 to snowball uncontested.",
+        "totalDecisions": 26
+      },
+      {
+        "matchSeed": 710790,
+        "ticks": 250,
+        "finalTerr": 734,
+        "finalBal": 0,
+        "winnerName": "VH-2",
+        "winnerTerr": 1748,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 54
+      },
+      {
+        "matchSeed": 711122,
+        "ticks": 250,
+        "finalTerr": 1028,
+        "finalBal": 237,
+        "winnerName": "VH-2",
+        "winnerTerr": 2007,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 84
+      },
+      {
+        "matchSeed": 711288,
+        "ticks": 250,
+        "finalTerr": 773,
+        "finalBal": 197,
+        "winnerName": "VH-2",
+        "winnerTerr": 1046,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 76
+      },
+      {
+        "matchSeed": 711371,
+        "ticks": 250,
+        "finalTerr": 832,
+        "finalBal": 196,
+        "winnerName": "VH-4",
+        "winnerTerr": 1157,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-4 to snowball uncontested.",
+        "totalDecisions": 84
+      },
+      {
+        "matchSeed": 711537,
+        "ticks": 250,
+        "finalTerr": 794,
+        "finalBal": 143,
+        "winnerName": "VH-2",
+        "winnerTerr": 1799,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 71
+      },
+      {
+        "matchSeed": 711703,
+        "ticks": 250,
+        "finalTerr": 888,
+        "finalBal": 266,
+        "winnerName": "VH-2",
+        "winnerTerr": 1210,
+        "detail": "Engaged in attrition war against secondary player, enabling outside leader VH-2 to snowball uncontested.",
+        "totalDecisions": 83
+      }
+    ],
+    "OVERCOMMIT": [],
+    "UNDERCOMMIT": [],
+    "TIMING_ERROR": [
+      {
+        "matchSeed": 701411,
+        "ticks": 250,
+        "finalTerr": 1100,
+        "finalBal": 303,
+        "winnerName": "VH-4",
+        "winnerTerr": 1214,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 114 pixels.",
+        "totalDecisions": 84
+      },
+      {
+        "matchSeed": 701577,
+        "ticks": 250,
+        "finalTerr": 907,
+        "finalBal": 207,
+        "winnerName": "VH-2",
+        "winnerTerr": 1053,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 146 pixels.",
+        "totalDecisions": 84
+      },
+      {
+        "matchSeed": 703071,
+        "ticks": 250,
+        "finalTerr": 1237,
+        "finalBal": 187,
+        "winnerName": "VH-4",
+        "winnerTerr": 1333,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 96 pixels.",
+        "totalDecisions": 75
+      },
+      {
+        "matchSeed": 704067,
+        "ticks": 250,
+        "finalTerr": 690,
+        "finalBal": 807,
+        "winnerName": "VH-4",
+        "winnerTerr": 755,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 65 pixels.",
+        "totalDecisions": 60
+      },
+      {
+        "matchSeed": 705893,
+        "ticks": 250,
+        "finalTerr": 1094,
+        "finalBal": 303,
+        "winnerName": "VH-4",
+        "winnerTerr": 1234,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 140 pixels.",
+        "totalDecisions": 84
+      },
+      {
+        "matchSeed": 706225,
+        "ticks": 250,
+        "finalTerr": 906,
+        "finalBal": 288,
+        "winnerName": "VH-3",
+        "winnerTerr": 1002,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 96 pixels.",
+        "totalDecisions": 83
+      },
+      {
+        "matchSeed": 706723,
+        "ticks": 250,
+        "finalTerr": 749,
+        "finalBal": 168,
+        "winnerName": "VH-2",
+        "winnerTerr": 809,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 60 pixels.",
+        "totalDecisions": 71
+      },
+      {
+        "matchSeed": 707055,
+        "ticks": 250,
+        "finalTerr": 600,
+        "finalBal": 164,
+        "winnerName": "VH-3",
+        "winnerTerr": 687,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 87 pixels.",
+        "totalDecisions": 61
+      },
+      {
+        "matchSeed": 708964,
+        "ticks": 250,
+        "finalTerr": 1460,
+        "finalBal": 192,
+        "winnerName": "VH-3",
+        "winnerTerr": 1553,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 93 pixels.",
+        "totalDecisions": 77
+      },
+      {
+        "matchSeed": 709047,
+        "ticks": 250,
+        "finalTerr": 836,
+        "finalBal": 174,
+        "winnerName": "VH-4",
+        "winnerTerr": 899,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 63 pixels.",
+        "totalDecisions": 75
+      },
+      {
+        "matchSeed": 710043,
+        "ticks": 250,
+        "finalTerr": 692,
+        "finalBal": 170,
+        "winnerName": "VH-2",
+        "winnerTerr": 781,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 89 pixels.",
+        "totalDecisions": 63
+      },
+      {
+        "matchSeed": 710873,
+        "ticks": 250,
+        "finalTerr": 624,
+        "finalBal": 168,
+        "winnerName": "VH-3",
+        "winnerTerr": 676,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 52 pixels.",
+        "totalDecisions": 57
+      },
+      {
+        "matchSeed": 711620,
+        "ticks": 250,
+        "finalTerr": 1100,
+        "finalBal": 303,
+        "winnerName": "VH-2",
+        "winnerTerr": 1214,
+        "detail": "Timed out at maxTicks (250) trailing winner by only 114 pixels.",
+        "totalDecisions": 84
+      }
+    ]
+  },
+  "dominantCluster": "KINGMAKER_ERROR"
+}

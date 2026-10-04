@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TIO MAIN hook test</title></head>
+<body data-status="running"><pre id="result">RUNNING</pre>
+  <script src="../shared/config.js"></script>
+  <script src="../content/engine-core-v1.js"></script>
+  <script src="../experiments/engine-core-v2-advanced.js"></script>
+  <script src="../content/engine-adapter.js"></script>
+  <script src="../content/source-adapter.js"></script>
+  <script>
+    (() => {
+      const active = Object.create(null);
+      const physical = new Set([99, 2]);
+      const counters = { dF: 0, dJ: 0, cE: 0, hg: 0 };
+      const aq = [0, 10000, 500];
+      const bN = [0, 100, 20];
+      const readable = {
+        neighbors(me, allowAll, excludeActive) {
+          return [...physical].filter((target) => !excludeActive || !active[target]);
+        },
+        contains(me, target) { return physical.has(target); },
+        available(me, target) { return physical.has(target) && !active[target]; },
+        select(me, allowAll, preferWeak, preferEmpty) {
+          if (preferEmpty && physical.has(99) && !active[99]) return { target: 99, empty: true };
+          if (physical.has(2) && !active[2]) return { target: 2, empty: false };
+          if (physical.has(99) && !active[99]) return { target: 99, empty: true };
+          return null;
+        }
+      };
+      window.__hookFixture = { active, physical, counters, aq };
+      window.__TIO_GAME__ = {
+        contract: 'test-fixture',
+        ap: 1,
+        aq,
+        bN,
+        b1: 99,
+        ax: [[], []],
+        bF: [[], [1]],
+        aX: { ch: (me, target) => !!active[target] },
+        readable,
+        dF(me, troops) { counters.dF++; aq[me] -= Math.min(troops, 100); return true; },
+        dJ(me, troops, target) { counters.dJ++; aq[me] -= Math.min(troops, 100); },
+        cE() { counters.cE++; }
+      };
+
+      const modernActive = Object.create(null);
+      const modernCounters = { hy: 0 };
+      const modernBalance = new Array(42).fill(0);
+      const modernTerritory = new Array(42).fill(0);
+      const modernAlive = new Array(42).fill(0);
+      modernBalance[1] = 12000;
+      modernTerritory[1] = 120;
+      modernAlive[1] = 1;
+      for (let id = 2; id <= 17; id++) {
+        modernBalance[id] = 500 + id;
+        modernTerritory[id] = 20 + id;
+        modernAlive[id] = 1;
+      }
+      modernBalance[40] = 450;
+      modernTerritory[40] = 35;
+      modernAlive[40] = 1;
+      const modernPhysical = new Set([41, 2, 40]);
+      const modernAdapter = {
+        neighbors(me, excludeActive) {
+          return [...modernPhysical].filter((target) => !excludeActive || !modernActive[target]);
+        },
+        contains(me, target) { return modernPhysical.has(target); },
+        available(me, target) { return modernPhysical.has(target) && !modernActive[target]; },
+        activeCount() { return Object.keys(modernActive).filter((key) => modernActive[key]).length; },
+        frontCap() { return 12; },
+        softCap() { return 12000; },
+        gameTick() { return 777; },
+        select() { return modernActive[2] ? { target: 40, empty: false } : { target: 2, empty: false }; }
+      };
+      const storage = Array.from({ length: 183 }, () => ({ value: 0 }));
+      window.__modernFixture = {
+        active: modernActive,
+        counters: modernCounters,
+        game: {
+          contract: 'live-modern-v1',
+          aE: { fB: 1, fO: 41, km: 2 },
+          ah: { hT: modernBalance, hF: modernTerritory, nM: modernAlive },
+          aS: { hv() { return storage[182].value | 0; }, di() {} },
+          bm: { eV: { data: storage }, po: { pp(index, value) { storage[index].value = value; } } },
+          bB: { hr: { hy(code, target) {
+            modernCounters.hy++;
+            modernCounters.code = code;
+            modernCounters.target = target;
+            if (!modernCounters.reject) modernBalance[1] -= Math.floor(modernBalance[1] * (code + 1) / 1024) + Math.floor(12 * modernBalance[1] / 1024);
+          } } },
+          modern: modernAdapter
+        }
+      };
+    })();
+  </script>
+  <script src="../content/main-hook.js"></script>
+  <script>
+    (async () => {
+      const checks = [];
+      const assert = (condition, label) => {
+        if (!condition) throw new Error(label);
+        checks.push(label);
+      };
+      const protocol = window.TIOConfig.BRIDGE;
+      let nextId = 1;
+      const rpc = (type, payload = {}) => new Promise((resolve, reject) => {
+        const id = nextId++;
+        const timer = setTimeout(() => reject(new Error(`${type} timeout`)), 1500);
+        const onMessage = (event) => {
+          const data = event.data;
+          if (event.source !== window || !data || data.source !== protocol.responseSource || data.id !== id) return;
+          clearTimeout(timer);
+          window.removeEventListener('message', onMessage);
+          resolve(data.result);
+        };
+        window.addEventListener('message', onMessage);
+        window.postMessage({ source: protocol.requestSource, version: protocol.version, id, type, ...payload }, '*');
+      });
+
+      try {
+        const fixture = window.__hookFixture;
+        const armed = await rpc('arm', { armed: true });
+        assert(armed.ok && armed.armed, 'arm handshake');
+
+        fixture.active[99] = true;
+        const busyNeutral = await rpc('attack-neutral', { ratio: 0.2 });
+        assert(busyNeutral.err === 'target-busy', 'active neutral blocked at actuator boundary');
+        delete fixture.active[99];
+
+        fixture.active[2] = true;
+        const busyEnemy = await rpc('attack-target', { ratio: 0.2, target: 2, phase: 'PRESSURE' });
+        assert(busyEnemy.err === 'target-busy', 'active enemy blocked at actuator boundary');
+        delete fixture.active[2];
+        assert(Object.values(fixture.counters).every((count) => count === 0), 'busy targets reach no native actuator');
+
+        const neutral = await rpc('attack-neutral', { ratio: 0.2 });
+        assert(neutral.ok && fixture.counters.dF === 1,
+          'inactive neutral reaches dF: ' + JSON.stringify({ neutral, counters: fixture.counters }));
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const enemy = await rpc('attack-target', { ratio: 0.2, target: 2, phase: 'PRESSURE' });
+        assert(enemy.ok && fixture.counters.dJ === 1, 'inactive enemy reaches dJ');
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        window.__TIO_GAME__ = window.__modernFixture.game;
+        const modernState = await rpc('state');
+        assert(modernState.state.ready && modernState.state.contract === 'live-modern-v1', 'modern contract recognized');
+        assert(modernState.state.balance === 12000 && modernState.state.territory === 120, 'modern economy mapped');
+        assert(modernState.state.softCap === 12000 && modernState.state.gameTick === 777, 'modern exact economy clock mapped');
+        assert(modernState.state.activeFronts === 0 && modernState.state.humanFrontCap === 12, 'modern land-front state mapped');
+        assert(modernState.state.enemies.some((enemy) => enemy.id === 40 && enemy.adjacent), 'high-id adjacent enemy survives crowded lobby');
+
+        window.__modernFixture.active[2] = true;
+        const modernBusy = await rpc('attack-target', { ratio: 0.2, target: 2, phase: 'PRESSURE' });
+        assert(modernBusy.err === 'target-busy' && window.__modernFixture.counters.hy === 0, 'modern active target blocked');
+        delete window.__modernFixture.active[2];
+        const modernAttack = await rpc('attack-target', { ratio: 0.2, target: 2, phase: 'PRESSURE' });
+        assert(modernAttack.ok && modernAttack.path === 'hy-land' && window.__modernFixture.counters.hy === 1, 'modern human land path executes');
+
+        const mf = window.__modernFixture;
+        const settle = async () => {
+          await new Promise(resolve => setTimeout(resolve, 300));
+          mf.game.ah.hT[1] = 12000;
+        };
+        await settle();
+        const beforeOpeningHold = mf.counters.hy;
+        const openingHold = await rpc('attack', { ratio: 0.2, preferNeutral: true,
+          attackSequence: 1, gameTimeSec: 1.8 });
+        assert(!openingHold.ok && mf.counters.hy === beforeOpeningHold,
+          'opening recovery remains zero-spend at native boundary');
+        const openingResume = await rpc('attack', { ratio: 0.2, preferNeutral: true,
+          attackSequence: 1, gameTimeSec: 3.0 });
+        assert(openingResume.ok, 'timed opening recovery expires through the full command path');
+        await settle();
+        // This target is crushable, so use a larger live defender to exercise
+        // the non-crush defensive wall rather than the counter-crush branch.
+        mf.game.ah.hT[2] = 3000;
+        await settle();
+        const beforeDefenseHold = mf.counters.hy;
+        const defenseWall = await rpc('attack', { ratio: 0.2, preferNeutral: false,
+          target: 2, areaTrend: -7, shrinkFrames: 2 });
+        assert(!defenseWall.ok && mf.counters.hy === beforeDefenseHold,
+          'territory-loss defense reaches the native command boundary');
+        mf.game.ah.hT[2] = 502;
+        await settle();
+        const freeFirst = await rpc('attack', { ratio: 0.4, preferNeutral: true, freeLand: 0.08 });
+        assert(freeFirst.ok && mf.counters.target === 41, 'dense empire keeps exact free-land intent');
+        await settle();
+        const focused = await rpc('attack', { ratio: 0.1, preferNeutral: false, target: 40 });
+        assert(focused.ok && mf.counters.target === 40, 'planner target preserved instead of native selector');
+        await settle();
+        mf.active[40] = true;
+        const beforeBusy = mf.counters.hy;
+        const noRedirect = await rpc('attack', { ratio: 0.1, preferNeutral: false, target: 40 });
+        assert(!noRedirect.ok && noRedirect.err === 'target-busy' && mf.counters.hy === beforeBusy, 'busy selected target never redirects');
+        delete mf.active[40];
+        const disabled = await rpc('attack', { ratio: 0.2, preferNeutral: false, autoAttack: false });
+        assert(!disabled.ok && disabled.err === 'action-disabled' && mf.counters.hy === beforeBusy, 'disabled attack reaches no actuator');
+        const disabledExpand = await rpc('attack', { ratio: 0.2, preferNeutral: true, autoExpand: false });
+        assert(!disabledExpand.ok && disabledExpand.err === 'action-disabled', 'disabled expansion reaches no actuator');
+        for (const ratio of [0.06, 0.72]) {
+          await settle();
+          const sized = await rpc('attack-target', { ratio, target: 2 });
+          const expected = window.TIOEngineCore.ratioToIl(ratio);
+          assert(sized.ok && mf.counters.code === expected && sized.ratio === (expected + 1) / 1024, 'exact ratio encoding ' + ratio);
+        }
+        await settle();
+        mf.counters.reject = true;
+        const ignored = await rpc('attack', { ratio: 0.2, preferNeutral: true });
+        assert(!ignored.ok && ignored.submitted && ignored.err === 'command-unconfirmed', 'void rejected command is not a success');
+        mf.counters.reject = false;
+        await settle();
+        const beforeBurst = mf.counters.hy;
+        const burst = await rpc('attack-burst', { ratio: 0.1, preferNeutral: false, target: 40, fronts: 4 });
+        assert(burst.okCount === 1 && mf.counters.hy === beforeBurst + 1, 'burst submits exactly one command');
+        await settle();
+        for (const target of [2, 3, 4, 5]) mf.active[target] = true;
+        const beforeCap = mf.counters.hy;
+        const capped = await rpc('attack', { preferNeutral: true, ratio: 0.1 });
+        assert(!capped.ok && capped.err === 'front-cap' && mf.counters.hy === beforeCap, 'live four-front cap blocks fifth command');
+
+        document.body.dataset.status = 'pass';
+        document.getElementById('result').textContent = `PASS ${checks.length}: ${checks.join(', ')}`;
+      } catch (error) {
+        document.body.dataset.status = 'fail';
+        document.getElementById('result').textContent = `FAIL: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "auditResults": [
+    {
+      "configuration": "Original Dev Tournament (Center spawn + Cloned Bots + Mock Chokepoint)",
+      "wins": 7,
+      "matches": 30,
+      "winRate": "23.3%"
+    },
+    {
+      "configuration": "Bias 1 Removed: Authentic Dump dU Bots (instead of Cloned Bots)",
+      "wins": 9,
+      "matches": 30,
+      "winRate": "30.0%"
+    },
+    {
+      "configuration": "Bias 2 Removed: Strict 1.30x Defense (NO 1.05x Chokepoint Bonus)",
+      "wins": 8,
+      "matches": 30,
+      "winRate": "26.7%"
+    },
+    {
+      "configuration": "Bias 3 Removed: Randomized Spawns (NO Static Center Spawn)",
+      "wins": 23,
+      "matches": 30,
+      "winRate": "76.7%"
+    },
+    {
+      "configuration": "Bias 4 Removed: Fog-of-War Active (Hidden Enemy Balance)",
+      "wins": 24,
+      "matches": 30,
+      "winRate": "80.0%"
+    }
+  ]
+}

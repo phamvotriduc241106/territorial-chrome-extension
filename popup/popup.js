@@ -1,10 +1,11 @@
 // Territorial.io Auto Commander - Popup Controller (error-safe)
 
 document.addEventListener('DOMContentLoaded', () => {
+  const config = window.TIOConfig;
   const toggleBot = document.getElementById('toggle-bot');
   const toggleExpand = document.getElementById('toggle-expand');
   const toggleAttack = document.getElementById('toggle-attack');
-  const toggleJitter = document.getElementById('toggle-jitter');
+  const toggleFallback = document.getElementById('toggle-fallback');
 
   const inputCPS = document.getElementById('input-cps');
   const inputRatio = document.getElementById('input-ratio');
@@ -13,25 +14,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const statusBadge = document.getElementById('status-badge');
   const statusText = document.getElementById('status-text');
+  const versionLabel = document.getElementById('version-label');
+  const versionDetails = document.getElementById('version-details');
   const strategyBtns = document.querySelectorAll('.strategy-btn');
+  const btnEngineV2 = document.getElementById('btn-engine-v2');
+  const btnEngineV1 = document.getElementById('btn-engine-v1');
 
-  let currentSettings = {
-    botEnabled: true,
-    autoExpand: true,
-    autoAttack: true,
-    clickSpeed: 14,
-    sliderPercentage: 30,
-    humanJitter: true,
-    hotkeysEnabled: true,
-    strategy: 'expansionist'
-  };
+  // Telemetry DOM elements
+  const pillConn = document.getElementById('pill-conn');
+  const teleState = document.getElementById('tele-state');
+  const teleKernel = document.getElementById('tele-kernel');
+  const teleEngine = document.getElementById('tele-engine');
+  const teleBalance = document.getElementById('tele-balance');
+  const teleCap = document.getElementById('tele-cap');
+  const telePolicy = document.getElementById('tele-policy');
+
+  const headerUpdateLabel = document.getElementById('header-update-label');
+
+  let currentSettings = config.normalizeSettings(config.DEFAULT_SETTINGS);
+  if (versionLabel) versionLabel.textContent = config.buildVersionLabel ? config.buildVersionLabel() : `v${config.VERSION}`;
+  if (versionDetails) versionDetails.textContent = config.buildEngineDetails ? config.buildEngineDetails() : `${config.ENGINE_VERSION} Math · Updated ${config.ENGINE_UPDATED_AT}`;
+  if (headerUpdateLabel && config.ENGINE_UPDATED_AT) headerUpdateLabel.textContent = `Updated: ${config.ENGINE_UPDATED_AT}`;
+
+  function updateTelemetry(st) {
+    if (!st) {
+      if (pillConn) {
+        pillConn.textContent = 'Disconnected';
+        pillConn.className = 'pill-badge';
+      }
+      if (teleState) teleState.textContent = 'Tab Inactive';
+      if (teleBalance) teleBalance.textContent = '—';
+      if (teleCap) teleCap.textContent = '—';
+      if (telePolicy) telePolicy.textContent = 'Open territorial.io to connect';
+      return;
+    }
+
+    if (pillConn) {
+      if (st.inGame) {
+        pillConn.textContent = 'Live Match';
+        pillConn.className = 'pill-badge active';
+      } else if (st.armed) {
+        pillConn.textContent = 'Spawn Ready';
+        pillConn.className = 'pill-badge waiting';
+      } else {
+        pillConn.textContent = 'Connected';
+        pillConn.className = 'pill-badge';
+      }
+    }
+
+    if (teleState) {
+      if (st.inGame) {
+        teleState.textContent = st.botEnabled ? 'Active Playing' : 'Paused (Press Z)';
+      } else if (st.armed) {
+        teleState.textContent = 'Awaiting Spawn';
+      } else {
+        teleState.textContent = 'Lobby / Standby';
+      }
+    }
+
+    if (teleEngine) {
+      teleEngine.textContent = st.internalReady ? 'INTERNAL (bB)' : (st.path || 'CLICK-VH');
+    }
+
+    if (teleKernel) {
+      teleKernel.textContent = st.engineVersion === 1 ? 'V1 Heuristic' : `${config.ENGINE_VERSION} Math`;
+    }
+
+    if (teleBalance) {
+      teleBalance.textContent = st.balance > 0 ? Number(st.balance).toLocaleString() : '—';
+    }
+
+    if (teleCap) {
+      teleCap.textContent = st.softCap > 0 ? Number(st.softCap).toLocaleString() : '—';
+    }
+
+    if (telePolicy) {
+      if (!st.inGame && !st.armed) {
+        telePolicy.textContent = 'Waiting to join match...';
+      } else if (st.armed && !st.inGame) {
+        telePolicy.textContent = 'Ready — click map to spawn!';
+      } else {
+        telePolicy.textContent = st.policy || 'Active play';
+      }
+    }
+  }
+
+  function queryLiveStatus() {
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        void chrome.runtime.lastError;
+        if (!tabs || !tabs[0] || !tabs[0].id) {
+          updateTelemetry(null);
+          return;
+        }
+        try {
+          chrome.tabs.sendMessage(tabs[0].id, { action: 'GET_STATUS' }, (resp) => {
+            void chrome.runtime.lastError;
+            if (resp && resp.success && resp.status) {
+              updateTelemetry(resp.status);
+            } else {
+              updateTelemetry(null);
+            }
+          });
+        } catch (_) {
+          updateTelemetry(null);
+        }
+      });
+    } catch (_) {
+      updateTelemetry(null);
+    }
+  }
 
   // Load existing settings (guard missing chrome APIs)
   try {
     chrome.storage.local.get(currentSettings, (stored) => {
       // Consume lastError so Chrome does not show "Errors" on extension page
       void chrome.runtime.lastError;
-      currentSettings = { ...currentSettings, ...(stored || {}) };
+      currentSettings = config.normalizeSettings({ ...currentSettings, ...(stored || {}) });
       updateUIFromSettings();
     });
   } catch (e) {
@@ -42,15 +141,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggleBot) toggleBot.checked = !!currentSettings.botEnabled;
     if (toggleExpand) toggleExpand.checked = !!currentSettings.autoExpand;
     if (toggleAttack) toggleAttack.checked = !!currentSettings.autoAttack;
-    if (toggleJitter) toggleJitter.checked = !!currentSettings.humanJitter;
+    if (toggleFallback) toggleFallback.checked = !!currentSettings.allowVisionFallback;
 
     if (inputCPS) inputCPS.value = currentSettings.clickSpeed;
     if (inputRatio) inputRatio.value = currentSettings.sliderPercentage;
 
-    if (valCPS) valCPS.textContent = `${currentSettings.clickSpeed} CPS`;
-    if (valRatio) valRatio.textContent = `${currentSettings.sliderPercentage}%`;
+    if (valCPS) valCPS.textContent = `${currentSettings.clickSpeed} /s`;
+    if (valRatio) valRatio.textContent = currentSettings.sliderPercentage > 0
+      ? `${currentSettings.sliderPercentage}%`
+      : 'AUTO';
 
-    const active = currentSettings.botEnabled || currentSettings.autoExpand || currentSettings.autoAttack;
+    const isV2 = (Number(currentSettings.engineVersion) || 2) === 2;
+    if (btnEngineV2) {
+      if (isV2) btnEngineV2.classList.add('active');
+      else btnEngineV2.classList.remove('active');
+    }
+    if (btnEngineV1) {
+      if (!isV2) btnEngineV1.classList.add('active');
+      else btnEngineV1.classList.remove('active');
+    }
+
+    const active = currentSettings.botEnabled;
     if (statusBadge && statusText) {
       if (active) {
         statusBadge.classList.add('active');
@@ -95,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveAndNotify() {
+    currentSettings = config.normalizeSettings(currentSettings);
     try {
       chrome.storage.local.set(currentSettings, () => {
         void chrome.runtime.lastError;
@@ -124,23 +236,26 @@ document.addEventListener('DOMContentLoaded', () => {
       saveAndNotify();
     });
   }
-  if (toggleJitter) {
-    toggleJitter.addEventListener('change', (e) => {
-      currentSettings.humanJitter = e.target.checked;
+  if (toggleFallback) {
+    toggleFallback.addEventListener('change', (e) => {
+      currentSettings.allowVisionFallback = e.target.checked;
       saveAndNotify();
     });
   }
   if (inputCPS) {
     inputCPS.addEventListener('input', (e) => {
-      currentSettings.clickSpeed = parseInt(e.target.value, 10) || 10;
-      if (valCPS) valCPS.textContent = `${currentSettings.clickSpeed} CPS`;
+      currentSettings.clickSpeed = parseInt(e.target.value, 10) || config.DEFAULT_SETTINGS.clickSpeed;
+      if (valCPS) valCPS.textContent = `${currentSettings.clickSpeed} /s`;
       saveAndNotify();
     });
   }
   if (inputRatio) {
     inputRatio.addEventListener('input', (e) => {
-      currentSettings.sliderPercentage = parseInt(e.target.value, 10) || 25;
-      if (valRatio) valRatio.textContent = `${currentSettings.sliderPercentage}%`;
+      const parsed = parseInt(e.target.value, 10);
+      currentSettings.sliderPercentage = Number.isFinite(parsed) ? parsed : 0;
+      if (valRatio) valRatio.textContent = currentSettings.sliderPercentage > 0
+        ? `${currentSettings.sliderPercentage}%`
+        : 'AUTO';
       saveAndNotify();
     });
   }
@@ -151,4 +266,23 @@ document.addEventListener('DOMContentLoaded', () => {
       saveAndNotify();
     });
   });
+
+  if (btnEngineV2) {
+    btnEngineV2.addEventListener('click', () => {
+      currentSettings.engineVersion = 2;
+      saveAndNotify();
+    });
+  }
+
+  if (btnEngineV1) {
+    btnEngineV1.addEventListener('click', () => {
+      currentSettings.engineVersion = 1;
+      saveAndNotify();
+    });
+  }
+
+  // Query live game telemetry immediately and poll every second while popup is open
+  queryLiveStatus();
+  const pollTimer = setInterval(queryLiveStatus, 1000);
+  window.addEventListener('unload', () => clearInterval(pollTimer));
 });

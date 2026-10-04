@@ -1,16 +1,9 @@
-// Territorial.io Commander - Background Service Worker v7.2
+// Territorial.io Commander - Background Service Worker v10
 // Keep this file free of window/document and always clear lastError.
 
-const DEFAULT_SETTINGS = {
-  botEnabled: true,
-  autoExpand: true,
-  autoAttack: true,
-  clickSpeed: 14,
-  sliderPercentage: 30,
-  humanJitter: true,
-  hotkeysEnabled: true,
-  strategy: 'expansionist'
-};
+importScripts('../shared/config.js');
+
+const DEFAULT_SETTINGS = self.TIOConfig.DEFAULT_SETTINGS;
 
 function safeSetBadge(enabled) {
   try {
@@ -23,9 +16,9 @@ function safeSetBadge(enabled) {
 
 chrome.runtime.onInstalled.addListener(() => {
   try {
-    chrome.storage.local.get(DEFAULT_SETTINGS, (stored) => {
+    chrome.storage.local.get(null, (stored) => {
       void chrome.runtime.lastError;
-      const merged = { ...DEFAULT_SETTINGS, ...(stored || {}) };
+      const merged = self.TIOConfig.migrateSettings(stored || {});
       chrome.storage.local.set(merged, () => {
         void chrome.runtime.lastError;
       });
@@ -62,13 +55,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'GET_SETTINGS') {
       chrome.storage.local.get(DEFAULT_SETTINGS, (data) => {
         void chrome.runtime.lastError;
-        sendResponse(data || DEFAULT_SETTINGS);
+        sendResponse(self.TIOConfig.normalizeSettings(data || DEFAULT_SETTINGS));
       });
       return true; // async
     }
 
     if (request.action === 'UPDATE_SETTINGS') {
-      chrome.storage.local.set(request.settings || {}, () => {
+      chrome.storage.local.set(self.TIOConfig.normalizeSettings(request.settings || {}), () => {
         void chrome.runtime.lastError;
         sendResponse({ status: 'ok' });
       });

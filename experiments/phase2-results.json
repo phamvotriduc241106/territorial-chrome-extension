@@ -1,0 +1,108 @@
+{
+  "lobbyBenchmarks": {
+    "2p": {
+      "wins": 4,
+      "matches": 20,
+      "winRate": "20.0%",
+      "avgRank": "1.80",
+      "avgShare": "51.4%"
+    },
+    "3p": {
+      "wins": 9,
+      "matches": 20,
+      "winRate": "45.0%",
+      "avgRank": "1.80",
+      "avgShare": "37.9%"
+    },
+    "4p": {
+      "wins": 11,
+      "matches": 20,
+      "winRate": "55.0%",
+      "avgRank": "1.45",
+      "avgShare": "35.9%"
+    },
+    "10p": {
+      "wins": 14,
+      "matches": 20,
+      "winRate": "70.0%",
+      "avgRank": "2.45",
+      "avgShare": "24.8%"
+    },
+    "25p": {
+      "wins": 7,
+      "matches": 20,
+      "winRate": "35.0%",
+      "avgRank": "8.45",
+      "avgShare": "10.1%"
+    },
+    "50p": {
+      "wins": 1,
+      "matches": 20,
+      "winRate": "5.0%",
+      "avgRank": "21.35",
+      "avgShare": "2.6%"
+    }
+  },
+  "adversarialScenarios": {
+    "WEAK_SPAWN": {
+      "wins": 1,
+      "matches": 15,
+      "winRate": "6.7%",
+      "avgRank": "2.93"
+    },
+    "SURROUNDED_SPAWN": {
+      "wins": 0,
+      "matches": 15,
+      "winRate": "0.0%",
+      "avgRank": "2.93"
+    },
+    "EDGE_SPAWN": {
+      "wins": 1,
+      "matches": 15,
+      "winRate": "6.7%",
+      "avgRank": "2.87"
+    },
+    "CHOKEPOINT_SPAWN": {
+      "wins": 5,
+      "matches": 15,
+      "winRate": "33.3%",
+      "avgRank": "2.13"
+    },
+    "ISLAND_START": {
+      "wins": 0,
+      "matches": 15,
+      "winRate": "0.0%",
+      "avgRank": "3.27"
+    },
+    "LOW_NEUTRAL_LAND": {
+      "wins": 9,
+      "matches": 15,
+      "winRate": "60.0%",
+      "avgRank": "2.07"
+    },
+    "DOMINANT_NEIGHBOR": {
+      "wins": 3,
+      "matches": 15,
+      "winRate": "20.0%",
+      "avgRank": "2.47"
+    },
+    "TWO_AGGRESSORS": {
+      "wins": 9,
+      "matches": 15,
+      "winRate": "60.0%",
+      "avgRank": "1.60"
+    },
+    "LATE_GAME_TROOP_DEFICIT": {
+      "wins": 4,
+      "matches": 15,
+      "winRate": "26.7%",
+      "avgRank": "2.20"
+    },
+    "LATE_GAME_TERRITORY_DEFICIT": {
+      "wins": 12,
+      "matches": 15,
+      "winRate": "80.0%",
+      "avgRank": "1.20"
+    }
+  }
+}

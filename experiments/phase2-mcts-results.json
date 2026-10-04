@@ -1,0 +1,64 @@
+{
+  "results": [
+    {
+      "depth": 1,
+      "rollouts": 35,
+      "winRate": 65,
+      "avgRank": 1.73,
+      "medShare": 31.9,
+      "medLat": 3.79,
+      "p95Lat": 24.33,
+      "avgNodes": 4.5
+    },
+    {
+      "depth": 2,
+      "rollouts": 70,
+      "winRate": 63.3,
+      "avgRank": 1.78,
+      "medShare": 33.1,
+      "medLat": 8.58,
+      "p95Lat": 18.92,
+      "avgNodes": 4.7
+    },
+    {
+      "depth": 3,
+      "rollouts": 105,
+      "winRate": 63.3,
+      "avgRank": 1.78,
+      "medShare": 33.9,
+      "medLat": 20.17,
+      "p95Lat": 27.71,
+      "avgNodes": 4.6
+    },
+    {
+      "depth": 4,
+      "rollouts": 140,
+      "winRate": 63.3,
+      "avgRank": 1.78,
+      "medShare": 33.9,
+      "medLat": 31.83,
+      "p95Lat": 42.67,
+      "avgNodes": 4.6
+    },
+    {
+      "depth": 6,
+      "rollouts": 210,
+      "winRate": 66.7,
+      "avgRank": 1.55,
+      "medShare": 34.7,
+      "medLat": 55.83,
+      "p95Lat": 67.42,
+      "avgNodes": 6.4
+    }
+  ],
+  "bestCfg": {
+    "depth": 1,
+    "rollouts": 35,
+    "winRate": 65,
+    "avgRank": 1.73,
+    "medShare": 31.9,
+    "medLat": 3.79,
+    "p95Lat": 24.33,
+    "avgNodes": 4.5
+  }
+}

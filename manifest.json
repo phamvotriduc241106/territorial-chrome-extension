@@ -1,19 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "9.9.9",
-  "description": "v9.9.9 Adjacent-only land attacks; ship (pZ) for sea-isolated islands.",
+  "version": "10.2.3",
+  "description": "V2.7 Territorial.io autonomous engine; native commands, predictive planning, no mouse/camera. Updated 2026-10-04 10:36:33 EDT.",
   "permissions": [
-    "storage",
-    "activeTab"
+    "storage"
   ],
   "host_permissions": [
     "https://territorial.io/*",
     "https://*.territorial.io/*",
     "http://localhost/*",
-    "http://127.0.0.1/*",
-    "http://localhost:*/*",
-    "http://127.0.0.1:*/*"
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background/background.js"
@@ -32,11 +29,15 @@
         "https://territorial.io/*",
         "https://*.territorial.io/*",
         "http://localhost/*",
-        "http://127.0.0.1/*",
-        "http://localhost:*/*",
-        "http://127.0.0.1:*/*"
+        "http://127.0.0.1/*"
       ],
       "js": [
+        "shared/config.js",
+        "content/engine-core-v1.js",
+        "experiments/engine-core-v2-advanced.js",
+        "content/engine-adapter.js",
+        "content/source-adapter.js",
+        "content/preloader.js",
         "content/main-hook.js"
       ],
       "run_at": "document_start",
@@ -47,28 +48,22 @@
         "https://territorial.io/*",
         "https://*.territorial.io/*",
         "http://localhost/*",
-        "http://127.0.0.1/*",
-        "http://localhost:*/*",
-        "http://127.0.0.1:*/*"
+        "http://127.0.0.1/*"
       ],
       "js": [
-        "content/hardmode.js",
+        "shared/config.js",
+        "content/engine-core-v1.js",
+        "experiments/engine-core-v2-advanced.js",
+        "content/engine-adapter.js",
         "content/coords.js",
         "content/vision.js",
         "content/grid.js",
         "content/region.js",
         "content/border.js",
         "content/neutral.js",
-        "content/world.js",
         "content/enemy.js",
         "content/economy.js",
         "content/heatmap.js",
-        "content/strategy.js",
-        "content/utility.js",
-        "content/prediction.js",
-        "content/smoothing.js",
-        "content/pathfinding.js",
-        "content/spatial.js",
         "content/controller.js",
         "content/internal.js",
         "content/hud.js",

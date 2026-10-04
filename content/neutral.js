@@ -75,39 +75,62 @@
       this.totalMine = nM;
       this.totalEnemy = nE;
       this.totalWater = nW;
-      const landish = Math.max(1, nN + nM + nE);
-      this.freeLandRatio = nN / landish;
+      this.mapWideNeutralRatio = nN / Math.max(1, nN + nM + nE);
 
       const cx = (myCentroid && myCentroid.x) || (w / 2);
       const cy = (myCentroid && myCentroid.y) || (h / 2);
 
-      // 1) Reachable uncaptured: NEUTRAL adjacent (4-conn) to MINE
-      //    These are the real click targets for expansion.
+      // 1) ONLY claimable cells: NEUTRAL that share an EDGE with MINE (4-conn).
+      //    Inland / island free land is NOT attackable — never score or return it.
       const reach = [];
       const seen = new Uint8Array(size);
-      const scanStep = Math.max(1, Math.floor(Math.min(w, h) / 120));
+      // Dense enough to catch thin perimeter; scale estimate with step²
+      const scanStep = Math.max(1, Math.floor(Math.min(w, h) / 160));
+      let adjNeutralEst = 0;
+      let adjEnemyEst = 0;
 
       for (let y = 1; y < h - 1; y += scanStep) {
         for (let x = 1; x < w - 1; x += scanStep) {
           const idx = y * w + x;
-          if (typeMatrix[idx] !== TYPE.NEUTRAL) continue;
+          const cellT = typeMatrix[idx];
+          // Count adjacent enemy for phase (edge-touch only)
+          if (cellT === TYPE.ENEMY) {
+            const enbs = [idx - 1, idx + 1, idx - w, idx + w];
+            for (let k = 0; k < 4; k++) {
+              if (typeMatrix[enbs[k]] === TYPE.MINE) {
+                adjEnemyEst += scanStep * scanStep;
+                break;
+              }
+            }
+            continue;
+          }
+          if (cellT !== TYPE.NEUTRAL) continue;
 
           let touchesMine = false;
           let enemyNear = false;
-          const nbs = [idx - 1, idx + 1, idx - w, idx + w];
+          let mineX = x;
+          let mineY = y;
+          const nbs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
           for (let k = 0; k < 4; k++) {
-            const nt = typeMatrix[nbs[k]];
-            if (nt === TYPE.MINE) touchesMine = true;
+            const nx = x + nbs[k][0];
+            const ny = y + nbs[k][1];
+            const nt = typeMatrix[ny * w + nx];
+            if (nt === TYPE.MINE) {
+              touchesMine = true;
+              mineX = nx;
+              mineY = ny;
+            }
             if (nt === TYPE.ENEMY) enemyNear = true;
           }
-          if (!touchesMine) continue;
+          if (!touchesMine) continue; // STRICT: not on our perimeter
           if (seen[idx]) continue;
           seen[idx] = 1;
+          adjNeutralEst += scanStep * scanStep;
 
-          // Local pocket density: how much neutral is around this cell
+          // Local pocket density only as scoring aid (target cell stays edge-touch)
           let pocketLocal = 0;
-          for (let dy = -3; dy <= 3; dy++) {
-            for (let dx = -3; dx <= 3; dx++) {
+          for (let dy = -2; dy <= 2; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
               const nx = x + dx, ny = y + dy;
               if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
               if (typeMatrix[ny * w + nx] === TYPE.NEUTRAL) pocketLocal++;
@@ -121,11 +144,9 @@
           const sector = ((Math.floor(((ang + Math.PI) / (Math.PI * 2)) * 8)) % 8 + 8) % 8;
           this.sectorFill[sector] += 1 + pocketLocal * 0.05;
 
-          // Score: prefer fat pockets near empire, avoid contested enemy edges early
-          let score = pocketLocal * 2.5 + Math.max(0, 40 - dist * 0.15);
-          if (enemyNear) score *= 0.45; // free land first
-          // Prefer cells slightly farther into neutral (deeper claim)
-          score += this._depthIntoNeutral(typeMatrix, w, h, x, y) * 3;
+          // Score perimeter free land only — prefer fat open edges, not depth inland
+          let score = pocketLocal * 2.0 + Math.max(0, 50 - dist * 0.12);
+          if (enemyNear) score *= 0.55;
 
           reach.push({
             x, y,
@@ -133,13 +154,27 @@
             touchesNeutral: true,
             touchesEnemy: enemyNear,
             touchesMine: true,
+            targetX: x,
+            targetY: y,
+            mineX,
+            mineY,
+            dx: Math.sign(x - mineX),
+            dy: Math.sign(y - mineY),
             pocketLocal,
             dist,
             sector,
-            score: parseFloat(score.toFixed(2))
+            score: parseFloat(score.toFixed(2)),
+            perimeterOnly: true
           });
         }
       }
+
+      // freeLandRatio = claimable perimeter free land vs our empire+claimable edge
+      // (NOT map-wide uncaptured — far neutrals are uncapturable until adjacent)
+      const claimableDenom = Math.max(1, nM + adjNeutralEst);
+      this.freeLandRatio = Math.min(1, adjNeutralEst / claimableDenom);
+      this.adjacentNeutralEst = adjNeutralEst;
+      this.adjacentEnemyEst = adjEnemyEst;
 
       // Sort and keep top candidates
       reach.sort((a, b) => b.score - a.score);
@@ -148,7 +183,7 @@
       // 2) Lightweight pocket clustering via sector aggregation + top cells
       this.pockets = this._buildPockets(reach, cx, cy);
 
-      // 3) Phase from free-land share + time
+      // 3) Phase from ADJACENT free-land share + time
       this.phase = this._phaseFor(this.freeLandRatio, gameTimeSec || 0, nM, nE);
 
       // Best sectors for multi-front expand
@@ -162,15 +197,21 @@
         totalNeutral: this.totalNeutral,
         totalMine: this.totalMine,
         totalEnemy: this.totalEnemy,
+        // Claimable free land only (edge-adjacent to us)
         freeLandRatio: parseFloat(this.freeLandRatio.toFixed(4)),
+        mapWideNeutralRatio: parseFloat((this.mapWideNeutralRatio || 0).toFixed(4)),
+        adjacentNeutralEst: this.adjacentNeutralEst | 0,
+        adjacentEnemyEst: this.adjacentEnemyEst | 0,
         reachableCount: this.reachableNeutral.length,
         pocketCount: this.pockets.length,
         largestPocket: this.pockets[0] ? this.pockets[0].area : 0,
         phase: this.phase,
         bestSectors: this.bestSectors.slice(),
+        // Only perimeter-adjacent neutrals
         topTargets: this.reachableNeutral.slice(0, 16),
         sectorFill: Array.from(this.sectorFill),
-        latencyMs: this.lastExecutionTimeMs
+        latencyMs: this.lastExecutionTimeMs,
+        perimeterOnly: true
       };
       return this.snapshot;
     }
@@ -245,6 +286,9 @@
         totalMine: 0,
         totalEnemy: 0,
         freeLandRatio: 0,
+        mapWideNeutralRatio: 0,
+        adjacentNeutralEst: 0,
+        adjacentEnemyEst: 0,
         reachableCount: 0,
         pocketCount: 0,
         largestPocket: 0,
@@ -252,7 +296,8 @@
         bestSectors: [],
         topTargets: [],
         sectorFill: [0, 0, 0, 0, 0, 0, 0, 0],
-        latencyMs: 0
+        latencyMs: 0,
+        perimeterOnly: true
       };
     }
 
@@ -301,7 +346,7 @@
             preferNeutral: true,
             wantEnemy: false,
             multiFront: 6,
-            pulseMs: 70,
+            pulseMs: 0,
             ratio: 0.42,
             label: 'VH OPEN dF'
           };
@@ -310,7 +355,7 @@
             preferNeutral: true,
             wantEnemy: false,
             multiFront: 6,
-            pulseMs: 80,
+            pulseMs: 0,
             ratio: 0.38,
             label: 'VH RUSH dF'
           };
@@ -319,7 +364,7 @@
             preferNeutral: this.freeLandRatio > 0.03,
             wantEnemy: this.freeLandRatio < 0.035,
             multiFront: 5,
-            pulseMs: 85,
+            pulseMs: 0,
             ratio: 0.35,
             label: 'VH CONTEST'
           };
@@ -329,7 +374,7 @@
             preferNeutral: this.freeLandRatio > 0.02,
             wantEnemy: true,
             multiFront: 5,
-            pulseMs: 90,
+            pulseMs: 0,
             ratio: 0.40,
             label: 'VH dJ pressure'
           };

@@ -1,0 +1,79 @@
+{
+  "eikonalRes": [
+    {
+      "N": 8,
+      "h": 0.1429,
+      "computed": 1.5175,
+      "exact": 1.4142,
+      "absError": 0.1033,
+      "relErrorPct": 7.3
+    },
+    {
+      "N": 16,
+      "h": 0.0667,
+      "computed": 1.4768,
+      "exact": 1.4142,
+      "absError": 0.06255,
+      "relErrorPct": 4.42
+    },
+    {
+      "N": 32,
+      "h": 0.0323,
+      "computed": 1.4517,
+      "exact": 1.4142,
+      "absError": 0.03745,
+      "relErrorPct": 2.65
+    },
+    {
+      "N": 64,
+      "h": 0.0159,
+      "computed": 1.4363,
+      "exact": 1.4142,
+      "absError": 0.02208,
+      "relErrorPct": 1.56
+    },
+    {
+      "N": 128,
+      "h": 0.0079,
+      "computed": 1.427,
+      "exact": 1.4142,
+      "absError": 0.0128,
+      "relErrorPct": 0.91
+    }
+  ],
+  "kktRes": {
+    "maxMarginalSpread": 0.030652890396844313
+  },
+  "pfRes": [
+    {
+      "K": 16,
+      "rmse": "210.4",
+      "calibrationPct": "45.9%",
+      "latencyUs": "2.18"
+    },
+    {
+      "K": 32,
+      "rmse": "211.7",
+      "calibrationPct": "44.2%",
+      "latencyUs": "3.14"
+    },
+    {
+      "K": 64,
+      "rmse": "209.4",
+      "calibrationPct": "39.3%",
+      "latencyUs": "7.29"
+    },
+    {
+      "K": 128,
+      "rmse": "221.2",
+      "calibrationPct": "39.6%",
+      "latencyUs": "8.98"
+    }
+  ],
+  "valRes": {
+    "w_terr": 5.031961089975556,
+    "w_bal": 0.06327466344003735,
+    "w_crush": -4.267818235708151,
+    "holdoutAcc": "71.3"
+  }
+}

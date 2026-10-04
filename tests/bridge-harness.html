@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TIO bridge test</title></head>
+<body data-status="running"><pre id="result">RUNNING</pre>
+  <script src="../shared/config.js"></script>
+  <script>
+    (() => {
+      const protocol = window.TIOConfig.BRIDGE;
+      let armed = false;
+      let stateRequests = 0;
+      let activeActions = 0;
+      let maxActiveActions = 0;
+      window.__bridgeTest = { get stateRequests() { return stateRequests; }, get maxActiveActions() { return maxActiveActions; } };
+      window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (event.source !== window || !data || data.source !== protocol.requestSource || data.version !== protocol.version) return;
+        let delay = 0;
+        let result;
+        if (data.type === 'state') {
+          stateRequests++;
+          result = { ok: true, state: { ready: true, armed, patched: true, balance: 1000, balanceKnown: true, territory: 100 } };
+          delay = 25;
+        } else if (data.type === 'arm' || data.type === 'disarm') {
+          armed = data.type === 'arm';
+          result = { ok: true, armed, state: { ready: true, armed, patched: true, balance: 1000, balanceKnown: true, territory: 100 } };
+        } else if (data.type === 'attack') {
+          window.__bridgeAttackPayload = data;
+          activeActions++;
+          maxActiveActions = Math.max(maxActiveActions, activeActions);
+          result = armed ? { ok: true, path: 'fake-native', policy: 'test' } : { ok: false, err: 'not-armed' };
+          delay = 40;
+        } else {
+          result = { ok: false, err: 'unknown-test-request' };
+        }
+        setTimeout(() => {
+          if (data.type === 'attack') activeActions--;
+          window.postMessage({
+            source: protocol.responseSource,
+            version: protocol.version,
+            id: data.id,
+            result
+          }, '*');
+        }, delay);
+      });
+    })();
+  </script>
+  <script src="../content/internal.js"></script>
+  <script>
+    (async () => {
+      const checks = [];
+      const assert = (condition, label) => {
+        if (!condition) throw new Error(label);
+        checks.push(label);
+      };
+      try {
+        const actuator = window.__TIO_internal;
+        const first = actuator.refresh();
+        const second = actuator.refresh();
+        await Promise.all([first, second]);
+        assert(window.__bridgeTest.stateRequests === 1, 'refresh coalesced');
+        assert(actuator.isReady(), 'adapter ready');
+
+        const preArm = await actuator.attack({ ratio: 0.2 });
+        assert(preArm.err === 'not-armed', 'mutation blocked before arm');
+        await actuator.setArmed(true);
+        assert(actuator.armed, 'arm handshake');
+
+        const attackOne = actuator.attack({ ratio: 0.2, gameTimeSec: 3.2, areaTrend: -7, shrinkFrames: 2 });
+        const attackTwo = await actuator.attack({ ratio: 0.2 });
+        assert(attackTwo.err === 'action-in-flight', 'second mutation rejected in flight');
+        const attackResult = await attackOne;
+        assert(attackResult.ok, 'first mutation succeeds');
+        assert(window.__bridgeAttackPayload.gameTimeSec === 3.2 &&
+          window.__bridgeAttackPayload.areaTrend === -7 && window.__bridgeAttackPayload.shrinkFrames === 2,
+          'opening clock and defensive trend cross the bridge');
+        assert(window.__bridgeTest.maxActiveActions === 1, 'maximum one active mutation');
+        assert(actuator.getTelemetry().pendingRequests === 0, 'pending map drained');
+
+        document.body.dataset.status = 'pass';
+        document.getElementById('result').textContent = `PASS ${checks.length}: ${checks.join(', ')}`;
+      } catch (error) {
+        document.body.dataset.status = 'fail';
+        document.getElementById('result').textContent = `FAIL: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>

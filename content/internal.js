@@ -1,6 +1,6 @@
 /**
- * Isolated-world bridge to MAIN-world game internals (v9.0.0)
- * No mouse events — postMessage to main-hook source-faithful actuator.
+ * Isolated-world RPC client for the MAIN-world Territorial adapter.
+ * Requests are versioned, bounded, and game mutations are single-flight.
  */
 (function () {
   'use strict';
@@ -8,37 +8,47 @@
   if (window.__TIO_INTERNAL_BRIDGE__) return;
   window.__TIO_INTERNAL_BRIDGE__ = true;
 
-  const SRC = 'tio-bot-isolated';
-  const REPLY = 'tio-bot-main';
+  const CFG = window.TIOConfig || {};
+  const PROTOCOL = CFG.BRIDGE || {};
+  const SRC = PROTOCOL.requestSource || 'tio-engine-isolated';
+  const REPLY = PROTOCOL.responseSource || 'tio-engine-main';
+  const VERSION = PROTOCOL.version || 1;
+  const MAX_PENDING = PROTOCOL.maxPending || 8;
+  const TARGET_ORIGIN = location.origin === 'null' ? '*' : location.origin;
+
   let reqId = 1;
   const pending = new Map();
 
   window.addEventListener('message', (ev) => {
     if (ev.source !== window) return;
     const data = ev.data;
-    if (!data || data.source !== REPLY) return;
-    const p = pending.get(data.id);
-    if (!p) return;
+    if (!data || data.source !== REPLY || data.version !== VERSION) return;
+    const request = pending.get(data.id);
+    if (!request) return;
     pending.delete(data.id);
-    clearTimeout(p.timer);
-    p.resolve(data.result || { ok: false, err: 'empty' });
+    clearTimeout(request.timer);
+    request.resolve(data.result || { ok: false, err: 'empty-response' });
   });
 
   function callMain(type, payload, timeoutMs) {
+    if (pending.size >= MAX_PENDING) {
+      return Promise.resolve({ ok: false, err: 'bridge-saturated' });
+    }
     const id = reqId++;
-    const msg = Object.assign({ source: SRC, id, type }, payload || {});
+    if (reqId >= Number.MAX_SAFE_INTEGER) reqId = 1;
+    const msg = Object.assign({ source: SRC, version: VERSION, id, type }, payload || {});
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
         pending.delete(id);
         resolve({ ok: false, err: 'timeout' });
-      }, timeoutMs || 900);
-      pending.set(id, { resolve, timer });
+      }, timeoutMs || PROTOCOL.actionTimeoutMs || 1200);
+      pending.set(id, { resolve, timer, type });
       try {
-        window.postMessage(msg, '*');
-      } catch (e) {
+        window.postMessage(msg, TARGET_ORIGIN);
+      } catch (error) {
         clearTimeout(timer);
         pending.delete(id);
-        resolve({ ok: false, err: String(e && e.message || e) });
+        resolve({ ok: false, err: String(error && error.message || error) });
       }
     });
   }
@@ -47,149 +57,160 @@
     constructor() {
       this.lastResult = null;
       this.lastState = null;
+      this.lastStateAt = 0;
+      this.lastActionAt = 0;
       this.ready = false;
-      this.mode = 'pending'; // pending | internal | patched-not-ready | unavailable
+      this.armed = false;
+      this.mode = 'pending';
       this.failStreak = 0;
       this.successCount = 0;
       this.lastPolicy = '';
       this.lastPath = '';
+      this._refreshPromise = null;
+      this._actionPromise = null;
+      this._ratioPromise = null;
     }
 
     async refresh() {
-      const r = await callMain('state', {}, 700);
-      if (r && r.ok && r.state) {
-        this.lastState = r.state;
-        this.ready = !!r.state.ready;
-        this.mode = this.ready
-          ? 'internal'
-          : (r.state.patched ? 'patched-not-ready' : 'unavailable');
-      } else {
-        this.ready = false;
-        this.mode = 'unavailable';
-      }
-      try {
-        const attr = document.documentElement.getAttribute('data-tio-internal');
-        if (attr === '1') {
-          this.ready = true;
-          this.mode = 'internal';
+      if (this._refreshPromise) return this._refreshPromise;
+      this._refreshPromise = callMain('state', {}, PROTOCOL.stateTimeoutMs || 700)
+        .then((result) => {
+          if (result && result.ok && result.state) {
+            this.lastState = result.state;
+            this.lastStateAt = performance.now();
+            this.ready = !!result.state.ready;
+            this.armed = result.state.armed === true;
+            this.mode = this.ready ? 'internal' : (result.state.patched ? 'patched-not-ready' : 'unavailable');
+          } else {
+            this.ready = false;
+            this.mode = 'unavailable';
+          }
+          return this.lastState;
+        })
+        .finally(() => {
+          this._refreshPromise = null;
+        });
+      return this._refreshPromise;
+    }
+
+    async setArmed(armed) {
+      const want = armed !== false;
+      const result = await callMain(want ? 'arm' : 'disarm', { armed: want }, 700);
+      if (result && result.ok) {
+        this.armed = want;
+        if (result.state) {
+          this.lastState = result.state;
+          this.lastStateAt = performance.now();
+          this.ready = !!result.state.ready;
         }
-      } catch (_) { /* ignore */ }
-      return this.lastState;
-    }
-
-    isReady() {
-      return this.ready;
-    }
-
-    /**
-     * Single source-faithful attack (expand-empty → crush-weak).
-     * opts: { ratio, preferNeutral, phase, freeLand }
-     */
-    async attack(ratioOrOpts, preferNeutral) {
-      let opts;
-      if (ratioOrOpts && typeof ratioOrOpts === 'object') {
-        opts = ratioOrOpts;
-      } else {
-        opts = {
-          ratio: ratioOrOpts != null ? ratioOrOpts : undefined,
-          preferNeutral: preferNeutral !== false
-        };
       }
-      const r = await callMain('attack', {
-        ratio: opts.ratio,
-        preferNeutral: opts.preferNeutral !== false,
-        phase: opts.phase || 'LAND_RUSH',
-        freeLand: opts.freeLand
-      }, 1200);
-      this._ingest(r);
-      return r;
+      return result;
     }
 
-    /**
-     * Multi-front burst (Hard ki=4). One round-trip to MAIN.
-     */
-    async attackBurst(opts) {
-      opts = opts || {};
-      const r = await callMain('attack-burst', {
+    isReady() { return this.ready; }
+    isBusy() { return !!this._actionPromise; }
+
+    async _runAction(type, payload, timeoutMs) {
+      if (!this.armed) return { ok: false, err: 'not-armed' };
+      if (this._actionPromise) return { ok: false, err: 'action-in-flight' };
+      this.lastActionAt = performance.now();
+      this._actionPromise = callMain(type, payload, timeoutMs)
+        .then((result) => {
+          this._ingest(result && result.last ? result.last : result);
+          if (result && result.ok && result.okCount > 1) this.successCount += result.okCount - 1;
+          this.lastResult = result;
+          return result;
+        })
+        .finally(() => {
+          this._actionPromise = null;
+        });
+      return this._actionPromise;
+    }
+
+    async attack(ratioOrOpts, preferNeutral) {
+      const opts = ratioOrOpts && typeof ratioOrOpts === 'object'
+        ? ratioOrOpts
+        : { ratio: ratioOrOpts, preferNeutral: preferNeutral !== false };
+      return this._runAction('attack', {
         ratio: opts.ratio,
         preferNeutral: opts.preferNeutral !== false,
         phase: opts.phase || 'LAND_RUSH',
         freeLand: opts.freeLand,
-        fronts: opts.fronts
+        target: opts.target,
+        autoExpand: opts.autoExpand,
+        autoAttack: opts.autoAttack,
+        minRemaining: opts.minRemaining,
+        primaryDanger: opts.primaryDanger,
+        attackSequence: opts.attackSequence,
+        gameTimeSec: opts.gameTimeSec,
+        areaTrend: opts.areaTrend,
+        shrinkFrames: opts.shrinkFrames
+      }, PROTOCOL.actionTimeoutMs || 1200);
+    }
+
+    async attackBurst(opts) {
+      opts = opts || {};
+      return this._runAction('attack-burst', {
+        ratio: opts.ratio,
+        preferNeutral: opts.preferNeutral !== false,
+        phase: opts.phase || 'LAND_RUSH',
+        freeLand: opts.freeLand,
+        fronts: opts.fronts,
+        target: opts.target,
+        autoExpand: opts.autoExpand,
+        autoAttack: opts.autoAttack,
+        minRemaining: opts.minRemaining,
+        primaryDanger: opts.primaryDanger,
+        attackSequence: opts.attackSequence,
+        gameTimeSec: opts.gameTimeSec,
+        areaTrend: opts.areaTrend,
+        shrinkFrames: opts.shrinkFrames
       }, 1800);
-      this._ingest(r && r.last ? r.last : r);
-      if (r && r.ok) {
-        this.successCount += (r.okCount || 1);
-        this.failStreak = 0;
-        this.ready = true;
-        this.mode = 'internal';
-      } else {
-        this.failStreak++;
-        if (this.failStreak > 8) this.mode = 'unavailable';
-      }
-      this.lastResult = r;
-      return r;
     }
 
     async attackNeutral(ratio, freeLand) {
-      const r = await callMain('attack-neutral', {
-        ratio: ratio != null ? ratio : undefined,
-        freeLand: freeLand
-      }, 1000);
-      this._ingest(r);
-      return r;
+      return this._runAction('attack-neutral', { ratio, freeLand }, 1000);
     }
 
     async attackEnemy(ratio, phase) {
-      const r = await callMain('attack-enemy', {
-        ratio: ratio != null ? ratio : undefined,
+      return this._runAction('attack-enemy', {
+        ratio,
         phase: phase || 'PRESSURE',
         freeLand: 0,
-        allowShip: true
+        allowShip: false
       }, 1000);
-      this._ingest(r);
-      return r;
     }
 
-    /** Boat attack to sea-isolated island (game pZ). */
-    async attackShip(ratio, target) {
-      const r = await callMain('attack-ship', {
-        ratio: ratio != null ? ratio : undefined,
-        target: target
-      }, 1000);
-      this._ingest(r);
-      return r;
-    }
+    async attackShip() { return { ok: false, err: 'ship-disabled-border-only' }; }
 
     async setDifficulty(diff) {
       return callMain('set-diff', { diff: diff | 0 }, 500);
     }
 
-    /**
-     * Set in-game troop bar to ratio (0–1).
-     * Required so canvas CLICKS spend adaptive %, not the stuck ~79% UI bar.
-     * Does not count as attack success/fail.
-     */
     async setTroopRatio(ratio) {
-      const r = await callMain('set-troop', {
+      if (!this.armed) return { ok: false, err: 'not-armed' };
+      if (this._ratioPromise) return this._ratioPromise;
+      this._ratioPromise = callMain('set-troop', {
         ratio: ratio != null ? ratio : 0.25
-      }, 500);
-      if (r && (r.ok || r.il != null)) {
-        this.lastTroopSet = r;
-      }
-      return r;
+      }, 600).then((result) => {
+        if (result && (result.ok || result.il != null)) this.lastTroopSet = result;
+        return result;
+      }).finally(() => {
+        this._ratioPromise = null;
+      });
+      return this._ratioPromise;
     }
 
-    _ingest(r) {
-      this.lastResult = r;
-      if (r && r.ok) {
+    _ingest(result) {
+      this.lastResult = result;
+      if (result && result.ok) {
         this.successCount++;
         this.failStreak = 0;
         this.ready = true;
         this.mode = 'internal';
-        this.lastPolicy = r.policy || (r.last && r.last.policy) || '';
-        this.lastPath = r.path || (r.last && r.last.path) || '';
-      } else {
+        this.lastPolicy = result.policy || (result.last && result.last.policy) || '';
+        this.lastPath = result.path || (result.last && result.last.path) || '';
+      } else if (!result || ['action-in-flight', 'spend-lock', 'target-busy', 'below-reserve', 'zero-troops', 'negative-troops'].indexOf(result.err) < 0) {
         this.failStreak++;
         if (this.failStreak > 8) this.mode = 'unavailable';
       }
@@ -199,10 +220,14 @@
       return {
         mode: this.mode,
         ready: this.ready,
+        armed: this.armed,
+        busy: this.isBusy(),
+        pendingRequests: pending.size,
         successCount: this.successCount,
         failStreak: this.failStreak,
         lastResult: this.lastResult,
         lastState: this.lastState,
+        lastStateAt: this.lastStateAt,
         lastPolicy: this.lastPolicy,
         lastPath: this.lastPath
       };
@@ -211,5 +236,5 @@
 
   window.InternalActuator = InternalActuator;
   window.__TIO_internal = new InternalActuator();
-  console.log('%c[TIO Internal Bridge v9] source-faithful postMessage actuator ready.', 'color: #38bdf8;');
+  console.log('%c[TIO Bridge v10] versioned, armed, single-flight RPC ready.', 'color:#38bdf8');
 })();

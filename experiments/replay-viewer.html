@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Territorial.io V2 Match Replay Viewer</title>
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-panel: #111827;
+      --bg-card: #1f2937;
+      --border-color: #374151;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-yellow: #f59e0b;
+      --accent-magenta: #d946ef;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .title-group h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .map-badge {
+      background: rgba(6, 182, 212, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, button, input[type="file"] {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    select:hover, button:hover {
+      background: #374151;
+      border-color: #6b7280;
+    }
+
+    button.primary {
+      background: #0284c7;
+      border-color: #38bdf8;
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: #0369a1;
+    }
+
+    .main-layout {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+
+    .canvas-container {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      aspect-ratio: 2 / 1;
+      border: 2px solid #1e293b;
+      border-radius: 8px;
+      image-rendering: pixelated;
+      background: #020617;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .playback-bar {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .timeline-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .timeline-row span {
+      font-size: 0.85rem;
+      font-family: monospace;
+      color: var(--text-muted);
+      min-width: 90px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .speed-btn {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+    }
+
+    .speed-btn.active {
+      background: var(--accent-cyan);
+      color: #042f2e;
+      font-weight: 700;
+      border-color: var(--accent-cyan);
+    }
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .panel-card h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .player-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .player-card {
+      background: var(--bg-card);
+      border-left: 4px solid #6b7280;
+      border-radius: 6px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .player-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+
+    .player-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .player-action {
+      font-size: 0.72rem;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .terr-bar-wrapper {
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      margin-top: 6px;
+    }
+
+    .terr-bar-segment {
+      height: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .math-badge-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .math-chip {
+      font-size: 0.7rem;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--accent-cyan);
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>Territorial.io V2 Match Visualizer <span class="badge">V2.1 KERNEL</span></h1>
+      <span id="mapBadge" class="badge map-badge">Loading...</span>
+    </div>
+    <div class="top-controls">
+      <select id="demoSelect">
+        <option value="replay-battle-royale.json">50-Player Battle Royale (Procedural)</option>
+        <option value="replay-europe.json">Europe & Mediterranean</option>
+        <option value="replay-world.json">World Continents</option>
+        <option value="replay-archipelago.json">Archipelago & Straits</option>
+      </select>
+      <button id="btnLoadDemo" class="primary">Load Preset</button>
+      <label class="button" style="cursor: pointer; background: var(--bg-card); padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem;">
+        Upload JSON
+        <input type="file" id="fileInput" accept=".json" style="display: none;">
+      </label>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- Center Screen Canvas & Controls -->
+    <div class="canvas-container">
+      <canvas id="gameCanvas" width="800" height="400"></canvas>
+      
+      <div class="playback-bar">
+        <div class="timeline-row">
+          <span id="tickDisplay">Tick: 0 / 0</span>
+          <input type="range" id="timelineSlider" min="0" max="0" value="0">
+        </div>
+        <div class="controls-row">
+          <div class="btn-group">
+            <button id="btnReset">↺</button>
+            <button id="btnStepBack">⏮ -1</button>
+            <button id="btnPlay" class="primary">▶ Play</button>
+            <button id="btnStepForward">+1 ⏭</button>
+          </div>
+          <div class="speed-group">
+            <span>Speed:</span>
+            <button class="speed-btn" data-speed="1">1x</button>
+            <button class="speed-btn active" data-speed="5">5x</button>
+            <button class="speed-btn" data-speed="15">15x</button>
+            <button class="speed-btn" data-speed="40">40x</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Analytics Panel -->
+    <div class="side-panel">
+      <!-- Territory Bar Card -->
+      <div class="panel-card">
+        <h2>Live Territory Share</h2>
+        <div class="terr-bar-wrapper" id="territoryBar"></div>
+      </div>
+
+      <!-- Player Leaderboard Card -->
+      <div class="panel-card">
+        <h2>Leaderboard <span id="winnerBadge" class="badge" style="display:none;">WINNER</span></h2>
+        <div class="player-list" id="playerList">
+          <div style="color: var(--text-muted); font-size: 0.85rem;">Load a match replay to view player statistics.</div>
+        </div>
+      </div>
+
+      <!-- Mathematical Vector Overlays Card -->
+      <div class="panel-card">
+        <h2>Mathematical Overlays</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem; margin-top: 6px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="overlayPoisson" checked>
+            <span>Poisson Streamlines (Harmonic PDE)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="overlayEikonal" checked>
+            <span>Eikonal Geodesic Wavefronts</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="overlaySpectral" checked>
+            <span>Spectral Fiedler Bisections</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="overlayHegemon" checked>
+            <span>Hegemon Containment Reticle</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Advanced Mathematical Intelligence Telemetry -->
+      <div class="panel-card">
+        <h2>Mathematical Telemetry</h2>
+        <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+          Active mathematical formulations driving real-time cellular expansion:
+        </p>
+        <div class="math-badge-list">
+          <span class="math-chip">PMP Singular Arc</span>
+          <span class="math-chip">Lanchester Lyapunov</span>
+          <span class="math-chip">Spectral Cheeger Cut</span>
+          <span class="math-chip">Poisson SOR Flux</span>
+          <span class="math-chip">KKT Water-Filling</span>
+          <span class="math-chip">Voronoi Dirichlet</span>
+          <span class="math-chip">Shapley Hegemon Truce</span>
+          <span class="math-chip">Eikonal Fast Marching</span>
+        </div>
+      </div>
+
+      <!-- Drag and Drop Box -->
+      <div class="drop-zone" id="dropZone">
+        Drop match replay JSON here to inspect
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const tickDisplay = document.getElementById('tickDisplay');
+      const timelineSlider = document.getElementById('timelineSlider');
+      const btnPlay = document.getElementById('btnPlay');
+      const btnReset = document.getElementById('btnReset');
+      const btnStepBack = document.getElementById('btnStepBack');
+      const btnStepForward = document.getElementById('btnStepForward');
+      const demoSelect = document.getElementById('demoSelect');
+      const btnLoadDemo = document.getElementById('btnLoadDemo');
+      const fileInput = document.getElementById('fileInput');
+      const dropZone = document.getElementById('dropZone');
+      const playerList = document.getElementById('playerList');
+      const territoryBar = document.getElementById('territoryBar');
+      const mapBadge = document.getElementById('mapBadge');
+      const speedBtns = document.querySelectorAll('.speed-btn');
+      const overlayPoisson = document.getElementById('overlayPoisson');
+      const overlayEikonal = document.getElementById('overlayEikonal');
+      const overlaySpectral = document.getElementById('overlaySpectral');
+      const overlayHegemon = document.getElementById('overlayHegemon');
+
+      let currentReplay = null;
+      let currentTick = 0;
+      let isPlaying = false;
+      let fps = 15;
+      let animTimer = null;
+      let gridState = null;
+
+      // Color Palette for players:
+      // 0: Neutral, 1: Red, 2: Green (V2), 3: Yellow/Amber, 4: Magenta/Purple
+      const PALETTE = {
+        [-1]: '#020617', // Ocean / Water
+        [0]: '#334155',  // Neutral land
+        [1]: '#ef4444',  // P1 Red
+        [2]: '#10b981',  // P2 Green (V2.1 Advanced)
+        [3]: '#f59e0b',  // P3 Yellow
+        [4]: '#d946ef'   // P4 Magenta
+      };
+
+      function parseANSIColor(code) {
+        if (!code) return '#38bdf8';
+        if (code.includes('31')) return '#ef4444';
+        if (code.includes('32')) return '#10b981';
+        if (code.includes('33')) return '#f59e0b';
+        if (code.includes('35')) return '#d946ef';
+        return '#38bdf8';
+      }
+
+      function loadReplayData(data) {
+        if (!data || !data.metadata || !data.ticks) {
+          alert('Invalid replay JSON structure.');
+          return;
+        }
+        currentReplay = data;
+        mapBadge.textContent = data.metadata.mapName || 'Unknown Map';
+        timelineSlider.max = data.ticks.length - 1;
+        timelineSlider.value = 0;
+        currentTick = 0;
+        gridState = new Int8Array(data.metadata.initialGrid);
+        renderFrame(0);
+        updateUI();
+      }
+
+      function rebuildGridAtTick(targetTick) {
+        if (!currentReplay) return;
+        gridState = new Int8Array(currentReplay.metadata.initialGrid);
+        const limit = Math.min(targetTick, currentReplay.ticks.length - 1);
+        for (let t = 0; t <= limit; t++) {
+          const tickData = currentReplay.ticks[t];
+          if (tickData && tickData.deltas) {
+            const deltas = tickData.deltas;
+            for (let i = 0; i < deltas.length; i += 2) {
+              const idx = deltas[i];
+              const val = deltas[i + 1];
+              gridState[idx] = val;
+            }
+          }
+        }
+      }
+
+      function renderFrame(tickIndex) {
+        if (!currentReplay) return;
+        const meta = currentReplay.metadata;
+        const W = meta.width;
+        const H = meta.height;
+        const cellW = canvas.width / W;
+        const cellH = canvas.height / H;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw cells
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const idx = y * W + x;
+            const val = gridState[idx];
+            ctx.fillStyle = PALETTE[val] || '#64748b';
+            ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+
+            // Subtle border for land cells
+            if (val >= 0) {
+              ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+              ctx.strokeRect(x * cellW, y * cellH, cellW, cellH);
+            }
+          }
+        }
+
+        // Draw Chokepoints
+        if (meta.chokepoints) {
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.5;
+          for (const cp of meta.chokepoints) {
+            ctx.strokeRect(cp.x * cellW - 1, cp.y * cellH - 1, cellW + 2, cellH + 2);
+          }
+        }
+
+        // Mathematical Overlays
+        const frame = currentReplay.ticks[tickIndex];
+        if (overlayEikonal && overlayEikonal.checked) {
+          drawEikonalWavefronts(ctx, gridState, W, H, cellW, cellH, tickIndex);
+        }
+        if (overlaySpectral && overlaySpectral.checked) {
+          drawSpectralBisections(ctx, meta, cellW, cellH);
+        }
+        if (overlayPoisson && overlayPoisson.checked) {
+          drawPoissonStreamlines(ctx, gridState, W, H, cellW, cellH);
+        }
+        if (overlayHegemon && overlayHegemon.checked && frame && frame.players) {
+          drawHegemonReticle(ctx, frame.players, gridState, W, H, cellW, cellH, tickIndex);
+        }
+
+        // Update player stats & action feed
+        if (frame && frame.players) {
+          renderPlayerCards(frame.players);
+          renderTerritoryBar(frame.players);
+        }
+
+        tickDisplay.textContent = `Tick: ${tickIndex} / ${meta.maxTicks}`;
+        timelineSlider.value = tickIndex;
+      }
+
+      function drawPoissonStreamlines(ctx, gridState, W, H, cellW, cellH) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.85)';
+        ctx.fillStyle = 'rgba(6, 182, 212, 0.9)';
+        ctx.lineWidth = 1.5;
+
+        const step = Math.max(1, Math.floor(W / 35));
+        for (let y = 1; y < H - 1; y += step) {
+          for (let x = 1; x < W - 1; x += step) {
+            const idx = y * W + x;
+            const val = gridState[idx];
+            if (val <= 0) continue;
+
+            let dx = 0, dy = 0, count = 0;
+            const neighbors = [
+              [x + 1, y, 1, 0],
+              [x - 1, y, -1, 0],
+              [x, y + 1, 0, 1],
+              [x, y - 1, 0, -1]
+            ];
+            for (const [nx, ny, dirX, dirY] of neighbors) {
+              const nVal = gridState[ny * W + nx];
+              if (nVal === 0) {
+                dx += dirX;
+                dy += dirY;
+                count++;
+              }
+            }
+
+            if (count > 0) {
+              const len = Math.hypot(dx, dy) || 1;
+              const startX = (x + 0.5) * cellW;
+              const startY = (y + 0.5) * cellH;
+              const arrowLen = Math.min(cellW, cellH) * 2.0;
+              const endX = startX + (dx / len) * arrowLen;
+              const endY = startY + (dy / len) * arrowLen;
+
+              ctx.beginPath();
+              ctx.moveTo(startX, startY);
+              ctx.lineTo(endX, endY);
+              ctx.stroke();
+
+              const angle = Math.atan2(endY - startY, endX - startX);
+              const headLen = 4;
+              ctx.beginPath();
+              ctx.moveTo(endX, endY);
+              ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+              ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawEikonalWavefronts(ctx, gridState, W, H, cellW, cellH, tickIndex) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        ctx.lineWidth = 1.0;
+        ctx.setLineDash([3, 3]);
+
+        const centroids = {};
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const v = gridState[y * W + x];
+            if (v > 0) {
+              if (!centroids[v]) centroids[v] = { sx: 0, sy: 0, count: 0 };
+              centroids[v].sx += x;
+              centroids[v].sy += y;
+              centroids[v].count++;
+            }
+          }
+        }
+
+        const phase = (tickIndex % 15) / 15;
+        for (const pid in centroids) {
+          const c = centroids[pid];
+          if (c.count < 8) continue;
+          const cx = (c.sx / c.count + 0.5) * cellW;
+          const cy = (c.sy / c.count + 0.5) * cellH;
+          const baseR = Math.sqrt(c.count * cellW * cellH / Math.PI);
+
+          for (let rOffset of [0.4, 0.8, 1.2, 1.6]) {
+            const r = baseR * (rOffset + phase * 0.3);
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawSpectralBisections(ctx, meta, cellW, cellH) {
+        if (!meta.chokepoints || meta.chokepoints.length === 0) return;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.9)';
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 2]);
+
+        for (const cp of meta.chokepoints) {
+          const px = (cp.x + 0.5) * cellW;
+          const py = (cp.y + 0.5) * cellH;
+          const boxSize = Math.max(cellW, cellH) * 2.5;
+
+          ctx.strokeRect(px - boxSize / 2, py - boxSize / 2, boxSize, boxSize);
+          ctx.fillRect(px - boxSize / 2, py - boxSize / 2, boxSize, boxSize);
+
+          ctx.fillStyle = '#f59e0b';
+          ctx.font = '8px monospace';
+          ctx.fillText('λ₂ cut', px - boxSize / 2, py - boxSize / 2 - 2);
+        }
+        ctx.restore();
+      }
+
+      function drawHegemonReticle(ctx, players, gridState, W, H, cellW, cellH, tickIndex) {
+        if (!players || players.length === 0) return;
+        const totalLand = players.reduce((s, p) => s + p.territory, 0) || 1;
+        const leader = [...players].sort((a, b) => b.territory - a.territory)[0];
+        if (!leader || leader.territory / totalLand < 0.28) return;
+
+        let sx = 0, sy = 0, count = 0;
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            if (gridState[y * W + x] === leader.id) {
+              sx += x;
+              sy += y;
+              count++;
+            }
+          }
+        }
+        if (count === 0) return;
+        const cx = (sx / count + 0.5) * cellW;
+        const cy = (sy / count + 0.5) * cellH;
+        const radius = Math.min(canvas.width, canvas.height) * 0.12;
+        const sharePct = ((leader.territory / totalLand) * 100).toFixed(1);
+
+        ctx.save();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(cx - radius * 1.3, cy);
+        ctx.lineTo(cx - radius * 0.35, cy);
+        ctx.moveTo(cx + radius * 0.35, cy);
+        ctx.lineTo(cx + radius * 1.3, cy);
+        ctx.moveTo(cx, cy - radius * 1.3);
+        ctx.lineTo(cx, cy - radius * 0.35);
+        ctx.moveTo(cx, cy + radius * 0.35);
+        ctx.lineTo(cx, cy + radius * 1.3);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`HEGEMON: ${leader.name || 'P' + leader.id} (${sharePct}%)`, cx, cy - radius - 6);
+        ctx.font = '9px monospace';
+        ctx.fillStyle = '#fca5a5';
+        ctx.fillText(`CONTAINMENT COALITION TARGET`, cx, cy + radius + 14);
+
+        ctx.restore();
+      }
+
+      function renderPlayerCards(players) {
+        playerList.innerHTML = '';
+        const sorted = [...players].sort((a, b) => b.territory - a.territory);
+
+        for (const p of sorted) {
+          const card = document.createElement('div');
+          card.className = 'player-card';
+          const pMeta = currentReplay.players.find(o => o.id === p.id) || {};
+          const col = parseANSIColor(pMeta.color);
+          card.style.borderLeftColor = col;
+
+          card.innerHTML = `
+            <div class="player-header">
+              <span style="color: ${col}; font-weight: 700;">${p.name || ('Player ' + p.id)}</span>
+              <span>${p.territory} px</span>
+            </div>
+            <div class="player-stats">
+              <span>Balance: ${p.balance.toLocaleString()}</span>
+              <span>Cuts: ${p.cuts || 0} | Naval: ${p.naval || 0}</span>
+            </div>
+            <div class="player-action">${p.lastAction || 'idle'}</div>
+          `;
+          playerList.appendChild(card);
+        }
+      }
+
+      function renderTerritoryBar(players) {
+        territoryBar.innerHTML = '';
+        const totalLand = players.reduce((s, p) => s + p.territory, 0) || 1;
+        for (const p of players) {
+          const pMeta = currentReplay.players.find(o => o.id === p.id) || {};
+          const col = parseANSIColor(pMeta.color);
+          const share = (p.territory / totalLand) * 100;
+          const seg = document.createElement('div');
+          seg.className = 'terr-bar-segment';
+          seg.style.width = `${share}%`;
+          seg.style.background = col;
+          seg.title = `${p.name}: ${p.territory}px (${share.toFixed(1)}%)`;
+          territoryBar.appendChild(seg);
+        }
+      }
+
+      function playStep() {
+        if (!currentReplay) return;
+        if (currentTick < currentReplay.ticks.length - 1) {
+          currentTick++;
+          const tickData = currentReplay.ticks[currentTick];
+          if (tickData && tickData.deltas) {
+            for (let i = 0; i < tickData.deltas.length; i += 2) {
+              gridState[tickData.deltas[i]] = tickData.deltas[i + 1];
+            }
+          }
+          renderFrame(currentTick);
+        } else {
+          pause();
+        }
+      }
+
+      function play() {
+        isPlaying = true;
+        btnPlay.textContent = '⏸ Pause';
+        if (animTimer) clearInterval(animTimer);
+        animTimer = setInterval(playStep, Math.floor(1000 / fps));
+      }
+
+      function pause() {
+        isPlaying = false;
+        btnPlay.textContent = '▶ Play';
+        if (animTimer) clearInterval(animTimer);
+        animTimer = null;
+      }
+
+      function updateUI() {
+        if (!currentReplay) return;
+        timelineSlider.max = currentReplay.ticks.length - 1;
+      }
+
+      btnPlay.addEventListener('click', () => {
+        if (isPlaying) pause();
+        else play();
+      });
+
+      btnReset.addEventListener('click', () => {
+        pause();
+        currentTick = 0;
+        rebuildGridAtTick(0);
+        renderFrame(0);
+      });
+
+      btnStepForward.addEventListener('click', () => {
+        pause();
+        if (currentReplay && currentTick < currentReplay.ticks.length - 1) {
+          currentTick++;
+          const tickData = currentReplay.ticks[currentTick];
+          if (tickData && tickData.deltas) {
+            for (let i = 0; i < tickData.deltas.length; i += 2) {
+              gridState[tickData.deltas[i]] = tickData.deltas[i + 1];
+            }
+          }
+          renderFrame(currentTick);
+        }
+      });
+
+      btnStepBack.addEventListener('click', () => {
+        pause();
+        if (currentReplay && currentTick > 0) {
+          currentTick--;
+          rebuildGridAtTick(currentTick);
+          renderFrame(currentTick);
+        }
+      });
+
+      timelineSlider.addEventListener('input', (e) => {
+        pause();
+        currentTick = parseInt(e.target.value, 10);
+        rebuildGridAtTick(currentTick);
+        renderFrame(currentTick);
+      });
+
+      speedBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          speedBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          fps = parseInt(btn.dataset.speed, 10);
+          if (isPlaying) {
+            pause();
+            play();
+          }
+        });
+      });
+
+      [overlayPoisson, overlayEikonal, overlaySpectral, overlayHegemon].forEach(cb => {
+        if (cb) {
+          cb.addEventListener('change', () => {
+            if (currentReplay) renderFrame(currentTick);
+          });
+        }
+      });
+
+      async function fetchPreset(filename) {
+        try {
+          const res = await fetch(filename);
+          if (!res.ok) throw new Error('Network error loading replay preset');
+          const data = await res.json();
+          loadReplayData(data);
+        } catch (err) {
+          console.warn('Preset fetch failed (likely local file:// protocol), prompting file pick:', err);
+        }
+      }
+
+      btnLoadDemo.addEventListener('click', () => {
+        fetchPreset(demoSelect.value);
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            try {
+              const data = JSON.parse(evt.target.result);
+              loadReplayData(data);
+            } catch (err) {
+              alert('Failed to parse JSON replay file: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#06b6d4';
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--border-color)';
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--border-color)';
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            try {
+              const data = JSON.parse(evt.target.result);
+              loadReplayData(data);
+            } catch (err) {
+              alert('Failed to parse dropped replay JSON: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      // Try initial load of Europe demo if hosted, else standby
+      fetchPreset('replay-europe.json');
+
+    })();
+  </script>
+</body>
+</html>

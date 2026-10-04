@@ -19,7 +19,7 @@
 }
 
 body {
-  width: 330px;
+  width: 360px;
   background-color: var(--bg-primary);
   color: var(--text-main);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -72,6 +72,15 @@ body {
 .brand-subtitle {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.header-updated {
+  font-size: 9px;
+  color: #10b981;
+  font-weight: 600;
+  display: block;
+  margin-top: 1px;
+  letter-spacing: 0.2px;
 }
 
 .status-badge {
@@ -129,6 +138,136 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: var(--text-muted);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pill-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.pill-badge.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.pill-badge.waiting {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+/* Telemetry Grid */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.metric-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-family: monospace;
+}
+
+.telemetry-footer {
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.policy-label {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.policy-val {
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+/* Quick Start Guide */
+.card-guide {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+}
+
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #c7d2fe;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.step-content strong {
+  color: #ffffff;
+}
+
+.step-content em {
+  color: #94a3b8;
+  font-size: 10px;
+}
+
+.step-link {
+  color: var(--accent-color);
+  text-decoration: underline;
 }
 
 /* Toggle Switches */
@@ -255,6 +394,74 @@ input:checked + .slider:before {
   font-size: 14px;
 }
 
+.btn-name {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.btn-sub {
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Engine Kernel Selection */
+.engine-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.engine-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.engine-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.engine-btn.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--success-color);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.engine-btn-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.engine-btn-header .btn-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.badge-main {
+  font-size: 8px;
+  font-weight: 800;
+  background: #10b981;
+  color: #0f172a;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
 /* Range Inputs */
 .control-row {
   display: flex;
@@ -337,11 +544,23 @@ kbd {
 /* Footer */
 .popup-footer {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   padding-top: 4px;
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.version-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.version-details {
+  font-size: 9px;
+  color: #64748b;
+  letter-spacing: 0.2px;
 }
 
 .game-link {
