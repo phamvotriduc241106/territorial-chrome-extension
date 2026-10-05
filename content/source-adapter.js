@@ -74,6 +74,22 @@
       incoming: 'hU', cap: 'kS', tick: 'kj', slider: 'hv', reload: 'di',
       sender: 'hr.hy', storage: 'po.pp', single: 'l6', guard: 'gn', playing: 'hc', living: 'hd'
     };
+    // Economy/settings and outgoing fronts are mapped only for the source whose
+    // symbols and arithmetic have been verified. Older adapters return null.
+    const planningExport = sourceKind === 'live-modern-v3' ? `
+        economy:function(p){if(!af||typeof af.aDb!=='function'||!aE.data)return null;
+          var d=aE.data;return {contract:'live-modern-v3',mapCells:aE.ke,playerSlots:aE.fW,
+            interestRateBps:af.aDb(p),interestType:d.iIncomeType,
+            interestValue:d.iIncomeType===2?d.iIncomeData[p]:d.iIncomeValue,
+            interestDisabled:!!(bD.gv.kH(p)&&p<aE.ku),
+            territoryIncomeValue:d.tIncomeType===0?32:d.tIncomeType===1?d.tIncomeValue:d.tIncomeData[p],
+            additionalIncomeType:d.aIncomeType,
+            additionalIncomeValue:d.aIncomeType===2?d.aIncomeData[p]:d.aIncomeValue,
+            softCapMaximum:aE.a6d,hardCapPerCell:aE.a5l,hardCapMaximum:aE.a5m,
+            debt:ah.a5j?ah.a5j[p]:0}},
+        outgoing:function(p){var a=[];for(var i=0;i<ae.gg(p);i++)a.push({
+          targetId:ae.gl(p,i)===aE.fW?'neutral':ae.gl(p,i),troops:ae.gm(p,i)});return a},` : `
+        economy:function(){return null},outgoing:function(){return []},`;
     return `get modern(){
       if(typeof ah==='undefined'||!ah||!ah.${m.bank}||!ah.${m.land}||!ah.${m.alive}||
         typeof aE==='undefined'||!aE||typeof aE.${m.me}!=='number'||
@@ -89,6 +105,7 @@
         activeCount:function(p){return ae.${m.count}(p)},
         frontCap:function(p){return p<aE.${m.humans}?(aE.${m.humans}<16?12:8):4},
         softCap:function(p){return af.${m.cap}(p)}, gameTick:function(){return bi.${m.tick}()},
+        ${planningExport}
         singlePlayer:function(){return !!aE.${m.single}},
         canAttack:function(p){return !!bD.${m.guard}.${m.playing}(1)&&!!bD.${m.guard}.${m.living}(p)},
         attack:function(code,t){return bB.${m.sender}(code,t)},

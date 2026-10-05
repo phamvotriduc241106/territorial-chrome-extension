@@ -160,7 +160,7 @@ function runNumericalStabilitySuite() {
   // --- 6. MCTS Endgame Tactical Kernel Pathologies ---
   console.log('6. Testing MCTS Endgame Tactical Kernel under Pathologies...');
   const mctsNoEnemies = v2.computeMCTSEndgameAction({ territory: 100, balance: 1000, adjEnemies: [] });
-  assert(mctsNoEnemies.bestAction === 'expand', 'MCTS zero-enemies returns expand');
+  assert(mctsNoEnemies.bestAction === 'hold', 'No legal target/free land returns hold');
   assert(mctsNoEnemies.winProb === 1.0, 'MCTS zero-enemies winProb is 1.0');
 
   const mctsZeroTime = v2.computeMCTSEndgameAction(

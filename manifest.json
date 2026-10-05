@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "10.2.5",
-  "description": "V2.7 Territorial.io autonomous engine; native commands, predictive planning, no mouse/camera. Updated 2026-10-04 11:29:34 EDT.",
+  "version": "10.3.0",
+  "description": "V2.8 Territorial.io engine; native commands, source-aligned planning. Updated 2026-10-04 20:17:35 EDT.",
   "permissions": [
     "storage"
   ],

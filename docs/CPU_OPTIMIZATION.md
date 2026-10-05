@@ -1,5 +1,7 @@
 # CPU optimization: measured first pass
 
+> Historical 10.2.5 report below. Current 10.3.0 tool compares against 188b1bf, reports intentional behavior differences, and includes a separate search-active leader fixture. See PLANNING_MODEL.md for current timing and limits; the old CPU-only equivalence claim does not apply to V2.8.
+
 Release **10.2.5**, engine **V2.7**. Updated **2026-10-04 11:29:34 EDT**.
 
 Implemented the report's profiling, redundant-work and typed-array priorities. No M4-specific instruction code, workers, WASM or GPU kernel was added without a measured need. The report's hardware-utilization ratings and predicted speedup ranges are assessments, not measurements. [Chrome's off-main-thread guidance](https://web.dev/articles/off-main-thread) explicitly notes messaging overhead; [extension worlds](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts) are separate environments, not promises of separate CPU cores.
@@ -38,7 +40,7 @@ npm run test:live
 npm run benchmark:cpu
 ```
 
-The CPU benchmark needs the historical baseline commit in your local Git history; use a full clone, not a shallow checkout that omits `27872b0`.
+The current CPU benchmark needs baseline commit `188b1bf` in local Git history; the historical numbers below used `27872b0`.
 
 In DevTools MAIN world (native state/command and MAIN kernel metrics):
 

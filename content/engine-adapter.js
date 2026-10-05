@@ -25,7 +25,7 @@
     setVersion: function (ver) {
       const v = Number(ver) || 1;
       this.activeVersion = v === 2 ? 2 : 1;
-      const name = this.activeVersion === 2 ? 'V2.7 Capital-Preserving Policy' : 'V1 Baseline Heuristic';
+      const name = this.activeVersion === 2 ? 'V2.8 Capital-Preserving Policy' : 'V1 Baseline Heuristic';
       root.TIOEngineCore = EngineProxy;
       root.TIOHardMode = EngineProxy;
       console.log(`[TIO Engine Adapter] Switched active policy kernel to: ${name}`);
@@ -38,10 +38,10 @@
       const v2 = root.TIOEngineCoreV2 || null;
       return {
         activeVersion: this.activeVersion,
-        activeEngine: this.activeVersion === 2 ? (cfg.ENGINE_VERSION || 'V2.7') : 'V1',
+        activeEngine: this.activeVersion === 2 ? (cfg.ENGINE_VERSION || 'V2.8') : 'V1',
         engineSource: this.activeVersion === 2 ? (cfg.ENGINE_SOURCE || 'content/engine-core-v2-advanced.js') : 'content/engine-core-v1.js',
-        engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-10-04 11:29:34 EDT',
-        extensionVersion: cfg.VERSION || '10.2.5',
+        engineUpdatedAt: cfg.ENGINE_UPDATED_AT || '2026-10-04 20:17:35 EDT',
+        extensionVersion: cfg.VERSION || '10.3.0',
         v1Available: !!v1,
         v2Available: !!v2,
         telemetry: { ticksEvaluated: this.telemetry.ticksEvaluated,
@@ -96,7 +96,7 @@
   root.TIOEngineCore = EngineProxy;
   root.TIOHardMode = EngineProxy;
   console.log(
-    '[TIO Engine Adapter] Default kernel: V2.7 Capital-Preserving Policy (Updated: 2026-10-04 11:29:34 EDT) · V1 available via TIOSetEngineVersion(1)'
+    '[TIO Engine Adapter] Default kernel: V2.8 Capital-Preserving Policy (Updated: 2026-10-04 20:17:35 EDT) · V1 available via TIOSetEngineVersion(1)'
   );
 
   if (typeof module !== 'undefined' && module.exports) {

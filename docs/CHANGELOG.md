@@ -1,5 +1,14 @@
 # Changelog
 
+## 10.3.0 — 2026-10-04 20:17:35 EDT
+
+- Engine V2.8: MPC and the endgame bandit share one aggregate transition model, exact slider/debit arithmetic and source-clock economics. Modern-v3 settings, global troop totals and outgoing fronts cross the native bridge into planning.
+- Differential-tested native interest and income in 54 controlled official-source cases. Combat, border evolution, opponent policy and settlement latency remain estimates.
+- Corrected global coalition sizing and KKT budget rounding; unified both allocator entrypoints and explicitly reported infeasible minimums. Added 5,000 seeded allocation cases and 200 small exhaustive integer-utility comparisons.
+- Fixed weighted particle confidence intervals; exposed lognormal mean separately while preserving the median-based estimate. Fixed experimental tree state propagation, duplicate-action rollout and depth accounting; tree search remains disabled and never called by decide().
+- Labelled endgame utility honestly, gated hold vetoes on action coverage, and skipped lookahead when it cannot change policy. Added 13 mathematics regression tests, bridge-to-planner input checks and an intentional new behavior fingerprint.
+- 400 paired approximate-simulator games against 188b1bf tied at 177 wins each. No improved official Hard/Very Hard win rate is claimed. See PLANNING_MODEL.md and VALIDATION.md.
+
 ## 10.2.5 — 2026-10-04 11:29:34 EDT
 
 - Added bounded per-world CPU profiling for actual kernel, state, vision, grid, border and command calls. Removed proxy telemetry that incorrectly inferred algorithm executions.

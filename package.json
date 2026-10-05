@@ -1,12 +1,12 @@
 {
   "name": "territorial-chrome-extension",
-  "version": "10.2.5",
+  "version": "10.3.0",
   "private": true,
   "description": "Territorial.io Manifest V3 extension and reproducible validation tools",
   "engines": { "node": ">=20" },
   "scripts": {
     "check": "node tests/repository.test.cjs",
-    "test": "npm run check && node tests/unit.cjs && node experiments/test-v2-compatibility.cjs && node experiments/hard-mode-crush-test.cjs && node experiments/numerical-stability-test.cjs && node experiments/test-adapter.cjs && node tests/hard-mode-policy.test.cjs && node --test tests/very-hard-standard.test.cjs tests/very-hard-cli.test.cjs tests/cpu-optimization.test.cjs",
+    "test": "npm run check && node tests/unit.cjs && node experiments/test-v2-compatibility.cjs && node experiments/hard-mode-crush-test.cjs && node experiments/numerical-stability-test.cjs && node experiments/test-adapter.cjs && node tests/hard-mode-policy.test.cjs && node --test tests/very-hard-standard.test.cjs tests/very-hard-cli.test.cjs tests/cpu-optimization.test.cjs tests/planning-math.test.cjs",
     "test:browser": "node tests/run.cjs",
     "test:live": "node tests/run.cjs --live",
     "test:very-hard": "node tools/very-hard-test.cjs",

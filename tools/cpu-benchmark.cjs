@@ -4,11 +4,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const cp = require('node:child_process');
 const os = require('node:os');
-const assert = require('node:assert/strict');
 const { performance } = require('node:perf_hooks');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
-const BASELINE = '27872b0';
+const BASELINE = '188b1bf';
 function historical(file) { return cp.execFileSync('git', ['show', BASELINE + ':' + file], { cwd: root, encoding: 'utf8' }); }
 function environment() {
   let seed = 12345;
@@ -47,20 +46,26 @@ function sample(fn, calls = 1200) {
 }
 function benchmark() {
   const old = kernel(true), next = kernel(false), fixtures = states();
-  // Freeze the clock for equivalence only: MCTS is deliberately wall-time
-  // bounded, so real timing naturally changes the number of completed rollouts.
+  // Strategy changes are intentional in 10.3.0; report differences rather than
+  // asserting CPU-only equivalence against the prior release.
   old.performance = next.performance = { now: () => 0 };
+  let changedDecisionFixtures = 0, changedSpendFixtures = 0;
   for (const state of fixtures) {
-    assert.deepEqual(JSON.parse(JSON.stringify(next.TIOEngineCore.decide(state))),
-      JSON.parse(JSON.stringify(old.TIOEngineCore.decide(state))), 'CPU changes must not change policy');
-    assert.deepEqual(JSON.parse(JSON.stringify(next.TIOEngineCore.planSpend(state))),
-      JSON.parse(JSON.stringify(old.TIOEngineCore.planSpend(state))), 'CPU changes must not change spending/reserve');
+    changedDecisionFixtures += Number(JSON.stringify(next.TIOEngineCore.decide(state)) !== JSON.stringify(old.TIOEngineCore.decide(state)));
+    changedSpendFixtures += Number(JSON.stringify(next.TIOEngineCore.planSpend(state)) !== JSON.stringify(old.TIOEngineCore.planSpend(state)));
   }
   old.performance = next.performance = performance;
   next.TIOProfiler.reset();
   const engine = {};
   for (const [name, box] of [['baseline', old], ['updated', next]])
     engine[name] = sample(i => { const state = fixtures[i % fixtures.length]; box.TIOEngineCore.decide(state); box.TIOEngineCore.planSpend(state); });
+  const leading = { balance: 9000, balanceKnown: true, territory: 100, softCap: 10000,
+    hasAdjFree: false, freeLandRatio: 0, playersRemaining: 3, globalRank: 1, leaderId: 1,
+    leaderTerritory: 100, totalEnemyTerr: 175, primaryDanger: 0.47, relativePower: 1.125,
+    adjEnemies: [{ id: 2, bal: 8000, terr: 90 }, { id: 3, bal: 7500, terr: 85 }] };
+  const leadingEngine = {};
+  for (const [name, box] of [['baseline', old], ['updated', next]])
+    leadingEngine[name] = sample(() => { box.TIOEngineCore.decide(leading); box.TIOEngineCore.planSpend(leading); }, 300);
   const grid = {}, width = 320, height = 180;
   const input = { width, height, typeMatrix: new Uint8Array(width * height), confidenceMatrix: new Float32Array(width * height).fill(0.75) };
   for (let i = 0; i < input.typeMatrix.length; i++) input.typeMatrix[i] = i % 5;
@@ -76,7 +81,10 @@ function benchmark() {
   for (let frame = 0; frame < 600; frame++) gate.shouldRun(state, frame * 1000 / 60, 0, settings, 0);
   return { evidence: 'Node microbenchmarks on fixed fixtures, not browser/game win rate or total CPU/power', baselineCommit: BASELINE,
     host: { cpu: os.cpus()[0].model, logicalCpus: os.cpus().length, architecture: process.arch, node: process.version },
-    policyEquivalentFixtures: fixtures.length, engine, grid,
+    policyFixturesCompared: fixtures.length, changedDecisionFixtures, changedSpendFixtures,
+    comparisonKind: 'Different planning models: latency comparison, not behavior-preserving CPU optimization',
+    engineFixtureKind: '80 follower states; speculative search cannot veto these decisions', engine,
+    leadingFixtureKind: 'Three-player leading state; endgame search is active', leadingEngine, grid,
     unchangedSnapshotGate: { frames: 600, evaluations: gate.evaluations, skipped: gate.skipped },
     cpuProfile: next.TIOGetPerformance() };
 }

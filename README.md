@@ -2,7 +2,7 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.2.5 · **Engine:** V2.7 · **Updated:** 2026-10-04 11:29:34 EDT
+**Release:** v10.3.0 · **Engine:** V2.8 · **Updated:** 2026-10-04 20:17:35 EDT
 
 ## Install
 
@@ -29,7 +29,7 @@ npm run package
 
 ## Engine and evidence
 
-The shipped kernel is [`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js), loaded in both browser worlds. V2.7 includes neutral-first expansion, lobby-wide duel detection, a 55%-capacity combat-bank target, incoming-aware targeting, timed opening recovery and native-boundary reserve protection.
+The shipped kernel is [`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js), loaded in both browser worlds. V2.8 adds a shared tick-based planning model, source-mapped income/outgoing fronts, global coalition sizing, budget-safe allocation and weighted belief intervals. It retains neutral-first expansion, lobby-wide duel detection, a 55%-capacity combat-bank target, incoming-aware targeting, timed opening recovery and native-boundary reserve protection. Experimental tree search remains disabled. See [planning mathematics and limitations](docs/PLANNING_MODEL.md).
 
 Approximate paired simulation: **367/800 wins (45.875%)**, versus **353/800 (44.125%)** with the new policy disabled. **Real Hard-mode win rate is unmeasured.** This release adds CPU profiling, duplicate-planning suppression and typed-array grid updates; it does not introduce a new strategic algorithm. See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
 

@@ -91,10 +91,10 @@ test('vision grid uses arrays, lazy stable views, correct terrain and danger syn
   assert.equal(grid.get4Neighbors(0, 0).length, 2);
   assert.equal(grid.updateFromVision({ width: 2, height: 2, typeMatrix, confidenceMatrix }), false);
 });
-test('actual orchestrator constructs, avoids vision, and wakes immediately for new threats', () => {
+test('actual orchestrator relays model inputs, avoids vision, and wakes immediately for new threats', () => {
   const box = environment(); load(box, 'shared/config.js'); load(box, 'content/optimization.js');
-  let decisions = 0, spendPlans = 0;
-  box.TIOEngineCore = { decide() { decisions++; return { action: 'hold', reason: 'test', phaseLabel: 'STACK' }; },
+  let decisions = 0, spendPlans = 0, received;
+  box.TIOEngineCore = { decide(state) { decisions++; received = state; return { action: 'hold', reason: 'test', phaseLabel: 'STACK' }; },
     planSpend() { spendPlans++; return { canAfford: false, ratio: 0, minRemaining: 1 }; }, maxSafeRatio() { return 0.5; } };
   for (const name of ['CoordSystem', 'VisionEngine', 'OccupancyGrid', 'RegionDetector', 'BorderDetector',
     'EnemyTracker', 'EconomyAnalyzer', 'HeatmapEngine', 'HUDEngine', 'MouseController']) box[name] = function() {};
@@ -106,10 +106,17 @@ test('actual orchestrator constructs, avoids vision, and wakes immediately for n
   agent.hud.updateDashboard = () => {};
   agent.vision.processFrame = () => { throw Error('Vision must not run in internal mode'); };
   agent.internal = { lastState: { ready: true, alive: true, balance: 2000, balanceKnown: true,
-    territory: 100, gameTick: 100, activeFronts: 0, enemies: [], neighbors: [], neutralId: 512 }, isBusy: () => false };
+    territory: 100, gameTick: 100, activeFronts: 0, enemies: [], neighbors: [], neutralId: 512,
+    economy: { playerSlots: 64, mapCells: 100000 }, totalEnemyBalance: 77777,
+    totalEnemyTerritory: 10000, leaderId: 40, leaderTerritory: 9000, alivePlayers: 64,
+    outgoingAttacks: [{ targetId: 512, troops: 100 }], freeLandCells: 1000 }, isBusy: () => false };
   agent.executeInternalPipeline(10);
   agent.executeInternalPipeline(26);
   assert.equal(decisions, 1); assert.equal(spendPlans, 1);
+  assert.equal(received.economy.playerSlots, 64); assert.equal(received.totalEnemyBalance, 77777);
+  assert.equal(received.totalEnemyTerr, 10000); assert.equal(received.leaderId, 40);
+  assert.equal(received.playersRemaining, 64); assert.equal(received.tick, 100);
+  assert.equal(received.outgoingAttacks.length, 1); assert.equal(received.freeLandCells, 1000);
   agent.executeInternalPipeline(110); assert.equal(decisions, 2, 'timed safety/opening recheck');
   agent.internal.lastState = { ...agent.internal.lastState, balance: 100, gameTick: 101 };
   agent.executeInternalPipeline(111); assert.equal(decisions, 3, 'fresh state never throttled');
@@ -131,9 +138,12 @@ test('algorithm counters reflect actual execution, not calls to unrelated proxy 
   assert.equal(box.TIOGetEngineStatus().telemetry.methodCalls.decide, 1);
   assert.equal(box.TIOEngineCore.decide, box.TIOEngineCore.decide, 'proxy method wrapper is reused');
 });
-test('80 frozen-clock decision/spend outputs match the shipped 27872b0 golden fingerprint', () => {
+test('80 frozen-clock decision/spend outputs match the audited 10.3.0 planning fingerprint', () => {
   const box = kernel(false); box.performance = { now: () => 0 };
   const results = states().map(state => ({ decision: box.TIOEngineCore.decide(state), spend: box.TIOEngineCore.planSpend(state) }));
   const hash = crypto.createHash('sha256').update(JSON.stringify(results)).digest('hex');
-  assert.equal(hash, '7c1a4ff811b85a21d00b4ae54885e3c30a7d9fbf32b71b01fe99054f5fb58dee');
+  // Intentional model/coalition/search-gating changes replace the 10.2.5 golden.
+  // Native-source and semantic tests establish correctness; this detects drift,
+  // not superior gameplay.
+  assert.equal(hash, 'd49794e32d3cc195e357b4edc5d14f0731b24a408c25ab03633a019cf015b0c6');
 });

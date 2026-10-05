@@ -1,5 +1,5 @@
 /**
- * Territorial.io Orchestrator v10.2.5 — internal-first, vision fallback
+ * Territorial.io Orchestrator v10.3.0 — internal-first, vision fallback
  *
  * - MAIN-world brain ports dump dF/dJ/cE/dU (expand-empty → crush-weak)
    * - Exact source economics with one mutation in flight
@@ -23,7 +23,7 @@
 
   const CFG = window.TIOConfig;
   const CORE = window.TIOEngineCore || window.TIOHardMode;
-  const AGENT_VERSION = CFG ? CFG.VERSION : '10.2.5';
+  const AGENT_VERSION = CFG ? CFG.VERSION : '10.3.0';
   const DEFAULT_SETTINGS = CFG ? CFG.DEFAULT_SETTINGS : {
     botEnabled: true, autoExpand: true, autoAttack: true, clickSpeed: 4,
     sliderPercentage: 0, hotkeysEnabled: true, strategy: 'aggressive',
@@ -456,7 +456,7 @@
                   armed: !!this.matchArmed,
                   botEnabled: !!this.settings.botEnabled,
                   engineVersion: adapterStatus ? adapterStatus.activeVersion : (this.settings.engineVersion || 2),
-                  engineName: adapterStatus ? adapterStatus.activeEngine : 'V2.7-Advanced',
+                  engineName: adapterStatus ? adapterStatus.activeEngine : 'V2.8-Advanced',
                   strategy: this.settings.strategy || 'aggressive',
                   internalReady: !!(this.internal && this.internal.isReady && this.internal.isReady()),
                   path: this._lastPath || 'hy/hg',
@@ -869,6 +869,11 @@
         freeLandRatio: freeHint,
         hasAdjFree,
         adjEnemies: enemies,
+        planningEnemies: adjacentEnemies,
+        economy: st.economy,
+        outgoingAttacks: st.outgoingAttacks,
+        freeLandCells: st.freeLandCells,
+        totalEnemyBalance: st.totalEnemyBalance,
         perimeterNeutral: hasAdjFree ? 1 : 0,
         perimeterEnemy: enemies.length,
         totalEnemyTerr: st.totalEnemyTerritory != null
@@ -876,6 +881,7 @@
           : adjacentEnemies.reduce((sum, enemy) => sum + Math.max(0, enemy.terr | 0), 0),
         globalRank: st.globalRank,
         leaderTerritory: st.leaderTerritory,
+        leaderId: st.leaderId,
         playersRemaining: st.alivePlayers,
         areaTrend: this.internalAreaTrend,
         shrinkFrames: this.internalShrinkFrames,
@@ -1312,7 +1318,16 @@
         adjEnemies: adjEnemyList.length ? adjEnemyList : (stForPolicy.enemies || []).filter((e) => e && e.terr > 0),
         perimeterNeutral: perimNeutral,
         perimeterEnemy: perimEnemy,
-        totalEnemyTerr,
+        totalEnemyTerr: stForPolicy.totalEnemyTerritory != null ? stForPolicy.totalEnemyTerritory : totalEnemyTerr,
+        totalEnemyBalance: stForPolicy.totalEnemyBalance,
+        globalRank: stForPolicy.globalRank,
+        leaderId: stForPolicy.leaderId,
+        leaderTerritory: stForPolicy.leaderTerritory,
+        playersRemaining: stForPolicy.alivePlayers,
+        economy: stForPolicy.economy,
+        outgoingAttacks: stForPolicy.outgoingAttacks,
+        freeLandCells: stForPolicy.freeLandCells,
+        tick: stForPolicy.gameTick,
         areaTrend: this.economy.areaTrend || 0,
         shrinkFrames: this.economy.consecutiveShrinkFrames || 0,
         primaryDanger: enemyAnalytics.primaryThreat

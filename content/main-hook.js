@@ -37,7 +37,7 @@
   var SRC = PROTOCOL.requestSource || 'tio-engine-isolated';
   var REPLY = PROTOCOL.responseSource || 'tio-engine-main';
   var BRIDGE_VER = PROTOCOL.version || 1;
-  var HOOK_VER = CFG.VERSION || '10.2.5';
+  var HOOK_VER = CFG.VERSION || '10.3.0';
   var _armed = false;
 
   function core() {
@@ -1610,6 +1610,15 @@
     var leaderId = me;
     var leaderTerritory = terr;
     var totalEnemyTerritory = 0;
+    var totalEnemyBalance = 0;
+    function economyOf(p) {
+      try { return g && g.modern && typeof g.modern.economy === 'function' ? g.modern.economy(p) : null; }
+      catch (eEconomy) { return null; }
+    }
+    var economy = economyOf(me);
+    var outgoingAttacks = [];
+    try { if (g && g.modern && typeof g.modern.outgoing === 'function') outgoingAttacks = g.modern.outgoing(me); }
+    catch (eOutgoing) {}
     var alivePlayers = me >= 0 && isAlive(me) ? 1 : 0;
     for (var p = 0; p < maxP; p++) {
       if (p === me || (nid != null && p === nid) || !isAlive(p)) continue;
@@ -1617,13 +1626,14 @@
       if (t <= 0) continue;
       alivePlayers++;
       totalEnemyTerritory += t;
+      var enemyBalance = getBalance(p) | 0;
+      totalEnemyBalance += Math.max(0, enemyBalance);
       if (t > terr) globalRank++;
       if (t > leaderTerritory) {
         leaderTerritory = t;
         leaderId = p;
       }
       if (!physicalSet[p]) continue;
-      var enemyBalance = getBalance(p) | 0;
       var incoming = 0;
       try {
         if (g && g.modern && typeof g.modern.incoming === 'function') incoming = Math.max(0, g.modern.incoming(p, me) | 0);
@@ -1635,6 +1645,7 @@
         effectiveBal: enemyBalance + incoming,
         incoming: incoming,
         terr: t,
+        economy: economyOf(p),
         adjacent: true,
         available: !!availableSet[p],
         shipOnly: false,
@@ -1677,6 +1688,10 @@
       leaderId: leaderId,
       leaderTerritory: leaderTerritory,
       totalEnemyTerritory: totalEnemyTerritory,
+      totalEnemyBalance: totalEnemyBalance,
+      economy: economy,
+      outgoingAttacks: outgoingAttacks,
+      freeLandCells: economy && economy.mapCells > 0 ? Math.max(0, economy.mapCells - terr - totalEnemyTerritory) : null,
       alivePlayers: alivePlayers,
       minRemaining: minRem,
       maxSpendable: maxSp,

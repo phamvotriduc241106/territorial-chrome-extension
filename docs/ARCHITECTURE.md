@@ -23,4 +23,6 @@ The MAIN hook validates the recognized source contract, target availability, cur
 
 No bundler is required. Chrome loads the repository directly, or the clean directory produced by `npm run package`. The explicit release closure rejects references outside production directories. Historical reports keep their original paths and claims as archival text; they are not current release documentation.
 
-This restructuring changes file ownership and validation, not strategy mathematics. The V2.7 kernel remains monolithic; decomposing its policy, economics and numerical helpers should be a separate behavior-preserving change with paired replay evidence, not a silent rewrite.
+V2.8 retains one shipped kernel file, but separates planning-state normalization, command application, income stepping, aggregate settlement and utility evaluation into shared functions. MPC and the endgame bandit use that same model. The source adapter supplies modern-v3 income parameters; the MAIN hook snapshots economy, outgoing fronts, global bank totals and leader identity; both orchestrator paths pass the context to planning. See PLANNING_MODEL.md.
+
+Experimental tree search is disabled by default and has no call path from decide(). Native actuation remains independent of speculation: every command is repriced and validated from live state. Planning utilities are not calibrated win probabilities. The 10.2.4 restructuring was behavior-preserving; 10.3.0 intentionally changes planning mathematics.

@@ -102,6 +102,41 @@ const server = http.createServer((request, response) => {
           exactDebit: expected, activeFronts: after.activeFronts, target: result.target };
       });
       console.log('Official single-player attack: PASS ' + JSON.stringify(smoke));
+      if (expectedContract === 'live-modern-v3') {
+        const economics = await page.evaluate(() => {
+          const game = window.__TIO_GAME__, core = window.TIOEngineCore;
+          const me = game.modern.me(), originalTick = game.bi.a2Q.ae0;
+          const banks = game.ah.hb.slice(), lands = game.ah.hN.slice(), debts = game.ah.a5j.slice();
+          const cases = [];
+          try {
+            for (const territory of [100, Math.floor(game.aE.ke * 0.03), Math.floor(game.aE.ke * 0.4)]) {
+             for (const tick of [8, 9, 99, 1919, 1929, 2999]) {
+              for (const bank of [territory * 10, territory * 100, territory * 150 - 10]) {
+                game.bi.a2Q.ae0 = tick; game.ah.hN[me] = territory; game.ah.hb[me] = bank; game.ah.a5j[me] = 0;
+                const economy = game.modern.economy(me);
+                const predictedRate = core.planningInterestBps(territory, bank, tick, economy);
+                if (predictedRate !== economy.interestRateBps) throw Error('Native interest-rate mismatch: ' +
+                  JSON.stringify({ tick, bank, economy, predictedRate }));
+                const predicted = core.transitionPlanningState({ tick, balance: bank, territory,
+                  economy, adjEnemies: [], playersRemaining: 1 }, { type: 'hold' }, 1);
+                game.af.ee();
+                if (predicted.balance !== game.ah.hb[me]) throw Error('Native income mismatch: ' +
+                  JSON.stringify({ tick, bank, predicted: predicted.balance, native: game.ah.hb[me] }));
+                cases.push({ territory, tick, bank, after: predicted.balance });
+                game.ah.hb.set(banks); game.ah.hN.set(lands); game.ah.a5j.set(debts);
+              }
+             }
+            }
+            const snapshot = window.__TIO_HOOK_API__.state();
+            if (!snapshot.economy || !Array.isArray(snapshot.outgoingAttacks) || snapshot.totalEnemyBalance == null)
+              throw Error('Planning economics missing from native snapshot');
+          } finally {
+            game.bi.a2Q.ae0 = originalTick; game.ah.hb.set(banks); game.ah.hN.set(lands); game.ah.a5j.set(debts);
+          }
+          return { cases: cases.length, exactIncomeAndRate: true };
+        });
+        console.log('Official planning economics: PASS ' + JSON.stringify(economics));
+      }
       await page.close();
     }
   } finally {

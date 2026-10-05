@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.2.5
+ * Territorial.io deterministic policy kernel v10.3.0
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -94,6 +94,7 @@
     enableCoalition: true,
     enableSDE: true,
     enableMCTS: true,
+    enableTreeSearch: false, // Experimental aggregate model; never used by decide().
     enableBayesianArchetype: true,
     enableCurvatureFlow: true,
     enableNavalBellman: true,
@@ -531,7 +532,7 @@
   }
 
   /**
-   * Control Barrier Function (CBF) for Dynamic Crush Immunity.
+   * Crush reserve barrier (legacy CBF name; not a derivative-based CBF proof).
    * Hard bots evaluate dJ crush when: al(B_bot, 8) > B_us (i.e. B_bot > 8 * B_us).
    *
    * To remain strictly outside the crush domain of all bordering enemies:
@@ -676,8 +677,8 @@
   }
 
   /**
-   * Advanced Mathematical Formulation: Pontryagin's Optimal Control (PMP)
-   * Solves the continuous/discrete Hamiltonian singular arc for optimal spend u*(t).
+   * Adaptive rule-based control (legacy PMP entrypoint). No costate equations
+   * or Hamiltonian boundary-value problem are solved here.
    *
    * Maximizes terminal objective: J(u) = alpha * Territory(T) + beta * Balance(T)
    * Subject to:
@@ -1138,86 +1139,190 @@
     return { articulationPoints, bridges, isConnected: components <= 1, components, nodeCount: V, edgeCount: edges ? edges.length : 0 };
   }
 
-  /**
-   * Forward Discrete Simulator for Model Predictive Control (MPC)
-   */
-  function forwardSimulatorStep(state, action, steps) {
-    steps = steps || 8;
-    let myBal = state.balance || 0;
-    let myTerr = state.territory || 1;
-    let neutralLand = state.freeLandRatio != null ? (state.freeLandRatio * (myTerr * 10)) : 1000;
-    const enemies = (state.adjEnemies || []).map(e => ({
-      id: e.id,
-      bal: e.bal || 0,
-      terr: e.terr || 1
+  // Aggregate planning model: exact source-clock economics/command arithmetic
+  // where a modern-v3 economy profile is supplied. Combat and settlement time
+  // are explicitly estimated: no pixel graph is available in this state.
+  function planningNumber(value, fallback) {
+    return value != null && Number.isFinite(Number(value)) ? Number(value) : fallback;
+  }
+
+  function createPlanningState(state) {
+    state = state || {};
+    const enemies = (state.planningEnemies || state.adjEnemies || []).filter(Boolean).map(e => ({
+      ...e, bal: Math.max(0, planningNumber(e.bal, 0)), terr: Math.max(0, planningNumber(e.terr, 1)),
+      economy: e.economy ? { ...e.economy } : null,
+      debt: planningNumber(e.debt, e.economy ? planningNumber(e.economy.debt, 0) : 0)
     }));
-    const interestRate = 0.035;
-    const D = 1.25;
+    const localTerr = enemies.reduce((sum, e) => sum + e.terr, 0);
+    const localBal = enemies.reduce((sum, e) => sum + e.bal, 0);
+    const tick = Math.max(0, Math.floor(planningNumber(state.tick, planningNumber(state.gameTick, 0))));
+    const next = { ...state, tick, balance: Math.max(0, planningNumber(state.balance, 0)),
+      territory: Math.max(0, planningNumber(state.territory, 1)), adjEnemies: enemies,
+      economy: state.economy ? { ...state.economy } : null,
+      debt: planningNumber(state.debt, state.economy ? planningNumber(state.economy.debt, 0) : 0),
+      hasAdjFree: state.hasAdjFree != null ? state.hasAdjFree === true : planningNumber(state.freeLandRatio, 0) > 0.01,
+      freeLandCells: Math.max(0, Math.floor(planningNumber(state.freeLandCells,
+        planningNumber(state.freeLandRatio, 0) * Math.max(1, planningNumber(state.territory, 1)) * 10))),
+      outsideEnemyTerr: Math.max(0, planningNumber(state.outsideEnemyTerr,
+        planningNumber(state.totalEnemyTerr, localTerr) - localTerr)),
+      outsideEnemyBal: Math.max(0, planningNumber(state.outsideEnemyBal,
+        planningNumber(state.totalEnemyBalance, localBal) - localBal)),
+      outsidePlayers: Math.max(0, planningNumber(state.outsidePlayers,
+        planningNumber(state.playersRemaining, enemies.length + 1) - enemies.filter(e => e.terr > 0).length - 1)),
+      activeAttacks: (state.activeAttacks || []).map(a => ({ ...a })),
+      modelKind: 'aggregate-combat-estimate' };
+    // Incoming has already left its sender's bank. Never debit it again.
+    if (!state.activeAttacks) {
+      for (const e of enemies) if (e.incoming > 0) next.activeAttacks.push({
+        attackerId: e.id, targetId: null, troops: e.incoming, settleTick: tick + 10, estimatedTiming: true });
+      for (const a of state.outgoingAttacks || []) next.activeAttacks.push({
+        attackerId: null, targetId: a.targetId, troops: a.troops,
+        settleTick: tick + 10, estimatedTiming: true });
+    }
+    delete next.planningEnemies; // Subsequent transitions must use evolved rivals.
+    next.unobservedFronts = Math.max(0, planningNumber(state.unobservedFronts,
+      planningNumber(state.activeFronts, 0) - next.activeAttacks.filter(a => a.attackerId == null).length));
+    return next;
+  }
 
-    if (action.type === 'expand') {
-      const ratio = Math.max(0.05, Math.min(0.40, action.ratio || 0.20));
-      const sent = Math.floor(myBal * ratio);
-      // The live human command path taxes the bank before the attack, not the
-      // dispatched force. Keeping this exact is important for MPC feasibility.
-      const tax = Math.floor(12 * myBal / 1024);
-      myBal = Math.max(0, myBal - sent - tax);
-      const gained = Math.min(neutralLand, Math.floor(sent / 2));
-      myTerr += gained;
-      neutralLand = Math.max(0, neutralLand - gained);
-    } else if (action.type === 'fight' && action.targetId != null) {
-      const foe = enemies.find(e => e.id === action.targetId);
-      if (foe) {
-        const ratio = Math.max(0.08, Math.min(0.55, action.ratio || 0.25));
-        const sent = Math.floor(myBal * ratio);
-        const tax = Math.floor(12 * myBal / 1024);
-        myBal = Math.max(0, myBal - sent - tax);
-        const defForce = foe.bal * D;
-        if (sent > defForce) {
-          const conquered = Math.min(foe.terr, Math.max(1, Math.floor(foe.terr * (sent / (defForce + 1)))));
-          myTerr += conquered;
-          foe.terr = Math.max(0, foe.terr - conquered);
-          foe.bal = Math.max(0, foe.bal - Math.floor(sent / D));
-        } else {
-          foe.bal = Math.max(0, foe.bal - Math.floor(sent / D));
-        }
+  // The live table uses nine integer Newton iterations, not Math.sqrt rounding.
+  function planningInterestBps(territory, balance, tick, economy) {
+    economy = economy || {};
+    const slots = Math.max(5, planningNumber(economy.playerSlots, 64));
+    const index = Math.max(0, Math.min(slots - 1,
+      al((slots - 1) * territory, Math.max(1, planningNumber(economy.mapCells, territory * slots)))));
+    const g = al(index * 25600, slots - 4);
+    let root = g < 1 ? 0 : al(g + 1, 2);
+    if (g >= 1) for (let i = 0; i < 9; i++) root = al(root + al(g, root), 2);
+    let rate = 100 + root;
+    if (tick < 1920) rate = Math.max(rate, al(100 * (13440 - 6 * tick), 1920));
+    const cap = Math.min(100 * territory, planningNumber(economy.softCapMaximum, 1e9));
+    if (balance > cap && cap > 0) rate -= al(2 * rate * (balance - cap), cap);
+    rate = Math.min(700, Math.max(0, rate));
+    if (economy.interestDisabled) return 0;
+    return economy.interestType > 0 ? al(planningNumber(economy.interestValue, 64) * rate, 64) : rate;
+  }
+
+  function planningIncome(player, tick) {
+    if (player.terr <= 0 || tick % 10 !== 9) return;
+    const e = player.economy || {};
+    const hardCap = Math.min(planningNumber(e.hardCapPerCell, 150) * player.terr,
+      planningNumber(e.hardCapMaximum, 1.5e9));
+    function credit(amount) {
+      const added = Math.max(0, Math.min(Math.floor(amount), hardCap - player.bal));
+      player.bal += added;
+      const repaid = Math.min(Math.max(0, planningNumber(player.debt, 0)), player.bal);
+      player.debt = Math.max(0, planningNumber(player.debt, 0) - repaid);
+      player.bal -= repaid;
+    }
+    credit(Math.max(1, al(planningInterestBps(player.terr, player.bal, tick, e) * player.bal, 10000)));
+    if (e.additionalIncomeType > 0) credit(al(planningNumber(e.additionalIncomeValue, 0) * player.terr, 128));
+    if (tick % 100 === 99) credit(al(planningNumber(e.territoryIncomeValue, 32) * player.terr, 32));
+  }
+
+  function applyPlanningAction(state, action, actorId) {
+    action = action || { type: 'hold' };
+    if (action.type === 'hold') return;
+    const own = actorId == null;
+    const actor = own ? { bal: state.balance, terr: state.territory }
+      : state.adjEnemies.find(e => e.id === actorId);
+    if (!actor || actor.terr <= 0 || actor.bal <= 0) return;
+    const targetId = action.type === 'expand' ? 'neutral' : action.targetId;
+    const foe = targetId == null ? null : state.adjEnemies.find(e => e.id === targetId);
+    if (action.type === 'expand' && (!own || !state.hasAdjFree || state.freeLandCells <= 0)) return;
+    if (action.type === 'fight' && own && (!foe || foe.terr <= 0 || foe.available === false || foe.adjacent === false)) return;
+    // Opponent-to-opponent adjacency is unknown; do not invent a complete graph.
+    if (!own && targetId != null) return;
+    if (state.activeAttacks.some(a => a.attackerId === actorId && a.targetId === targetId)) return;
+    const used = state.activeAttacks.filter(a => a.attackerId === actorId).length + (own ? state.unobservedFronts : 0);
+    if (used >= (own ? Math.max(1, planningNumber(state.frontCap, 4)) : 4)) return;
+    const ratio = Math.max(0, Math.min(0.72, planningNumber(action.ratio, 0.2)));
+    if (ratio <= 0) return;
+    const requested = al(actor.bal * (ratioToIl(ratio) + 1), 1024);
+    const cost = own ? humanAttackDebit(actor.bal, requested) : botAttackDebit(actor.bal, requested);
+    if (cost.sent <= 0) return;
+    if (own && actor.bal - cost.debit < Math.max(minLeaveFor(actor.bal),
+      computeCrushBarrierFloor(actor.bal, state.adjEnemies).floor)) return;
+    if (own) state.balance -= cost.debit;
+    else actor.bal = Math.max(0, actor.bal - cost.debit);
+    state.activeAttacks.push({ attackerId: actorId, targetId, troops: cost.sent,
+      settleTick: state.tick + Math.max(1, planningNumber(state.settlementTicks, 10)), estimatedTiming: true });
+  }
+
+  function settlePlanningAttack(state, attack) {
+    const own = attack.attackerId == null;
+    const actor = own ? null : state.adjEnemies.find(e => e.id === attack.attackerId);
+    if ((!own && (!actor || actor.terr <= 0)) || (own && state.territory <= 0)) return;
+    if (attack.targetId === 'neutral') {
+      const gained = Math.min(state.freeLandCells, Math.floor(attack.troops / 2));
+      state.territory += gained; state.freeLandCells -= gained;
+      state.hasAdjFree = state.freeLandCells > 0;
+      return;
+    }
+    const foe = own ? state.adjEnemies.find(e => e.id === attack.targetId) : null;
+    if (own && (!foe || foe.terr <= 0)) return;
+    const bank = own ? foe.bal : state.balance;
+    const land = own ? foe.terr : state.territory;
+    const defense = bank * 1.25;
+    const damage = Math.floor(attack.troops / 1.25);
+    // Deliberately retain an aggregate attrition estimate, not a pixel simulator.
+    const gained = attack.troops > defense ? land : 0;
+    if (own) {
+      state.territory += gained; foe.terr -= gained;
+      foe.bal = foe.terr > 0 ? Math.max(0, bank - damage) : 0;
+      foe.available = foe.terr > 0;
+      if (foe.terr <= 0) foe.adjacent = false;
+    } else {
+      actor.terr += gained; state.territory -= gained;
+      state.balance = state.territory > 0 ? Math.max(0, bank - damage) : 0;
+    }
+  }
+
+  function advancePlanningState(state, ticks) {
+    for (let i = 0; i < ticks; i++) {
+      const self = { bal: state.balance, terr: state.territory, economy: state.economy, debt: state.debt };
+      planningIncome(self, state.tick); state.balance = self.bal; state.debt = self.debt;
+      for (const e of state.adjEnemies) planningIncome(e, state.tick);
+      state.tick++;
+      const pending = [];
+      for (const a of state.activeAttacks) {
+        if (a.settleTick <= state.tick) settlePlanningAttack(state, a);
+        else pending.push(a);
       }
+      state.activeAttacks = pending;
     }
+    state.activeFronts = state.unobservedFronts + state.activeAttacks.filter(a => a.attackerId == null).length;
+    state.playersRemaining = state.outsidePlayers + state.adjEnemies.filter(e => e.terr > 0).length + Number(state.territory > 0);
+    state.totalEnemyTerr = state.outsideEnemyTerr + state.adjEnemies.reduce((sum, e) => sum + e.terr, 0);
+    state.totalEnemyBalance = state.outsideEnemyBal + state.adjEnemies.reduce((sum, e) => sum + e.bal, 0);
+    return state;
+  }
 
-    for (let s = 0; s < steps; s++) {
-      const myCap = Math.min(100 * myTerr, 1000000000);
-      const myBaseInc = Math.max(2, Math.floor(Math.sqrt(myTerr) * 2.5));
-      if (myBal < myCap) myBal += Math.floor(myBal * interestRate) + myBaseInc;
-      else myBal += myBaseInc;
+  function transitionPlanningState(state, action, ticks = 1) {
+    const next = createPlanningState(state);
+    applyPlanningAction(next, action, null);
+    return advancePlanningState(next, Math.max(0, Math.min(1000, Math.floor(planningNumber(ticks, 1)))));
+  }
 
-      for (let i = 0; i < enemies.length; i++) {
-        const foe = enemies[i];
-        if (foe.terr <= 0) continue;
-        const foeCap = Math.min(100 * foe.terr, 1000000000);
-        const foeBase = Math.max(2, Math.floor(Math.sqrt(foe.terr) * 2.5));
-        if (foe.bal < foeCap) foe.bal += Math.floor(foe.bal * interestRate) + foeBase;
-        else foe.bal += foeBase;
+  function planningUtility(state) {
+    if (state.territory <= 0) return { value: 0, crushDanger: 1 };
+    const rivals = state.adjEnemies.filter(e => e.terr > 0);
+    const enemyTerr = state.outsideEnemyTerr + rivals.reduce((sum, e) => sum + e.terr, 0);
+    const enemyBal = state.outsideEnemyBal + rivals.reduce((sum, e) => sum + e.bal, 0);
+    if (enemyTerr === 0 && state.outsidePlayers === 0) return { value: 1, crushDanger: 0 };
+    const maxThreat = rivals.reduce((max, e) => Math.max(max, e.bal + state.activeAttacks
+      .filter(a => a.attackerId === e.id && a.targetId == null).reduce((sum, a) => sum + a.troops, 0)), 0);
+    const danger = Math.max(0, (maxThreat / 7.6 - state.balance) / Math.max(1, state.balance));
+    const value = 0.50 * state.territory / Math.max(1, state.territory + enemyTerr)
+      + 0.35 * state.balance / Math.max(1, state.balance + enemyBal) - 0.40 * Math.min(1, danger);
+    return { value: Math.max(0, Math.min(1, value)), crushDanger: danger };
+  }
 
-        if (Math.floor(foe.bal / 8) > myBal) {
-          myBal = 0;
-          myTerr = Math.max(1, Math.floor(myTerr * 0.5));
-        }
-      }
-    }
-
-    let totalEnemyTerr = 0;
-    let totalEnemyBal = 0;
-    let maxEnemyBal = 0;
-    for (let i = 0; i < enemies.length; i++) {
-      totalEnemyTerr += enemies[i].terr;
-      totalEnemyBal += enemies[i].bal;
-      if (enemies[i].bal > maxEnemyBal) maxEnemyBal = enemies[i].bal;
-    }
-    const terrShare = myTerr / Math.max(1, myTerr + totalEnemyTerr);
-    const balShare = myBal / Math.max(1, myBal + totalEnemyBal);
-    const crushDanger = Math.max(0, (maxEnemyBal / 8.0 - myBal) / Math.max(1, myBal));
-    const value = 0.50 * terrShare + 0.35 * balShare - 0.40 * Math.min(1.0, crushDanger);
-
-    return { value, finalTerr: myTerr, finalBal: myBal, crushDanger };
+  /** One action followed by passive lookahead; steps remain 10-tick cycles. */
+  function forwardSimulatorStep(state, action, steps) {
+    const nextState = transitionPlanningState(state, action, Math.max(0, steps == null ? 8 : steps) * 10);
+    return { ...planningUtility(nextState), finalTerr: nextState.territory, finalBal: nextState.balance, nextState,
+      modelKind: nextState.modelKind };
   }
 
   /**
@@ -1247,109 +1352,9 @@
   /**
    * True KKT Marginal-Utility Multi-Front Allocation (Diminishing Returns Bisection)
    */
+  // Compatibility entrypoint. Both allocators now share one tested solver.
   function allocateKKTMarginalUtility(totalBudget, frontConfigs) {
-    const B = Math.max(0, totalBudget | 0);
-    if (!frontConfigs || !frontConfigs.length) return [];
-    const K = frontConfigs.length;
-    if (K === 1) {
-      const cfg = frontConfigs[0];
-      const minD = Math.max(0, cfg.min | 0);
-      const maxD = cfg.max != null ? Math.max(minD, cfg.max | 0) : B;
-      return [Math.min(B, Math.max(minD, maxD))];
-    }
-
-    const allocations = new Int32Array(K);
-    let remBudget = B;
-
-    // 1. Allocate minimum demand floors
-    for (let k = 0; k < K; k++) {
-      const cfg = frontConfigs[k];
-      const minD = Math.max(0, cfg.min | 0);
-      const alloc = Math.min(remBudget, minD);
-      allocations[k] = alloc;
-      remBudget -= alloc;
-    }
-
-    if (remBudget <= 0) {
-      return Array.from(allocations);
-    }
-
-    // 2. Prepare diminishing return parameters: V_k and scale s_k
-    const V = new Float64Array(K);
-    const s = new Float64Array(K);
-    const cap = new Float64Array(K);
-    let maxMarginal = 1e-9;
-
-    for (let k = 0; k < K; k++) {
-      const cfg = frontConfigs[k];
-      let weight = cfg.weight != null ? Math.max(0.05, Number(cfg.weight)) : 1.0;
-      if (cfg.isChokepoint) weight *= 2.8;
-      if (cfg.isEnclave) weight *= 1.8;
-      V[k] = weight;
-      s[k] = Math.max(10.0, (cfg.saturation != null ? Number(cfg.saturation) : (remBudget * 0.4)));
-      const maxD = cfg.max != null ? Math.max(allocations[k], cfg.max | 0) : B;
-      cap[k] = Math.max(0, maxD - allocations[k]);
-
-      const initialMarginal = V[k] / s[k];
-      if (initialMarginal > maxMarginal) maxMarginal = initialMarginal;
-    }
-
-    // 3. Monotonic Bisection Search for Lagrange Multiplier lambda in (0, maxMarginal]
-    let lowLambda = 1e-9;
-    let highLambda = maxMarginal * 1.05;
-    const y = new Float64Array(K);
-
-    for (let iter = 0; iter < 16; iter++) {
-      const midLambda = (lowLambda + highLambda) * 0.5;
-      let sumY = 0;
-
-      for (let k = 0; k < K; k++) {
-        const ratio = (midLambda * s[k]) / V[k];
-        let yk = 0;
-        if (ratio < 1.0) {
-          yk = -s[k] * Math.log(ratio);
-          if (yk > cap[k]) yk = cap[k];
-          if (yk < 0) yk = 0;
-        }
-        y[k] = yk;
-        sumY += yk;
-      }
-
-      if (sumY > remBudget) {
-        lowLambda = midLambda;
-      } else {
-        highLambda = midLambda;
-      }
-    }
-
-    // 4. Discretize integer allocations
-    let spentExtra = 0;
-    for (let k = 0; k < K; k++) {
-      const add = Math.floor(y[k]);
-      allocations[k] += add;
-      spentExtra += add;
-    }
-
-    let leftover = remBudget - spentExtra;
-    while (leftover > 0) {
-      let bestK = -1;
-      let bestResidual = -1;
-      for (let k = 0; k < K; k++) {
-        const currentAdd = allocations[k] - (frontConfigs[k].min | 0);
-        if (currentAdd < cap[k]) {
-          const marginal = (V[k] / s[k]) * Math.exp(-currentAdd / s[k]);
-          if (marginal > bestResidual) {
-            bestResidual = marginal;
-            bestK = k;
-          }
-        }
-      }
-      if (bestK === -1) break;
-      allocations[bestK]++;
-      leftover--;
-    }
-
-    return Array.from(allocations);
+    return allocateKKTMultiFront(totalBudget, frontConfigs);
   }
 
   /**
@@ -1563,11 +1568,17 @@
 
     getBelief() {
       let mean = 0;
-      for (let k = 0; k < NUM_PARTICLES; k++) mean += this.particles[k] * this.weights[k];
-
-      const sorted = Array.from(this.particles).sort((a, b) => a - b);
-      const p95 = sorted[Math.floor(NUM_PARTICLES * 0.95)];
-      const p05 = sorted[Math.floor(NUM_PARTICLES * 0.05)];
+      const mass = this.weights.reduce((sum, w) => sum + Math.max(0, w), 0);
+      const sorted = Array.from(this.particles, (value, i) => ({ value,
+        weight: mass > 0 ? Math.max(0, this.weights[i]) / mass : 1 / NUM_PARTICLES })).sort((a, b) => a.value - b.value);
+      for (const item of sorted) mean += item.value * item.weight;
+      function quantile(p) {
+        let cumulative = 0;
+        for (const item of sorted) { cumulative += item.weight; if (cumulative >= p) return item.value; }
+        return sorted[sorted.length - 1].value;
+      }
+      const p95 = quantile(0.95);
+      const p05 = quantile(0.05);
 
       const p95Val = Math.round(p95);
       return {
@@ -1641,10 +1652,7 @@
     expand() {
       const action = this.untriedActions.pop();
       const nextOutcome = forwardSimulatorStep(this.state, action, 1);
-      const nextState = Object.assign({}, this.state, {
-        balance: nextOutcome.finalBal,
-        territory: nextOutcome.finalTerr
-      });
+      const nextState = nextOutcome.nextState;
       const child = new MCTSNode(nextState, action, this);
       this.children.push(child);
       return child;
@@ -1656,7 +1664,9 @@
    */
   function runMultiStepMCTS() { return profileKernel('kernel.multiStepMcts', runMultiStepMCTSImpl, arguments); }
   function runMultiStepMCTSImpl(initialState, maxRollouts = 40, maxDepth = 4) {
-    const root = new MCTSNode(initialState);
+    if (!CONFIG.enableTreeSearch) return { bestAction: 'hold', targetId: null, ratio: 0,
+      winProb: 0, expectedUtility: 0, rollouts: 0, treeSize: 0, disabled: true };
+    const root = new MCTSNode(createPlanningState(initialState));
 
     for (let iter = 0; iter < maxRollouts; iter++) {
       let node = root;
@@ -1668,10 +1678,11 @@
 
       if (!node.isFullyExpanded() && depth < maxDepth) {
         node = node.expand();
+        depth++;
       }
 
-      const rolloutOutcome = forwardSimulatorStep(node.state, node.action || { type: 'hold', ratio: 0 }, 6);
-      const reward = Math.max(0.0, Math.min(1.0, rolloutOutcome.value + 0.5));
+      const rolloutOutcome = forwardSimulatorStep(node.state, { type: 'hold', ratio: 0 }, 6);
+      const reward = rolloutOutcome.value;
 
       let curr = node;
       while (curr != null) {
@@ -1968,7 +1979,8 @@
     // ── MODEL PREDICTIVE CONTROL (MPC) TRAJECTORY EVALUATOR ──
     // When multiple strategic options exist, simulate forward H=8 cycles
     // under exact game mechanics to pick a* = argmax_a E[V(s_{t+H}) | s_t, a]:
-    if (hasFree && hasEnemy && B >= 60 && !crushable && shrink <= 2) {
+    const exactNeutralOverrides = CONFIG.enableHardModePolicy && S.hasAdjFree === true;
+    if (!exactNeutralOverrides && hasFree && hasEnemy && B >= 60 && !crushable && shrink <= 2) {
       const seq = S.attackSequence != null ? (S.attackSequence | 0) : 0;
       const candidates = [
         { type: 'hold', ratio: 0 },
@@ -2040,13 +2052,17 @@
 
     // Priority 6: Monte Carlo Tree Search (MCTS) Endgame Tactical Equilibrium
     let mcts = null;
-    if (CONFIG.enableMCTS && hasEnemy && (enemies.length <= 3 || myShare >= 0.35 || free < 0.03)) {
+    const canMctsVeto = action === 'fight' && !crushable && shrink <= 0 && trend >= 0 &&
+      enemies.length >= 2 && !isDuel && isLeading && !exactNeutralOverrides &&
+      (!CONFIG.enableHardModePolicy || d >= CONFIG.combatBankTarget);
+    if (CONFIG.enableMCTS && canMctsVeto && (enemies.length <= 3 || myShare >= 0.35 || free < 0.03)) {
       mcts = computeMCTSEndgameAction(S, 45, 0.5);
       if (mcts) {
         // MCTS hold veto is strictly valid for multi-agent standoffs (N >= 3) to prevent free-riding.
         // It must NEVER veto active border defense when shrinking or in 1v1 duels.
         const canVeto = shrink <= 0 && trend >= 0 && enemies.length >= 2 && !isDuel && isLeading;
-        if (canVeto && mcts.bestAction === 'hold' && !crushable && action === 'fight') {
+        if (canVeto && mcts.completeCoverage && mcts.actionVisits >= 2 &&
+            mcts.bestAction === 'hold' && !crushable && action === 'fight') {
           action = 'hold';
           reason = 'mcts-equilibrium-hold';
         }
@@ -2420,109 +2436,84 @@
    * priority fronts (e.g. isthmus breaches) receive decisive mass to break through.
    */
   function allocateKKTMultiFront(totalBudget, frontConfigs) {
-    const B = Math.max(0, totalBudget | 0);
-    if (!frontConfigs || !frontConfigs.length) return [];
-    const K = frontConfigs.length;
-    if (K === 1) {
-      const cfg = frontConfigs[0];
-      const minD = Math.max(0, cfg.min | 0);
-      const maxD = cfg.max != null ? Math.max(minD, cfg.max | 0) : B;
-      return [Math.min(B, Math.max(minD, maxD))];
+    return allocateKKTMultiFrontDetailed(totalBudget, frontConfigs).allocations;
+  }
+
+  /** Concave utility is on EXTRA troops above feasible minimum floors. */
+  function allocateKKTMultiFrontDetailed(totalBudget, frontConfigs) {
+    const budget = Math.max(0, Math.floor(planningNumber(totalBudget, 0)));
+    const configs = (frontConfigs || []).map(c => {
+      const min = Math.max(0, Math.floor(planningNumber(c.min, 0)));
+      const max = Math.max(0, Math.floor(planningNumber(c.max, budget)));
+      return { min, max, weight: Math.max(0.05, planningNumber(c.weight, 1)) *
+        (c.isChokepoint ? 2.8 : 1) * (c.isEnclave ? 1.8 : 1),
+        saturation: Math.max(10, planningNumber(c.saturation, budget * 0.4)) };
+    });
+    const allocations = configs.map(() => 0);
+    const minimumDemand = configs.reduce((sum, c) => sum + c.min, 0);
+    const feasible = minimumDemand <= budget && configs.every(c => c.min <= c.max);
+    if (!feasible) {
+      // Explicit priority policy, NOT a KKT solution to an infeasible problem.
+      let remaining = budget;
+      const order = configs.map((_, i) => i).sort((a, b) => configs[b].weight - configs[a].weight || a - b);
+      for (const i of order) {
+        allocations[i] = Math.min(remaining, configs[i].min, configs[i].max);
+        remaining -= allocations[i];
+      }
+      return { allocations, feasible: false, status: 'infeasible-minimums-priority',
+        minimumDemand, unspent: remaining, unmetMinimums: configs.map((c, i) => Math.max(0, c.min - allocations[i])) };
     }
-
-    const allocations = new Int32Array(K);
-    let remBudget = B;
-
-    // 1. Allocate minimum demand floors
-    for (let k = 0; k < K; k++) {
-      const cfg = frontConfigs[k];
-      const minD = Math.max(0, cfg.min | 0);
-      const alloc = Math.min(remBudget, minD);
-      allocations[k] = alloc;
-      remBudget -= alloc;
+    for (let i = 0; i < configs.length; i++) allocations[i] = configs[i].min;
+    if (configs.length === 1) {
+      allocations[0] = Math.min(budget, configs[0].max);
+      return { allocations, feasible: true, status: 'feasible', minimumDemand,
+        unspent: budget - allocations[0], unmetMinimums: [0] };
     }
-
-    if (remBudget <= 0) {
-      return Array.from(allocations);
-    }
-
-    // 2. KKT Diminishing Returns: U_k(y_k) = V_k * (1 - exp(-y_k / s_k))
-    // Stationarity: U'_k(y_k) = (V_k / s_k) * exp(-y_k / s_k) = lambda
-    const V = new Float64Array(K);
-    const s = new Float64Array(K);
-    const cap = new Float64Array(K);
-    let maxMarginal = 1e-9;
-
-    for (let k = 0; k < K; k++) {
-      const cfg = frontConfigs[k];
-      let weight = cfg.weight != null ? Math.max(0.05, Number(cfg.weight)) : 1.0;
-      if (cfg.isChokepoint) weight *= 2.8;
-      if (cfg.isEnclave) weight *= 1.8;
-      V[k] = weight;
-      s[k] = Math.max(10.0, (cfg.saturation != null ? Number(cfg.saturation) : (remBudget * 0.4)));
-      const maxD = cfg.max != null ? Math.max(allocations[k], cfg.max | 0) : B;
-      cap[k] = Math.max(0, maxD - allocations[k]);
-
-      const initialMarginal = V[k] / s[k];
-      if (initialMarginal > maxMarginal) maxMarginal = initialMarginal;
-    }
-
-    // 3. Monotonic bisection search for optimal Lagrange multiplier lambda
-    let lowLambda = 1e-9;
-    let highLambda = maxMarginal * 1.05;
-    const y = new Float64Array(K);
-
-    for (let iter = 0; iter < 16; iter++) {
-      const midLambda = (lowLambda + highLambda) * 0.5;
-      let sumY = 0;
-
-      for (let k = 0; k < K; k++) {
-        const ratio = (midLambda * s[k]) / V[k];
-        let yk = 0;
-        if (ratio < 1.0) {
-          yk = -s[k] * Math.log(ratio);
-          if (yk > cap[k]) yk = cap[k];
-          if (yk < 0) yk = 0;
+    const remaining = budget - minimumDemand;
+    const caps = configs.map(c => c.max - c.min);
+    const extra = new Float64Array(configs.length);
+    const capSum = caps.reduce((sum, cap) => sum + cap, 0);
+    if (capSum <= remaining) {
+      for (let i = 0; i < extra.length; i++) extra[i] = caps[i];
+    } else if (remaining > 0 && configs.length) {
+      let low = 0, high = Math.max(...configs.map(c => c.weight / c.saturation));
+      function demand(lambda, save) {
+        let total = 0;
+        for (let i = 0; i < configs.length; i++) {
+          const c = configs[i], ratio = lambda * c.saturation / c.weight;
+          const amount = Math.min(caps[i], Math.max(0, -c.saturation * Math.log(ratio)));
+          if (save) extra[i] = amount;
+          total += amount;
         }
-        y[k] = yk;
-        sumY += yk;
+        return total;
       }
-
-      if (sumY > remBudget) {
-        lowLambda = midLambda;
-      } else {
-        highLambda = midLambda;
+      for (let i = 0; i < 48; i++) {
+        const mid = (low + high) / 2;
+        if (demand(mid, false) > remaining) low = mid;
+        else high = mid;
       }
+      // Always materialize the FEASIBLE endpoint, not the last midpoint.
+      demand(high, true);
     }
-
-    // 4. Discretize integer allocations
-    let spentExtra = 0;
-    for (let k = 0; k < K; k++) {
-      const add = Math.floor(y[k]);
-      allocations[k] += add;
-      spentExtra += add;
+    let spent = minimumDemand;
+    for (let i = 0; i < configs.length; i++) {
+      const amount = Math.min(Math.floor(extra[i]), budget - spent);
+      allocations[i] += amount; spent += amount;
     }
-
-    let leftover = remBudget - spentExtra;
-    while (leftover > 0) {
-      let bestK = -1;
-      let bestResidual = -1;
-      for (let k = 0; k < K; k++) {
-        const currentAdd = allocations[k] - (frontConfigs[k].min | 0);
-        if (currentAdd < cap[k]) {
-          const marginal = (V[k] / s[k]) * Math.exp(-currentAdd / s[k]);
-          if (marginal > bestResidual) {
-            bestResidual = marginal;
-            bestK = k;
-          }
-        }
+    // Integer correction uses exact one-troop utility differences, not a
+    // continuous derivative (which misorders unequal saturation scales).
+    while (spent < budget) {
+      let best = -1, gain = -1;
+      for (let i = 0; i < configs.length; i++) if (allocations[i] < configs[i].max) {
+        const c = configs[i], y = allocations[i] - c.min;
+        const marginal = c.weight * Math.exp(-y / c.saturation) * -Math.expm1(-1 / c.saturation);
+        if (marginal > gain) { gain = marginal; best = i; }
       }
-      if (bestK === -1) break;
-      allocations[bestK]++;
-      leftover--;
+      if (best < 0) break;
+      allocations[best]++; spent++;
     }
-
-    return Array.from(allocations);
+    return { allocations, feasible: true, status: 'feasible', minimumDemand,
+      unspent: budget - spent, unmetMinimums: configs.map(() => 0) };
   }
 
   /**
@@ -2599,7 +2590,7 @@
   }
 
   /**
-   * Priority 9: Cooperative Game Theory & Shapley FFA Balancing (Anti-Snowball Coalition Index)
+   * Hegemon-containment heuristic, NOT a Shapley computation or equilibrium.
    *
    * Formulates multi-player territorial dynamics as a cooperative game (N, v).
    * Detects runaway hegemons (players holding >= 35% of total known territory or >= 1.35x our territory).
@@ -2629,11 +2620,18 @@
       }
     }
 
-    const grandTotal = myTerr + totalRivalTerr;
+    const hasGlobalTotal = state.totalEnemyTerr != null && Number.isFinite(Number(state.totalEnemyTerr));
+    const grandTotal = myTerr + Math.max(totalRivalTerr,
+      hasGlobalTotal ? Math.max(0, Number(state.totalEnemyTerr)) : totalRivalTerr);
     const leaderShare = maxRivalTerr / Math.max(1, grandTotal);
 
     // Hegemon criteria: Leader holds >= 35% of total known territory and is significantly larger than us
-    const isLeaderHegemon = !!(leader && leaderShare >= 0.35 && leader.terr > myTerr * 1.35);
+    const completeLobby = hasGlobalTotal || state.playersRemaining == null ||
+      state.playersRemaining <= rivals.length + 1;
+    const isGlobalLeader = state.leaderId == null ? state.leaderTerritory == null ||
+      leader && leader.terr >= state.leaderTerritory : leader && leader.id === state.leaderId;
+    const isLeaderHegemon = !!(completeLobby && isGlobalLeader && leader &&
+      leaderShare >= 0.35 && leader.terr > myTerr * 1.35);
     const coalitionIndices = {};
 
     for (let i = 0; i < rivals.length; i++) {
@@ -2877,210 +2875,69 @@
   }
 
   /**
-   * Priority 6: Monte Carlo Tree Search (MCTS) Endgame Tactical Kernel
+   * UCB Monte Carlo action bandit (legacy MCTS name; this has no search tree).
    *
    * Activates when alive rivals <= 3 or total land claimed >= 85%.
    * Performs rollouts with Upper Confidence Bound for Trees (UCT, C = sqrt(2)).
    * Evaluates 3-way Lanchester equilibrium to determine whether attacking player A,
    * attacking player B, or accumulating troops (pass) yields the highest win probability.
    */
-  // Persistent flat simulation scratch buffers for MCTS (0 GC)
+  // Bounded action-score scratch space. Rollout state cloning is not zero-GC.
   const MCTS_MAX_ENEMIES = 16;
   const MCTS_MAX_ACTIONS = 33;
-  const mctsSimBalBuf = new Float64Array(MCTS_MAX_ENEMIES + 1);
-  const mctsSimTerrBuf = new Float64Array(MCTS_MAX_ENEMIES + 1);
   const mctsVisitsBuf = new Int32Array(MCTS_MAX_ACTIONS);
   const mctsWinsBuf = new Float32Array(MCTS_MAX_ACTIONS);
-  const mctsActTypeBuf = new Array(MCTS_MAX_ACTIONS);
-  const mctsActTargetIdBuf = new Int32Array(MCTS_MAX_ACTIONS);
-  const mctsActTargetIdxBuf = new Int32Array(MCTS_MAX_ACTIONS);
-  const mctsActRatioBuf = new Float64Array(MCTS_MAX_ACTIONS);
 
   function computeMCTSEndgameAction() { return profileKernel('kernel.mcts', computeMCTSEndgameActionImpl, arguments); }
   function computeMCTSEndgameActionImpl(state, maxRolloutsParam, timeBudgetMs) {
-    if (!state) return { bestAction: 'hold', targetId: null, ratio: 0, winProb: 0.5, rollouts: 0 };
-    const myTerr = state.territory || 1;
-    const myBal = state.balance || 0;
-    const enemies = state.adjEnemies || [];
-    if (enemies.length === 0) return { bestAction: 'expand', targetId: null, ratio: 0, winProb: 1.0, rollouts: 0 };
-
-    const maxRollouts = maxRolloutsParam || 50;
-    const startTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
-
-    const numEnemies = Math.min(enemies.length, MCTS_MAX_ENEMIES);
-    let numActions = 1;
-    mctsActTypeBuf[0] = 'hold';
-    mctsActTargetIdBuf[0] = 0;
-    mctsActTargetIdxBuf[0] = -1;
-    mctsActRatioBuf[0] = 0;
-
-    for (let i = 0; i < numEnemies; i++) {
-      const e = enemies[i];
-      mctsActTypeBuf[numActions] = 'fight';
-      mctsActTargetIdBuf[numActions] = e.id;
-      mctsActTargetIdxBuf[numActions] = i;
-      mctsActRatioBuf[numActions] = 0.25;
-      numActions++;
-      if (myBal > (e.bal || 0) * 1.5) {
-        mctsActTypeBuf[numActions] = 'fight';
-        mctsActTargetIdBuf[numActions] = e.id;
-        mctsActTargetIdxBuf[numActions] = i;
-        mctsActRatioBuf[numActions] = 0.50;
-        numActions++;
-      }
+    const initial = createPlanningState(state);
+    const actions = [{ type: 'hold', targetId: null, ratio: 0 }];
+    for (const e of initial.adjEnemies.slice(0, MCTS_MAX_ENEMIES)) {
+      if (e.available === false || e.terr <= 0) continue;
+      actions.push({ type: 'fight', targetId: e.id, ratio: 0.25 });
+      if (initial.balance > e.bal * 1.5) actions.push({ type: 'fight', targetId: e.id, ratio: 0.50 });
     }
-
-    const visits = mctsVisitsBuf;
-    const wins = mctsWinsBuf;
-    for (let a = 0; a < numActions; a++) {
-      visits[a] = 0;
-      wins[a] = 0;
-    }
-
-    const simBal = mctsSimBalBuf;
-    const simTerr = mctsSimTerrBuf;
-
-    let seed = ((state.balance || 123) * 1664525 + 1013904223) >>> 0;
-    let completedRollouts = 0;
-    const C = CONFIG.cMCTS != null ? CONFIG.cMCTS : 2.1096;
-
+    const visits = mctsVisitsBuf, scores = mctsWinsBuf;
+    visits.fill(0); scores.fill(0);
+    const maxRollouts = Math.max(1, Math.floor(planningNumber(maxRolloutsParam, 50)));
+    const clock = () => typeof performance !== 'undefined' && performance.now ? performance.now() : 0;
+    const start = clock(), budget = Math.max(0, planningNumber(timeBudgetMs, 0.6));
+    let seed = (Math.imul(initial.balance | 0, 1664525) + 1013904223) >>> 0, completed = 0;
+    const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
     for (let iter = 0; iter < maxRollouts; iter++) {
-      if (startTime > 0 && iter % 10 === 0 && (performance.now() - startTime) > (timeBudgetMs || 0.6)) {
-        break;
+      if (iter > 0 && clock() - start >= budget) break;
+      let chosen = 0, highest = -Infinity;
+      for (let a = 0; a < actions.length; a++) {
+        if (visits[a] === 0) { chosen = a; break; }
+        const ucb = scores[a] / visits[a] + CONFIG.cMCTS * Math.sqrt(Math.log(iter + 1) / visits[a]);
+        if (ucb > highest) { highest = ucb; chosen = a; }
       }
-
-      let bestActIdx = 0;
-      let bestUCT = -1e9;
-      for (let a = 0; a < numActions; a++) {
-        if (visits[a] === 0) {
-          bestActIdx = a;
-          break;
+      const simulation = createPlanningState(initial);
+      applyPlanningAction(simulation, actions[chosen], null);
+      for (let cycle = 0; cycle < 6; cycle++) {
+        // Stochastic border policy is an estimate, NOT the native bot AI.
+        for (const e of simulation.adjEnemies) if (e.terr > 0 && e.bal > 10 && random() < 0.35) {
+          applyPlanningAction(simulation, { type: 'fight', targetId: null, ratio: 0.20 }, e.id);
         }
-        const exploitation = wins[a] / visits[a];
-        const exploration = C * Math.sqrt(Math.log(iter + 1) / visits[a]);
-        const uct = exploitation + exploration;
-        if (uct > bestUCT) {
-          bestUCT = uct;
-          bestActIdx = a;
-        }
+        advancePlanningState(simulation, 10);
       }
-
-      simBal[0] = myBal;
-      simTerr[0] = myTerr;
-      for (let e = 0; e < numEnemies; e++) {
-        simBal[e + 1] = enemies[e].bal || 0;
-        simTerr[e + 1] = enemies[e].terr || 1;
-      }
-
-      if (mctsActTypeBuf[bestActIdx] === 'fight') {
-        const foeIdx = mctsActTargetIdxBuf[bestActIdx] + 1;
-        const sent = simBal[0] * mctsActRatioBuf[bestActIdx];
-        simBal[0] -= sent * 1.05;
-        const defense = simBal[foeIdx] * 1.25;
-        if (sent > defense) {
-          const conquered = Math.min(simTerr[foeIdx], Math.max(1, Math.floor(simTerr[foeIdx] * (sent / (defense + 1)))));
-          simTerr[0] += conquered;
-          simTerr[foeIdx] -= conquered;
-          simBal[foeIdx] = Math.max(0, simBal[foeIdx] - (sent / 1.25));
-        } else {
-          simBal[foeIdx] = Math.max(0, simBal[foeIdx] - sent * 0.7);
-        }
-      }
-
-      for (let step = 0; step < 6; step++) {
-        simBal[0] = Math.min(simTerr[0] * 100, simBal[0] * 1.05);
-        for (let e = 0; e < numEnemies; e++) {
-          simBal[e + 1] = Math.min(simTerr[e + 1] * 100, simBal[e + 1] * 1.05);
-        }
-
-        for (let e = 0; e < numEnemies; e++) {
-          const foeIdx = e + 1;
-          if (simTerr[foeIdx] <= 0 || simBal[foeIdx] <= 10) continue;
-          seed = (seed * 1664525 + 1013904223) >>> 0;
-          if ((seed >>> 0) / 4294967296 < 0.35) {
-            let weakestTarget = 0;
-            let minTerr = simTerr[0];
-            let otherFoeIdx = -1;
-            for (let o = 0; o < numEnemies; o++) {
-              const oIdx = o + 1;
-              if (o !== e && simTerr[oIdx] > 0 && simTerr[oIdx] < minTerr) {
-                minTerr = simTerr[oIdx];
-                weakestTarget = oIdx;
-                otherFoeIdx = o;
-              }
-            }
-            const foeAttack = simBal[foeIdx] * 0.20;
-            simBal[foeIdx] -= foeAttack * 1.05;
-            if (weakestTarget === 0) {
-              if (foeAttack > simBal[0] * 1.25) {
-                const loss = Math.min(simTerr[0], Math.max(1, Math.floor(simTerr[0] * 0.15)));
-                simTerr[0] -= loss;
-                simTerr[foeIdx] += loss;
-              }
-              simBal[0] = Math.max(0, simBal[0] - foeAttack * 0.7);
-            } else if (otherFoeIdx >= 0) {
-              const targetIdx = otherFoeIdx + 1;
-              if (foeAttack > simBal[targetIdx] * 1.25) {
-                const loss = Math.min(simTerr[targetIdx], Math.max(1, Math.floor(simTerr[targetIdx] * 0.15)));
-                simTerr[targetIdx] -= loss;
-                simTerr[foeIdx] += loss;
-              }
-              simBal[targetIdx] = Math.max(0, simBal[targetIdx] - foeAttack * 0.7);
-            }
-          }
-        }
-      }
-
-      let totalLobbyTerr = simTerr[0];
-      let totalLobbyBal = simBal[0];
-      let maxOtherTerr = 0;
-      for (let e = 0; e < numEnemies; e++) {
-        const foeIdx = e + 1;
-        if (simTerr[foeIdx] > 0) {
-          totalLobbyTerr += simTerr[foeIdx];
-          totalLobbyBal += simBal[foeIdx];
-          if (simTerr[foeIdx] > maxOtherTerr) maxOtherTerr = simTerr[foeIdx];
-        }
-      }
-
-      let utility = 0;
-      if (simTerr[0] <= 0) {
-        utility = 0;
-      } else if (maxOtherTerr === 0) {
-        utility = 1.0;
-      } else {
-        const terrShare = simTerr[0] / Math.max(1, totalLobbyTerr);
-        const balShare = simBal[0] / Math.max(1, totalLobbyBal);
-        utility = 0.75 * (terrShare * 0.6 + balShare * 0.4);
-      }
-
-      utility = Math.max(0, Math.min(1.0, utility));
-      visits[bestActIdx]++;
-      wins[bestActIdx] += utility;
-      completedRollouts++;
+      scores[chosen] += planningUtility(simulation).value;
+      visits[chosen]++; completed++;
     }
-
-    let bestIdx = 0;
-    let maxVisits = -1;
-    for (let a = 0; a < numActions; a++) {
-      if (visits[a] > maxVisits) {
-        maxVisits = visits[a];
-        bestIdx = a;
-      }
-    }
-
-    const winProb = maxVisits > 0 ? (wins[bestIdx] / maxVisits) : 0.5;
-    return {
-      bestAction: mctsActTypeBuf[bestIdx],
-      targetId: mctsActTargetIdxBuf[bestIdx] >= 0 ? mctsActTargetIdBuf[bestIdx] : null,
-      ratio: mctsActRatioBuf[bestIdx],
-      winProb: parseFloat(winProb.toFixed(3)),
-      rollouts: completedRollouts
-    };
+    let best = 0;
+    for (let a = 1; a < actions.length; a++) if (visits[a] > 0 &&
+      (visits[best] === 0 || scores[a] / visits[a] > scores[best] / visits[best] + 1e-12)) best = a;
+    const expectedUtility = visits[best] > 0 ? scores[best] / visits[best] : planningUtility(initial).value;
+    const value = Number(expectedUtility.toFixed(3));
+    return { bestAction: actions[best].type, targetId: actions[best].targetId, ratio: actions[best].ratio,
+      expectedUtility: value, winProb: value, // Deprecated score alias, NOT a calibrated probability.
+      scoreKind: 'heuristic-utility', modelKind: initial.modelKind,
+      rollouts: completed, actionVisits: visits[best], actionCount: actions.length,
+      completeCoverage: actions.every((_, i) => visits[i] > 0) };
   }
 
   /**
-   * Priority 5: Bayesian State Observer & Extended Kalman Filter (EKF)
+   * Scalar log-space Kalman observer (not an extended Kalman filter).
    *
    * Tracks unobserved rival troop balances and growth dynamics during Fog-of-War.
    * State x = ln(Balance), measurement z = ln(ObservedAttack / u_prior).
@@ -3109,14 +2966,17 @@
         s.lastSeenTick = currentTick || 0;
       }
 
-      const meanB = Math.exp(s.x);
+      const medianB = Math.exp(s.x);
+      const expectedB = Math.exp(Math.min(700, s.x + s.P / 2));
       const stdDev = Math.sqrt(s.P);
       const lower = Math.max(1, Math.round(Math.exp(s.x - 1.645 * stdDev)));
       const upper = Math.round(Math.exp(s.x + 1.645 * stdDev));
       const entropy = 0.5 * Math.log(2 * Math.PI * Math.E * Math.max(1e-4, s.P));
 
       return {
-        estimatedBalance: Math.round(meanB),
+        estimatedBalance: Math.round(medianB), // Compatibility: median, not mean.
+        estimatedMedian: Math.round(medianB),
+        expectedBalance: Math.round(expectedB),
         lowerBound: lower,
         upperBound: upper,
         variance: s.P,
@@ -3657,7 +3517,7 @@
   }
 
   const EngineCore = {
-    version: '10.2.5',
+    version: '10.3.0',
     DIFF,
     DUMP,
     LIVE,
@@ -3709,8 +3569,13 @@
     computeCrushBarrierFloor,
     computeTerritorialTopology,
     forwardSimulatorStep,
+    createPlanningState,
+    transitionPlanningState,
+    planningInterestBps,
+    planningUtility,
     evaluateMPCAction,
     allocateKKTMarginalUtility,
+    allocateKKTMultiFrontDetailed,
     computeEikonalGodunovIsotropic,
     OpponentParticleFilter,
     runMultiStepMCTS,
@@ -3724,7 +3589,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.7] Capital-preserving policy · Updated: 2026-10-04 11:29:34 EDT',
+    '%c[TIO Engine Core V2.8] Capital-preserving policy · Updated: 2026-10-04 20:17:35 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {
