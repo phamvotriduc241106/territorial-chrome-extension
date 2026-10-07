@@ -2,7 +2,7 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.3.0 · **Engine:** V2.8 · **Updated:** 2026-10-04 20:17:35 EDT
+**Release:** v10.3.1 · **Engine:** V2.8.1 · **Updated:** 2026-10-06 23:11:16 EDT
 
 ## Install
 
@@ -31,7 +31,7 @@ npm run package
 
 The shipped kernel is [`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js), loaded in both browser worlds. V2.8 adds a shared tick-based planning model, source-mapped income/outgoing fronts, global coalition sizing, budget-safe allocation and weighted belief intervals. It retains neutral-first expansion, lobby-wide duel detection, a 55%-capacity combat-bank target, incoming-aware targeting, timed opening recovery and native-boundary reserve protection. Experimental tree search remains disabled. See [planning mathematics and limitations](docs/PLANNING_MODEL.md).
 
-Approximate paired simulation: **367/800 wins (45.875%)**, versus **353/800 (44.125%)** with the new policy disabled. **Real Hard-mode win rate is unmeasured.** This release adds CPU profiling, duplicate-planning suppression and typed-array grid updates; it does not introduce a new strategic algorithm. See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
+V2.8.1 adds opt-in native ownership extraction, compact border geometry, a source-cost combat shadow experiment and bounded paired prediction telemetry. Production policy remains unchanged; the new model cannot control native attacks. See [frontier shadow usage and limitations](docs/FRONTIER_MODEL.md). **Real Hard/Very Hard win-rate improvement remains unmeasured.** See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
 
 ## Repository
 
@@ -39,6 +39,7 @@ Approximate paired simulation: **367/800 wins (45.875%)**, versus **353/800 (44.
 - [Validation and benchmark limits](docs/VALIDATION.md)
 - [20-match Very Hard test standard](docs/VERY_HARD_TEST.md)
 - [Measured CPU optimization and profiler](docs/CPU_OPTIMIZATION.md)
+- [Frontier shadow model and telemetry](docs/FRONTIER_MODEL.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Historical source map](docs/SOURCE_MAP.md)
 - [Historical reports](docs/archive/)

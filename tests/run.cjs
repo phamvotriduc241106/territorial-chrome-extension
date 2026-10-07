@@ -56,9 +56,33 @@ const server = http.createServer((request, response) => {
     }
     if (live) {
       const page = await context.newPage();
-      await page.addInitScript({ content: ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
-        'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js',
-        'content/preloader.js', 'content/main-hook.js'].map(read).join('\n') });
+      const bootstrap = ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
+        'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js', 'content/frontier-model.js',
+        'content/preloader.js', 'content/main-hook.js'].map(read);
+      // Test-only access to the ORIGINAL native gr/hR/hQ routines. This hook is
+      // never packaged. It restores mutable globals/arrays/functions in finally.
+      bootstrap.splice(7, 0, `{
+        const build = TIOSourceAdapter.buildExportSnippet;
+        window.TIOSourceAdapter = { ...TIOSourceAdapter, buildExportSnippet: function(version, kind) {
+          const result = build(version, kind);
+          if (kind !== 'live-modern-v3') return result;
+          return result.replace('window.__TIO_GAME__={', \`window.__TIO_GAME__={
+            testCombatBatch:function(input){
+              var saved=[gQ,gU,gR,gV,gS,gT],me=aE.fJ,foe=(me+1)%aE.fW;
+              var bank=ah.hb[foe],land=ah.hN[foe],counter=input.counter;
+              var gz=bg.gz,hc=ae.hc,ha=ae.ha;
+              try{gQ=me;gU=input.neutral?aE.fW:foe;gR=input.troops;gV=input.cells;gS=false;
+                ah.hb[foe]=input.bank;ah.hN[foe]=input.territory;
+                bg.gz=function(){};ae.hc=function(){return counter};ae.ha=function(p,t,n){counter=n};
+                var captured=0,resolved=true;
+                if(gV>0&&gr()){captured=hA()?gV:0;resolved=!captured;}
+                return {remaining:gR,bank:ah.hb[foe],counter:counter,captured:captured,resolved:resolved};
+              }finally{gQ=saved[0];gU=saved[1];gR=saved[2];gV=saved[3];gS=saved[4];gT=saved[5];
+                ah.hb[foe]=bank;ah.hN[foe]=land;bg.gz=gz;ae.hc=hc;ae.ha=ha;}
+            },\`);
+        } };
+      }`);
+      await page.addInitScript({ content: bootstrap.join('\n') });
       await page.goto(base + '/live');
       await page.waitForFunction(() => window.__TIO_GAME__ && window.__TIO_GAME__.modern);
       const result = await page.evaluate(() => ({ preload: window.__TIO_PRELOAD_RESULT__,
@@ -103,6 +127,50 @@ const server = http.createServer((request, response) => {
       });
       console.log('Official single-player attack: PASS ' + JSON.stringify(smoke));
       if (expectedContract === 'live-modern-v3') {
+        const frontier = await page.evaluate(async () => {
+          const game = window.__TIO_GAME__, f = window.TIOFrontier, api = window.__TIO_HOOK_API__;
+          const state = api.state(), t0 = performance.now(), r = game.modern.ownership(4 * 1024 * 1024);
+          if (!r) throw Error('Native ownership does not reconcile');
+          const g = f.extract(r, { matchId: state.matchId, stateVersion: state.stateVersion,
+            gameTick: state.gameTick, geometryVersion: 1 }, { player: state.player });
+          for (let p = 0; p < r.counts.length; p++)
+            if (r.counts[p] !== game.ah.hN[p]) throw Error('Native ownership territory mismatch');
+          const extractionMs = performance.now() - t0;
+          let cases = 0;
+          for (const land of [1, 10, 100, 10000]) for (const cells of [1, Math.min(land, 3), land])
+            for (const bank of [0, land * 10, land * 150]) for (const counter of [0, 100])
+              for (const troops of [0, cells * game.aE.gt, cells * game.aE.gt + 1, 10000]) {
+                const input = { territory: land, cells, bank, counter, troops };
+                const expected = game.testCombatBatch(input);
+                const predicted = f.resolveNativeBatch(troops, bank, land, cells, counter, game.aE.gt);
+                if (JSON.stringify(predicted) !== JSON.stringify(expected))
+                  throw Error('Native combat batch mismatch: ' + JSON.stringify({ input, expected, predicted }));
+                cases++;
+              }
+          for (const troops of [0, 2, 3, 10000]) {
+            const input = { territory: 10, cells: 3, bank: 0, counter: 0, troops, neutral: true };
+            if (JSON.stringify(game.testCombatBatch(input)) !== JSON.stringify(f.resolveNativeBatch(troops, 0, 10, 3, 0, game.aE.gt, true)))
+              throw Error('Native neutral combat mismatch'); cases++;
+          }
+          if (api.frontier.report().status.enabled) throw Error('Shadow mode must default off');
+          const start = api.frontier.start();
+          // Exercise the actual timer -> exact-tick paired label path, not only
+          // synchronous start/stop. No extra attacks or online matches.
+          const deadline = performance.now() + 5000;
+          while (performance.now() < deadline && !api.frontier.report().telemetry.records.some(x =>
+            x.event === 'prediction_scored' && x.predictions.frontier))
+            await new Promise(resolve => setTimeout(resolve, 50));
+          const report = api.frontier.stop();
+          if (!start.ok || !report.telemetry || report.status.policyInfluence || report.status.error ||
+            !report.telemetry.records.some(x => x.event === 'geometry_snapshot') ||
+            !report.telemetry.records.some(x => x.event === 'prediction' && x.frontier) ||
+            !report.telemetry.records.some(x => x.event === 'prediction_scored' && x.predictions.frontier))
+            throw Error('Shadow integration failed: ' + JSON.stringify(report));
+          return { width: r.width, height: r.height, cells: r.owners.length, reconciledPlayers: r.counts.length,
+            segments: g.meta.segmentCount, boundaryEdges: g.meta.boundaryEdges, extractionMs,
+            exactCombatCases: cases, scoredShadowPredictions: report.telemetry.scored, policyInfluence: false };
+        });
+        console.log('Official ownership and combat shadow: PASS ' + JSON.stringify(frontier));
         const economics = await page.evaluate(() => {
           const game = window.__TIO_GAME__, core = window.TIOEngineCore;
           const me = game.modern.me(), originalTick = game.bi.a2Q.ae0;

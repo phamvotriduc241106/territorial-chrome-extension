@@ -1,6 +1,8 @@
 # Planning mathematics and boundaries
 
-Release 10.3.0, engine V2.8. Updated 2026-10-04 20:17:35 EDT.
+Release 10.3.1, engine V2.8.1. Updated 2026-10-06 23:11:16 EDT.
+
+Production planning still uses the V2.8 aggregate model described below. A separate opt-in shadow call to the **same** transition API can use source-cost incremental combat with compact initial border geometry. This path is not invoked by production policy. Geometry evolution, reinforcement, attack scheduling, refunds and opponent behavior remain estimates; see [FRONTIER_MODEL.md](FRONTIER_MODEL.md).
 
 MPC and the UCB endgame action bandit share planning-state normalization, command application, income stepping, aggregate settlement and utility evaluation. `transitionPlanningState(state, action, ticks)` returns an independent next state. The older `forwardSimulatorStep(..., steps)` API uses ten source ticks per step, applies one action once and returns `nextState`. A zero/negative horizon applies the command without advancing time.
 

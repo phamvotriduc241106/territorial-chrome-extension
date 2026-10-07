@@ -87,8 +87,21 @@
             additionalIncomeValue:d.aIncomeType===2?d.aIncomeData[p]:d.aIncomeValue,
             softCapMaximum:aE.a6d,hardCapPerCell:aE.a5l,hardCapMaximum:aE.a5m,
             debt:ah.a5j?ah.a5j[p]:0}},
+        ownership:function(maxCells){
+          if(!ad||!bV||typeof ad.h9!=='function'||typeof ad.fR!=='function'||typeof ad.fQ!=='function')return null;
+          maxCells=Math.min(4194304,Number.isSafeInteger(maxCells)?Math.max(0,maxCells):4194304);
+          var w=bV.fk,h=bV.fl,n=w*h;
+          if(!Number.isInteger(w)||!Number.isInteger(h)||!Number.isSafeInteger(n)||w<1||h<1||n>maxCells||aE.fW>=65535)return null;
+          var owners=new Uint16Array(n),counts=new Uint32Array(aE.fW),free=0;
+          for(var i=0;i<n;i++){var f=4*i,o=65535;
+            if(ad.h9(f)){o=ad.fR(f);if(!Number.isInteger(o)||o<0||o>=aE.fW)return null;counts[o]++;}
+            else if(ad.fQ(f)){o=aE.fW;free++;}owners[i]=o;}
+          for(var p=0;p<aE.fW;p++)if(counts[p]!==ah.hN[p])return null;
+          return {width:w,height:h,owners:owners,counts:counts,neutralId:aE.fW,
+            freeLandCells:free,cellCost:aE.gt,mapId:bV.fF,mapSeed:bV.mapSeed,
+            difficulty:aE.data.botDifficultyValue};},
         outgoing:function(p){var a=[];for(var i=0;i<ae.gg(p);i++)a.push({
-          targetId:ae.gl(p,i)===aE.fW?'neutral':ae.gl(p,i),troops:ae.gm(p,i)});return a},` : `
+          targetId:ae.gl(p,i)===aE.fW?'neutral':ae.gl(p,i),troops:ae.gm(p,i),reinforced:!!ae.gn(p,i)});return a},` : `
         economy:function(){return null},outgoing:function(){return []},`;
     return `get modern(){
       if(typeof ah==='undefined'||!ah||!ah.${m.bank}||!ah.${m.land}||!ah.${m.alive}||

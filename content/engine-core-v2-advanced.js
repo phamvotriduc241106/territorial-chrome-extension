@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.3.0
+ * Territorial.io deterministic policy kernel v10.3.1
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -1180,6 +1180,15 @@
         settleTick: tick + 10, estimatedTiming: true });
     }
     delete next.planningEnemies; // Subsequent transitions must use evolved rivals.
+    // Only explicit shadow calls can select the experimental combat model.
+    // Live decide/MPC/bandit callers never set this flag. Validate at origin;
+    // subsequent pure rollouts retain their immutable snapshot provenance.
+    next.frontierActive = !!(state.frontierExperiment === true && root.TIOFrontier &&
+      root.TIOFrontier.compatible(state.frontierSnapshot, next));
+    if (next.frontierActive) {
+      next.frontierOriginTick = state.frontierSnapshot.meta.gameTick;
+      next.modelKind = 'native-cost-static-frontier-shadow';
+    }
     next.unobservedFronts = Math.max(0, planningNumber(state.unobservedFronts,
       planningNumber(state.activeFronts, 0) - next.activeAttacks.filter(a => a.attackerId == null).length));
     return next;
@@ -1279,6 +1288,7 @@
   }
 
   function advancePlanningState(state, ticks) {
+    const frontierStart = state.frontierActive && root.TIOProfiler ? performance.now() : 0;
     for (let i = 0; i < ticks; i++) {
       const self = { bal: state.balance, terr: state.territory, economy: state.economy, debt: state.debt };
       planningIncome(self, state.tick); state.balance = self.bal; state.debt = self.debt;
@@ -1286,7 +1296,9 @@
       state.tick++;
       const pending = [];
       for (const a of state.activeAttacks) {
-        if (a.settleTick <= state.tick) settlePlanningAttack(state, a);
+        if (state.frontierActive) {
+          if (!root.TIOFrontier.advanceAttack(state, a)) pending.push(a);
+        } else if (a.settleTick <= state.tick) settlePlanningAttack(state, a);
         else pending.push(a);
       }
       state.activeAttacks = pending;
@@ -1295,6 +1307,7 @@
     state.playersRemaining = state.outsidePlayers + state.adjEnemies.filter(e => e.terr > 0).length + Number(state.territory > 0);
     state.totalEnemyTerr = state.outsideEnemyTerr + state.adjEnemies.reduce((sum, e) => sum + e.terr, 0);
     state.totalEnemyBalance = state.outsideEnemyBal + state.adjEnemies.reduce((sum, e) => sum + e.bal, 0);
+    if (state.frontierActive && root.TIOProfiler) root.TIOProfiler.record('frontier.transition', performance.now() - frontierStart);
     return state;
   }
 
@@ -3517,7 +3530,7 @@
   }
 
   const EngineCore = {
-    version: '10.3.0',
+    version: '10.3.1',
     DIFF,
     DUMP,
     LIVE,
@@ -3589,7 +3602,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.8] Capital-preserving policy · Updated: 2026-10-04 20:17:35 EDT',
+    '%c[TIO Engine Core V2.8.1] Capital-preserving policy · Updated: 2026-10-06 23:11:16 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {

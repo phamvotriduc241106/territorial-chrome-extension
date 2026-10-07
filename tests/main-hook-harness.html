@@ -8,6 +8,7 @@
   <script src="../content/engine-core-v2-advanced.js"></script>
   <script src="../content/engine-adapter.js"></script>
   <script src="../content/source-adapter.js"></script>
+  <script src="../content/frontier-model.js"></script>
   <script>
     (() => {
       const active = Object.create(null);
@@ -122,6 +123,17 @@
         const fixture = window.__hookFixture;
         const armed = await rpc('arm', { armed: true });
         assert(armed.ok && armed.armed, 'arm handshake');
+        const observation = await rpc('state');
+        assert(observation.state.matchId === armed.state.matchId && observation.state.stateVersion > armed.state.stateVersion,
+          'observations have stable match ID and increasing state version');
+        const shadowOff = await rpc('frontier-report');
+        assert(shadowOff.ok && !shadowOff.status.enabled && !shadowOff.status.policyInfluence && shadowOff.telemetry === null,
+          'frontier shadow is disabled by default over the real bridge');
+        await rpc('frontier-start');
+        const unsupportedShadow = await rpc('frontier-stop');
+        assert(unsupportedShadow.ok && !unsupportedShadow.status.enabled && unsupportedShadow.status.error &&
+          unsupportedShadow.telemetry.records.some(x => x.event === 'prediction' && x.aggregate.balance != null),
+          'unsupported geometry falls back and nested predictions survive bridge cloning');
 
         fixture.active[99] = true;
         const busyNeutral = await rpc('attack-neutral', { ratio: 0.2 });

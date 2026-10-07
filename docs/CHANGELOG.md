@@ -1,5 +1,15 @@
 # Changelog
 
+## 10.3.1 — 2026-10-06 23:11:16 EDT
+
+- Engine V2.8.1: first frontier-observability/shadow stage. Production policy and native safety checks are unchanged; recording is disabled by default. No new permissions or external telemetry.
+- Modern-v3 ownership extraction decodes native four-byte cell records, reconciles every player's territory, identifies neutral/blocked cells and rejects unsupported/oversized rasters. Local match IDs and monotonic observation versions identify forecasts.
+- Compact TypedArray straight-run segments preserve every four-neighbor contact, deduplicate candidate cells, split at corners/owner changes and retain owner-pair graph connectivity. Coverage caps fail closed, not by silently dropping borders.
+- An explicit experimental transition reuses command/economy arithmetic with incremental source-cost combat batches. Original native normal-batch routines match in 292 controlled differential cases. Contact evolution, reinforcement, cadence and refunds remain uncalibrated estimates.
+- Bounded local shadow logs preserve paired 10-tick forecasts, exact-tick labels, censored observations, attack progress and bridge-issued commands. Offline reporting deduplicates overlapping exports and reports MAE/RMSE/P95 by complete match; policy promotion is always disabled.
+- Added 12 regression tests, 10,000 random topology maps, 10,000 combat-bound cases and 3 browser checks. Live ownership reconciled all 512 player slots on a 262,144-cell local Very Hard map. No full-match strength or prediction-accuracy improvement is claimed.
+- Workers, adaptive curvature/chokepoint fitting, probabilistic ETA/opponents, calibrated replay and deeper search are deferred until telemetry demonstrates their value. See FRONTIER_MODEL.md.
+
 ## 10.3.0 — 2026-10-04 20:17:35 EDT
 
 - Engine V2.8: MPC and the endgame bandit share one aggregate transition model, exact slider/debit arithmetic and source-clock economics. Modern-v3 settings, global troop totals and outgoing fronts cross the native bridge into planning.
