@@ -9,8 +9,8 @@
   window.__TIO_HUD_ENGINE_V5_LOADED__ = true;
 
   const CFG = window.TIOConfig || {};
-  const HUD_VERSION = CFG.VERSION || '10.3.1';
-  const HUD_ENGINE_VERSION = CFG.ENGINE_VERSION || 'V2.8.1';
+  const HUD_VERSION = CFG.VERSION || '10.3.2';
+  const HUD_ENGINE_VERSION = CFG.ENGINE_VERSION || 'V2.8.2';
   const HUD_ENGINE_UPDATED = CFG.ENGINE_UPDATED_AT || '—';
 
   class TimestampFormatter {

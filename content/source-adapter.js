@@ -140,6 +140,136 @@
     },`;
   }
 
+  // Stringified into the verified native closure; never executed in this world.
+  // No wrappers exist while diagnostics are off. Sink failures cannot reach game.
+  function nativeShadowTelemetry() {
+    var sink = null, undos = [], ids = new Map(), sequence = 0, version = 0, token = null, context = null, stepping = false, fault = null;
+    function refresh() { if (token !== ah.h1) { token = ah.h1; ids.clear(); } }
+    function key(p, t) { return p + ':' + t; }
+    function id(p, t) { refresh(); var k = key(p, t); if (!ids.has(k)) ids.set(k, ++sequence); return ids.get(k); }
+    function player(p) { return p < aE.fW ? { balance: ah.hb[p], territory: ah.hN[p],
+      debt: ah.a5j[p], alive: !!ah.nU[p] } : null; }
+    function emit(event) {
+      version++;
+      try { if (sink) sink(Object.assign({ gameTick: bi.kr(), sourceStateVersion: version,
+        observationTick: stepping ? bi.kr() + 1 : bi.kr(),
+        phase: stepping ? 'during-tick' : 'between-ticks' }, event)); } catch (error) { fault = String(error); }
+    }
+    function wrap(object, name, factory) {
+      var original = object[name], wrapped = factory(original); object[name] = wrapped;
+      undos.push(function () { if (object[name] === wrapped) object[name] = original; });
+    }
+    function fronts(p) {
+      var result = []; if (!sink || !ah.h1 || !ah.hb || !ah.nU || !ah.a5j) return result;
+      for (var actor = 0; actor < aE.fW; actor++) for (var i = 0; i < ae.gg(actor); i++) {
+        var t = ae.gl(actor, i);
+        result.push({ nativeFrontId: id(actor, t), actor: actor, target: t === aE.fW ? 'neutral' : t,
+          troops: ae.gm(actor, i), reinforced: !!ae.gn(actor, i),
+          counterforce: t < aE.fW ? ae.hc(t, actor) : 0, actorState: player(actor), targetState: player(t) });
+      } return result;
+    }
+    return {
+      version: function () { return version; }, active: function () { return !!sink; }, fronts: fronts,
+      fault: function () { return fault; },
+      playerState: player,
+      stop: function () { sink = null; for (var i = undos.length - 1; i >= 0; i--) undos[i](); undos = []; ids.clear(); },
+      install: function (callback) {
+        if (sink) return { ok: false, err: 'shadow-already-installed' };
+        if (typeof n8 !== 'function' || typeof gh !== 'function' || typeof gp !== 'function' || typeof bi === 'undefined' ||
+          !bi || typeof bi.ee !== 'function' || typeof ae.ei !== 'function' ||
+          typeof ae.h0 !== 'function' || typeof ae.clear !== 'function' ||
+          typeof bD.gv.gw !== 'function' || typeof bD.gv.n4 !== 'function' || typeof af.qr !== 'function')
+          return { ok: false, err: 'native-event-hooks-unavailable' };
+        // Contract family alone is insufficient for private routine hooks.
+        // Reject changed symbols/bodies before installing ANY wrappers.
+        var batchSource = Function.prototype.toString.call(gh).replace(/\s+/g, '');
+        var returnSource = Function.prototype.toString.call(gp).replace(/\s+/g, '');
+        var tickSource = Function.prototype.toString.call(n8).replace(/\s+/g, '');
+        if (!['gU=ae.gl(gQ,gP)', 'gR=ae.gm(gQ,gP)', 'gS=ae.gn(gQ,gP)', 'gV===0'].every(function (s) { return batchSource.includes(s); }) ||
+          !returnSource.includes('bD.gv.gy(gQ,gR)') || !returnSource.includes('ae.h0(gQ,gP)') ||
+          !tickSource.includes('aG.ee()') || !tickSource.includes('bi.ee()'))
+          return { ok: false, err: 'native-event-signature-unverified' };
+        sink = callback; token = ah.h1; version = 0; context = null; fault = null;
+        try {
+          wrap(ae, 'ei', function (original) { return function (actor, force, target) {
+            var existed = ae.kF(actor, target), before = player(actor);
+            var result = original.apply(this, arguments);
+            var flag = null; for (var i = 0; i < ae.gg(actor); i++) if (ae.gl(actor, i) === target) flag = !!ae.gn(actor, i);
+            emit({ event: 'native_command', kind: existed ? 'front-topup' : 'front-admission',
+              nativeFrontId: flag == null ? null : id(actor, target), actor: actor, target: target === aE.fW ? 'neutral' : target,
+              sent: force, actorBefore: before, actorAfter: player(actor), targetAfter: player(target),
+              forceAfter: flag == null ? 0 : ae.hc(actor, target),
+              counterforce: target < aE.fW ? ae.hc(target, actor) : 0, reinforced: flag }); return result;
+          }; });
+          wrap(bD.gv, 'n4', function (original) { return function (actor) {
+            var before = player(actor), result = original.apply(this, arguments);
+            emit({ event: 'native_command', kind: 'bank-debit', actor: actor,
+              sent: bR.g6[0], tax: bR.g6[1], actorBefore: before, actorAfter: player(actor) }); return result;
+          }; });
+          wrap(bD.gv, 'gw', function (original) { return function (actor, requested) {
+            var before = player(actor), delivered = original.apply(this, arguments);
+            emit({ event: 'native_reinforcement', nativeFrontId: context && context.nativeFrontId,
+              actor: actor, target: context && context.target, requested: requested, delivered: delivered,
+              actorBefore: before, actorAfter: player(actor) }); return delivered;
+          }; });
+          wrap(af, 'qr', function (original) { return function (actor, target) {
+            var before = player(actor), targetBefore = player(target), result = original.apply(this, arguments);
+            emit({ event: 'native_command', kind: 'transfer', actor: actor, target: target,
+              actorBefore: before, actorAfter: player(actor), targetBefore: targetBefore, targetAfter: player(target) }); return result;
+          }; });
+          wrap(ae, 'h0', function (original) { return function (actor, index) {
+            var target = ae.gl(actor, index), force = context && context.returning ? gR : ae.gm(actor, index), front = id(actor, target);
+            var result = original.apply(this, arguments);
+            emit({ event: 'native_termination', nativeFrontId: front, actor: actor,
+              target: target === aE.fW ? 'neutral' : target, remainingForce: force,
+              reason: context && context.returning ? 'native-return' : 'native-front-removal',
+              actorAfter: player(actor), targetAfter: player(target),
+              refund: context && context.returning ? player(actor).balance - context.returnBalance : null });
+            ids.delete(key(actor, target)); return result;
+          }; });
+          wrap(ae, 'clear', function (original) { return function (actor) {
+            var active = []; for (var i = 0; i < ae.gg(actor); i++) active.push({ target: ae.gl(actor, i), front: id(actor, ae.gl(actor, i)) });
+            var result = original.apply(this, arguments);
+            for (var i = 0; i < active.length; i++) { var a = active[i];
+              emit({ event: 'native_termination', nativeFrontId: a.front, actor: actor,
+                target: a.target === aE.fW ? 'neutral' : a.target, reason: 'native-clear',
+                actorAfter: player(actor), targetAfter: player(a.target), refund: null }); ids.delete(key(actor, a.target)); }
+            return result;
+          }; });
+          var oldGP = gp;
+          var newGP = function () { if (context) { context.returning = true; context.returnBalance = ah.hb[gQ]; }
+            return oldGP.apply(this, arguments); };
+          gp = newGP; undos.push(function () { if (gp === newGP) gp = oldGP; });
+          var oldGH = gh;
+          var newGH = function () {
+            var actor = gQ, target = ae.gl(gQ, gP), previous = context;
+            var before = { actor: player(actor), target: player(target), force: ae.gm(actor, gP),
+              reinforced: !!ae.gn(actor, gP), counterforce: target < aE.fW ? ae.hc(target, actor) : 0 };
+            var front = id(actor, target); context = { nativeFrontId: front, target: target === aE.fW ? 'neutral' : target };
+            try { return oldGH.apply(this, arguments); }
+            finally {
+              var after = { actor: player(actor), target: player(target), force: ae.hc(actor, target),
+                counterforce: target < aE.fW ? ae.hc(target, actor) : 0 };
+              emit({ event: 'native_batch', nativeFrontId: front, actor: actor,
+                target: target === aE.fW ? 'neutral' : target, candidateCells: gV, cellCost: aE.gt,
+                returned: !!context.returning,
+                before: before, after: after, reinforced: before.reinforced,
+                territoryDelta: after.actor.territory - before.actor.territory }); context = previous;
+            }
+          }; gh = newGH; undos.push(function () { if (gh === newGH) gh = oldGH; });
+          var oldTick = n8, newTick = function () { var previous = stepping;
+            if (token !== ah.h1) { refresh(); emit({ event: 'native_match_start', phase: 'before-tick', observationTick: bi.kr() }); }
+            stepping = true;
+            try { return oldTick.apply(this, arguments); } finally { stepping = previous; } };
+          n8 = newTick; undos.push(function () { if (n8 === newTick) n8 = oldTick; });
+          wrap(bi, 'ee', function (original) { return function () { var result = original.apply(this, arguments);
+            emit({ event: 'native_tick', phase: 'after-tick', observationTick: bi.kr() }); return result; }; });
+        } catch (error) { this.stop(); return { ok: false, err: String(error) }; }
+        return { ok: true, coverage: 'native land admissions, debits, batches, reinforcements, returns, clears, exact end ticks' };
+      }
+    };
+  }
+
   /** Build the only code injected into a recognized game closure. */
   function buildExportSnippet(hookVersion, sourceKind) {
     const version = JSON.stringify(String(hookVersion || 'unknown'));
@@ -152,6 +282,7 @@
     );
     return ';try{' +
       'window.__TIO_GAME__={' +
+      (sourceKind === 'live-modern-v3' ? 'shadow:(' + nativeShadowTelemetry.toString() + ')(),' : '') +
       'get contract(){return ' + contract + '},' +
       'get ah(){return typeof ah!=="undefined"?ah:null},' +
       'get aE(){return typeof aE!=="undefined"?aE:null},' +

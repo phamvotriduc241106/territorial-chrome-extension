@@ -9,6 +9,7 @@
   <script src="../content/engine-adapter.js"></script>
   <script src="../content/source-adapter.js"></script>
   <script src="../content/frontier-model.js"></script>
+  <script src="../content/frontier-episodes.js"></script>
   <script>
     (() => {
       const active = Object.create(null);
@@ -132,8 +133,8 @@
         await rpc('frontier-start');
         const unsupportedShadow = await rpc('frontier-stop');
         assert(unsupportedShadow.ok && !unsupportedShadow.status.enabled && unsupportedShadow.status.error &&
-          unsupportedShadow.telemetry.records.some(x => x.event === 'prediction' && x.aggregate.balance != null),
-          'unsupported geometry falls back and nested predictions survive bridge cloning');
+          unsupportedShadow.telemetry.schema === 2 && !unsupportedShadow.telemetry.commandCoverage,
+          'unsupported command/geometry coverage produces schema2 censored telemetry over the bridge');
 
         fixture.active[99] = true;
         const busyNeutral = await rpc('attack-neutral', { ratio: 0.2 });

@@ -1,6 +1,6 @@
 # Planning mathematics and boundaries
 
-Release 10.3.1, engine V2.8.1. Updated 2026-10-06 23:11:16 EDT.
+Release 10.3.2, engine V2.8.2. Updated 2026-10-07 10:19:32 EDT.
 
 Production planning still uses the V2.8 aggregate model described below. A separate opt-in shadow call to the **same** transition API can use source-cost incremental combat with compact initial border geometry. This path is not invoked by production policy. Geometry evolution, reinforcement, attack scheduling, refunds and opponent behavior remain estimates; see [FRONTIER_MODEL.md](FRONTIER_MODEL.md).
 

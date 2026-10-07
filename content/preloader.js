@@ -40,7 +40,7 @@
       return;
     }
 
-    var snippet = adapter.buildExportSnippet(config.VERSION || '10.3.1', kind);
+    var snippet = adapter.buildExportSnippet(config.VERSION || '10.3.2', kind);
     var patched = adapter.patch(html, snippet);
     if (!patched || patched === html) {
       result.status = 'patch-rejected';

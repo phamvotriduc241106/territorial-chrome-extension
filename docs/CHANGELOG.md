@@ -1,5 +1,14 @@
 # Changelog
 
+## 10.3.2 — 2026-10-07 10:19:32 EDT
+
+- Engine V2.8.2: action-conditioned frontier telemetry, still opt-in and shadow-only. Production decisions, spending, permissions and tree-search settings are unchanged.
+- Native land-front IDs, exact end-of-tick observations, event/state/geometry provenance, force/counterforce progression, reinforcement flags, bank/debt changes and actual return/removal/clear events are recorded. Stop restores the original native functions. Disappearance never establishes conquest or settlement ETA.
+- Forecasts at 2/5/10/20 ticks condition on observed forces. Subsequent relevant commands, unsupported existing fronts, reinforcement/refunds, missing observations and telemetry gaps censor the affected intervals. Fresh geometry gates paired origins; all native intervening commands remain in the local ledger.
+- Schema2 offline reporting deduplicates exports and reports paired territory/capture/balance/valid-ETA errors by complete match, episode, horizon and reinforcement subset, with censoring and coverage denominators. Legacy schema1 remains descriptive and cannot calibrate parameters.
+- Added local official-source recording and whole-match train/held-out parameter-estimation tools. Initial controlled Very Hard recordings estimate cadence, first-batch delay, contact growth, support/refund fractions and a diagnostic ETA baseline; parameters are not applied. See FRONTIER_CALIBRATION.md for evidence and limits.
+- Added 15 episode/report/fitting regressions; retained all 80 production decision/spend fingerprints. No Workers, WASM, WebGPU, online games, external telemetry or tree-search activation.
+
 ## 10.3.1 — 2026-10-06 23:11:16 EDT
 
 - Engine V2.8.1: first frontier-observability/shadow stage. Production policy and native safety checks are unchanged; recording is disabled by default. No new permissions or external telemetry.

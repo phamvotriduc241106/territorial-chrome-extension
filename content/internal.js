@@ -109,9 +109,9 @@
 
     isReady() { return this.ready; }
     // Explicit diagnostic-only activation. Normal autoplay never calls this.
-    frontierShadow(command = 'report') {
-      if (!['start', 'stop', 'report'].includes(command)) return Promise.reject(Error('Invalid frontier command'));
-      return callMain('frontier-' + command, {}, PROTOCOL.stateTimeoutMs || 700);
+    frontierShadow(command = 'report', options = {}) {
+      if (!['start', 'stop', 'report', 'drain'].includes(command)) return Promise.reject(Error('Invalid frontier command'));
+      return callMain('frontier-' + command, { options }, PROTOCOL.stateTimeoutMs || 700);
     }
     isBusy() { return !!this._actionPromise; }
 

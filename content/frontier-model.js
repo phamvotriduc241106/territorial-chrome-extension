@@ -158,6 +158,7 @@
     } else { actor.terr += result.captured; state.territory -= result.captured;
       state.balance = state.territory > 0 ? result.bank : 0; }
     attack.frontierProgress = (attack.frontierProgress || 0) + result.captured;
+    if (state.shadowTrackEffects && root.TIOEpisodeTelemetry) root.TIOEpisodeTelemetry.effect(state, attack, result.captured);
     attack.estimatedTiming = true;
     return result.resolved || result.remaining <= 0;
   }

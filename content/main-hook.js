@@ -37,7 +37,7 @@
   var SRC = PROTOCOL.requestSource || 'tio-engine-isolated';
   var REPLY = PROTOCOL.responseSource || 'tio-engine-main';
   var BRIDGE_VER = PROTOCOL.version || 1;
-  var HOOK_VER = CFG.VERSION || '10.3.1';
+  var HOOK_VER = CFG.VERSION || '10.3.2';
   var _armed = false;
 
   function core() {
@@ -1570,6 +1570,20 @@
   var _observationVersion = 0, _matchToken = null, _matchId = null;
   var _frontierRecorder = null, _frontierTimer = null, _frontierGeometryVersion = 0;
   var _frontierLastScan = -Infinity, _frontierStatus = { enabled: false, policyInfluence: false };
+  var _shadowNative = null, _shadowLastTick = -1, _shadowLastScanTick = -1;
+  var _shadowGeometryIntervalMs = 500;
+  function syncMatchIdentity(g) {
+    var token = g && g.ah && g.ah.h1 || g;
+    if (token !== _matchToken || !_matchId) {
+      _matchToken = token;
+      _matchId = window.crypto && typeof window.crypto.randomUUID === 'function'
+        ? window.crypto.randomUUID() : 'local-' + Date.now() + '-' + _observationVersion;
+      if (_frontierStatus.enabled) {
+        delete _frontierStatus.lastGeometry; _frontierLastScan = -Infinity;
+        _shadowLastTick = -1; _shadowLastScanTick = -10;
+      }
+    }
+  }
   function captureFrontier(state) {
     var g = G(), model = window.TIOFrontier;
     if (!model || !g || g.contract !== 'live-modern-v3' || !g.modern ||
@@ -1579,7 +1593,8 @@
       var raster = g.modern.ownership(4 * 1024 * 1024);
       if (!raster) throw Error('frontier-ownership-unreconciled-or-oversize');
       var snapshot = model.extract(raster, { matchId: state.matchId, stateVersion: state.stateVersion,
-        gameTick: state.gameTick, geometryVersion: ++_frontierGeometryVersion }, { player: state.player });
+        gameTick: state.gameTick, sourceStateVersion: state.sourceStateVersion,
+        geometryVersion: ++_frontierGeometryVersion }, { player: state.player });
       // Raster is discarded; only the compact geometry remains in this observation.
       return { snapshot: snapshot, metadata: { mapId: raster.mapId, mapSeed: raster.mapSeed,
         difficulty: raster.difficulty, playerSlots: raster.neutralId, playerCount: g.aE.data.playerCount,
@@ -1588,43 +1603,80 @@
     } finally { if (window.TIOProfiler) window.TIOProfiler.record('frontier.extract', performance.now() - start); }
   }
   function sampleFrontier() {
-    if (!_frontierRecorder) return;
+    if (!_frontierRecorder || !_frontierStatus.enabled || _shadowLastTick === getGameTick()) return;
     try {
       var state = getState(), geometry = null, metadata = { engineVersion: CFG.ENGINE_VERSION,
         updatedAt: CFG.ENGINE_UPDATED_AT };
+      if (_shadowNative && _shadowNative.fault() && _frontierRecorder.commandCoverage)
+        _frontierRecorder.gap(_shadowNative.fault());
+      _shadowLastTick = state.gameTick;
       // Score first, then extract for a new forecast at this SAME observation.
       _frontierRecorder.observe(state, null, null, metadata);
-      if (state.ready && state.alive && performance.now() - _frontierLastScan >= 500 && !_frontierRecorder.pending) {
+      if (state.ready && state.alive && performance.now() - _frontierLastScan >= _shadowGeometryIntervalMs &&
+          state.gameTick - _shadowLastScanTick >= 10) {
         _frontierLastScan = performance.now();
+        _shadowLastScanTick = state.gameTick;
         try {
           var captured = captureFrontier(state); geometry = captured.snapshot; metadata = captured.metadata;
-          _frontierRecorder.add({ event: 'geometry_snapshot', ...geometry.meta, ...metadata });
+          _frontierRecorder.add({ event: 'geometry_snapshot', ...geometry.meta, ...metadata, pairs: geometry.pairs });
           _frontierStatus.lastGeometry = geometry.meta; _frontierStatus.error = null;
-        } catch (geometryError) { _frontierStatus.error = String(geometryError.message || geometryError); }
+        } catch (geometryError) { _frontierStatus.error = String(geometryError.message || geometryError);
+          _frontierRecorder.add({ event: 'geometry_unavailable', matchId: state.matchId, gameTick: state.gameTick,
+            stateVersion: state.stateVersion, sourceStateVersion: state.sourceStateVersion, reason: _frontierStatus.error }); }
       }
-      _frontierRecorder.observe(state, geometry, window.TIOEngineCoreV2, metadata);
-    } catch (error) { _frontierStatus.error = String(error.message || error); }
+      // Do not pin an episode's forecast phase to a tick with no geometry; wait
+      // for the next fresh scan. Failed scans still produce uncovered baselines.
+      _frontierRecorder.observe(state, geometry, geometry || _frontierStatus.error ? window.TIOEngineCoreV2 : null, metadata);
+    } catch (error) { _frontierStatus.error = String(error.message || error);
+      if (_frontierRecorder.commandCoverage) _frontierRecorder.gap(_frontierStatus.error); }
   }
   var frontierAPI = {
-    start: function () {
-      if (!window.TIOFrontier) return { ok: false, err: 'frontier-module-unavailable' };
+    start: function (options) {
+      options = options || {};
+      if (!window.TIOFrontier || !window.TIOEpisodeTelemetry) return { ok: false, err: 'frontier-module-unavailable' };
       if (!_frontierTimer) {
-        _frontierRecorder = new window.TIOFrontier.Recorder();
+        try { _frontierRecorder = new window.TIOEpisodeTelemetry.Recorder(options); }
+        catch (eOptions) { return { ok: false, err: String(eOptions.message || eOptions) }; }
         _frontierStatus = { enabled: true, policyInfluence: false };
-        _frontierLastScan = -Infinity;
+        _frontierLastScan = -Infinity; _shadowLastTick = -1; _shadowLastScanTick = -10;
+        _shadowGeometryIntervalMs = Number.isFinite(options.geometryIntervalMs)
+          ? Math.max(0, Math.min(10000, options.geometryIntervalMs)) : 500;
+        var initial = getState(), game = G();
+        // Initialize match provenance before hooks, but do not create pair-only
+        // aliases for fronts that will receive native IDs in the first sample.
+        _frontierRecorder.match(initial, { engineVersion: CFG.ENGINE_VERSION, updatedAt: CFG.ENGINE_UPDATED_AT });
+        if (game && game.contract === 'live-modern-v3' && game.shadow) {
+          _shadowNative = game.shadow;
+          var installed = _shadowNative.install(function (event) {
+            if (!_frontierStatus.enabled) return;
+            // Native match initialization replaces h1 before other arrays exist.
+            // Update identity without reading a half-initialized full state.
+            syncMatchIdentity(game);
+            if (event.event === 'native_tick') { sampleFrontier(); return; }
+            var geometry = _frontierStatus.lastGeometry;
+            _frontierRecorder.native(event, { matchId: _matchId, stateVersion: _observationVersion,
+              gameTick: event.gameTick, player: myPlayer(), sourceStateVersion: event.sourceStateVersion,
+              contract: game.contract, metadata: { engineVersion: CFG.ENGINE_VERSION, updatedAt: CFG.ENGINE_UPDATED_AT },
+              geometryVersion: geometry ? geometry.geometryVersion : null,
+              geometryTick: geometry ? geometry.gameTick : null });
+          });
+          _frontierRecorder.commandCoverage = installed.ok;
+          _frontierStatus.nativeEvents = installed;
+        }
         _frontierTimer = setInterval(sampleFrontier, 50); sampleFrontier();
       }
       return { ok: true, status: { ..._frontierStatus } };
     },
     stop: function () { if (_frontierTimer) clearInterval(_frontierTimer);
-      if (_frontierRecorder && _frontierRecorder.pending) {
-        _frontierRecorder.add({ event: 'prediction_censored', reason: 'recording-stopped',
-          ..._frontierRecorder.pending.origin, dueTick: _frontierRecorder.pending.dueTick });
-        _frontierRecorder.pending = null;
-      }
+      if (_frontierRecorder) _frontierRecorder.cancel('recording-stopped');
+      if (_frontierRecorder) _frontierRecorder.add({ event: 'recording_end', matchId: _matchId,
+        gameTick: getGameTick(), reason: 'recording-stopped' });
+      if (_shadowNative) _shadowNative.stop(); _shadowNative = null;
       _frontierTimer = null; _frontierStatus.enabled = false; return this.report(); },
     report: function () { return { status: { ..._frontierStatus },
-      telemetry: _frontierRecorder ? _frontierRecorder.export() : null }; }
+      telemetry: _frontierRecorder ? _frontierRecorder.export() : null }; },
+    drain: function () { return { status: { ..._frontierStatus },
+      telemetry: _frontierRecorder ? _frontierRecorder.export(true) : null }; }
   };
 
   function extractState() {
@@ -1643,12 +1695,7 @@
     var hasDJ = !!(legacyNative && g && typeof g.dJ === 'function');
     var ready = !!(contractOk && g && me >= 0 && (hasHg || hasCE || hasDF || hasDJ) && (g.ah || g.aq));
     // Native ah.dk() replaces h1 at each match; no names/browser data collected.
-    var matchToken = g && g.ah && g.ah.h1 || g;
-    if (matchToken !== _matchToken || !_matchId) {
-      _matchToken = matchToken;
-      _matchId = window.crypto && typeof window.crypto.randomUUID === 'function'
-        ? window.crypto.randomUUID() : 'local-' + Date.now() + '-' + _observationVersion;
-    }
+    syncMatchIdentity(g);
 
     var bInf = me >= 0 ? getBalanceInfo(me) : { value: 0, known: false };
     var bal = bInf.value;
@@ -1683,6 +1730,13 @@
       catch (eEconomy) { return null; }
     }
     var economy = economyOf(me);
+    var combatPlayers = null;
+    if (_frontierStatus.enabled && _shadowNative && _shadowNative.active()) {
+      combatPlayers = {};
+      for (var pendingAttack of _frontierRecorder.pending) {
+        if (combatPlayers[pendingAttack.actor] == null) combatPlayers[pendingAttack.actor] = _shadowNative.playerState(pendingAttack.actor);
+      }
+    }
     var outgoingAttacks = [];
     try { if (g && g.modern && typeof g.modern.outgoing === 'function') outgoingAttacks = g.modern.outgoing(me); }
     catch (eOutgoing) {}
@@ -1740,6 +1794,9 @@
       ready: ready,
       matchId: _matchId,
       stateVersion: ++_observationVersion,
+      sourceStateVersion: g && g.shadow ? g.shadow.version() : null,
+      combatFronts: _frontierStatus.enabled && g && g.shadow && g.shadow.active() ? g.shadow.fronts(me) : null,
+      combatPlayers: combatPlayers,
       armed: _armed,
       patched: !!window.__TIO_SCRIPT_PATCHED__,
       hookVer: HOOK_VER,
@@ -1859,11 +1916,13 @@
       } else if (data.type === 'ping' || data.type === 'state') {
         result = { ok: true, state: getState() };
       } else if (data.type === 'frontier-start') {
-        result = frontierAPI.start();
+        result = frontierAPI.start(data.options);
       } else if (data.type === 'frontier-stop') {
         result = { ok: true, ...frontierAPI.stop() };
       } else if (data.type === 'frontier-report') {
         result = { ok: true, ...frontierAPI.report() };
+      } else if (data.type === 'frontier-drain') {
+        result = { ok: true, ...frontierAPI.drain() };
       } else if (data.type === 'set-diff') {
         DIFF = Math.max(0, Math.min(5, data.diff | 0));
         result = { ok: true, difficulty: DIFF, state: getState() };

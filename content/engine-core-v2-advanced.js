@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.3.1
+ * Territorial.io deterministic policy kernel v10.3.2
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -1180,6 +1180,8 @@
         settleTick: tick + 10, estimatedTiming: true });
     }
     delete next.planningEnemies; // Subsequent transitions must use evolved rivals.
+    if (state.shadowTrackEffects) next.shadowEffects = Object.fromEntries(
+      Object.entries(state.shadowEffects || {}).map(([key, value]) => [key, { ...value }]));
     // Only explicit shadow calls can select the experimental combat model.
     // Live decide/MPC/bandit callers never set this flag. Validate at origin;
     // subsequent pure rollouts retain their immutable snapshot provenance.
@@ -1264,6 +1266,7 @@
     if ((!own && (!actor || actor.terr <= 0)) || (own && state.territory <= 0)) return;
     if (attack.targetId === 'neutral') {
       const gained = Math.min(state.freeLandCells, Math.floor(attack.troops / 2));
+      if (state.shadowTrackEffects && root.TIOEpisodeTelemetry) root.TIOEpisodeTelemetry.effect(state, attack, gained, true);
       state.territory += gained; state.freeLandCells -= gained;
       state.hasAdjFree = state.freeLandCells > 0;
       return;
@@ -1276,6 +1279,7 @@
     const damage = Math.floor(attack.troops / 1.25);
     // Deliberately retain an aggregate attrition estimate, not a pixel simulator.
     const gained = attack.troops > defense ? land : 0;
+    if (state.shadowTrackEffects && root.TIOEpisodeTelemetry) root.TIOEpisodeTelemetry.effect(state, attack, gained, true);
     if (own) {
       state.territory += gained; foe.terr -= gained;
       foe.bal = foe.terr > 0 ? Math.max(0, bank - damage) : 0;
@@ -1297,7 +1301,9 @@
       const pending = [];
       for (const a of state.activeAttacks) {
         if (state.frontierActive) {
-          if (!root.TIOFrontier.advanceAttack(state, a)) pending.push(a);
+          const terminal = root.TIOFrontier.advanceAttack(state, a);
+          if (!terminal) pending.push(a);
+          else if (state.shadowTrackEffects && root.TIOEpisodeTelemetry) root.TIOEpisodeTelemetry.effect(state, a, 0, true);
         } else if (a.settleTick <= state.tick) settlePlanningAttack(state, a);
         else pending.push(a);
       }
@@ -3530,7 +3536,7 @@
   }
 
   const EngineCore = {
-    version: '10.3.1',
+    version: '10.3.2',
     DIFF,
     DUMP,
     LIVE,
@@ -3602,7 +3608,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.8.1] Capital-preserving policy · Updated: 2026-10-06 23:11:16 EDT',
+    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-07 10:19:32 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {

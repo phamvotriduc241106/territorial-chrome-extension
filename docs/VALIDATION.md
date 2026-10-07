@@ -6,7 +6,13 @@ Production gates: `npm test` runs core contracts, version/timestamp checks, mani
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `experiments/`; they are not silently treated as release gates. For example, `tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
-## V2.8.1 frontier shadow, updated 2026-10-06 23:11:16 EDT
+## V2.8.2 action-conditioned shadow, updated 2026-10-07 10:19:32 EDT
+
+Fifteen new episode/report/fitting tests cover stable native IDs, current reinforcement flags, exact observation ticks, multi-horizon forecasts, irrelevant/relevant intervening actions, support/refund censoring, native settlement vs disappearance, unavailable actor labels, bounded drains, duplicate/conflicting exports and whole-match estimation splits. The existing 12 frontier tests retain 10,000 topology and 10,000 combat-bound cases. All 80 production decision/spend fingerprints remain unchanged.
+
+Three complete controlled local official-source Very Hard recordings now provide paired action-censored forecasts and initial offline cadence/contact/support/refund/ETA estimates. See [recorded evidence and limits](FRONTIER_CALIBRATION.md). These isolated 64-player matches use periodic neutral commands, not the production autoplay policy. They are not a prospective win-rate campaign or representative contested-front calibration. Parameters are not applied; the frontier remains shadow-only.
+
+## Historical V2.8.1 frontier shadow, updated 2026-10-06 23:11:16 EDT
 
 Production policy retains the 80-fixture V2.8 decision/spend fingerprint with the spatial module present or absent. Twelve new tests cover native ownership decoding/reconciliation, straight/corner/island/hole/corridor/junction geometry, unique contact cells, complete boundary coverage, version rejection, incremental conservation, command-once semantics, input purity, deterministic split horizons, bounded/censored telemetry and paired offline statistics. Random coverage: 10,000 topology maps (4/8/16 cells per side), 10,000 normal combat batches and 500 multi-tick conservation trajectories. The node test runner now has 63 cases, in addition to existing engine assertion suites.
 

@@ -1,0 +1,1014 @@
+{
+  "schema": 1,
+  "release": "10.3.2",
+  "engine": "V2.8.2",
+  "releaseUpdatedAt": "2026-10-07 10:19:32 EDT",
+  "source": "controlled-local-official-source",
+  "sourceSha256": "155a2db1cc6f256317fc6178ce12993c76b51630ba5985be4e9ef1d7cad7fcff",
+  "controller": "20%-bank neutral command every 100 ticks when legal; otherwise hold; native Very Hard bots",
+  "difficulty": 5,
+  "players": 64,
+  "acceleratedNativeTicks": true,
+  "policyInfluence": false,
+  "parametersApplied": false,
+  "recordedDraftUpdatedAt": "2026-10-06 23:46:14 EDT",
+  "recordings": [
+    {
+      "file": "match-1.json",
+      "sha256": "d2d42dcdfd3e75a412d9f5cb0d4fcb42f225354d22810b53c15254164c230f0e",
+      "seed": 14071,
+      "recordedAt": "2026-10-07T14:19:35.259Z",
+      "endTick": 8537,
+      "terminal": true
+    },
+    {
+      "file": "match-2.json",
+      "sha256": "6519b51735e49ac55cd60bebaef35868628d3c489d0e6eea91ff30a3103dc46e",
+      "seed": 21990,
+      "recordedAt": "2026-10-07T14:19:48.948Z",
+      "endTick": 9328,
+      "terminal": true
+    },
+    {
+      "file": "match-3.json",
+      "sha256": "2e7a9b3720e57bb03a4af26c0f6ae7802084519c4772afdedc278e9824839108",
+      "seed": 29909,
+      "recordedAt": "2026-10-07T14:20:04.056Z",
+      "endTick": 9864,
+      "terminal": true
+    }
+  ],
+  "report": {
+    "forecasts": 384,
+    "paired": 259,
+    "censored": 125,
+    "censoringRate": 0.3255208333333333,
+    "aggregate": {
+      "territory": {
+        "n": 259,
+        "mae": 348.6833976833977,
+        "rmse": 751.937376736134,
+        "p95AbsoluteError": 2332
+      },
+      "captured": {
+        "n": 259,
+        "mae": 348.6833976833977,
+        "rmse": 751.937376736134,
+        "p95AbsoluteError": 2332
+      },
+      "balance": {
+        "n": 259,
+        "mae": 10.11969111969112,
+        "rmse": 65.10368920030837,
+        "p95AbsoluteError": 66
+      },
+      "etaTicks": {
+        "n": 0,
+        "mae": null,
+        "rmse": null,
+        "p95AbsoluteError": null
+      }
+    },
+    "frontier": {
+      "territory": {
+        "n": 259,
+        "mae": 14.938223938223938,
+        "rmse": 28.894094999994824,
+        "p95AbsoluteError": 59
+      },
+      "captured": {
+        "n": 259,
+        "mae": 14.938223938223938,
+        "rmse": 28.894094999994824,
+        "p95AbsoluteError": 59
+      },
+      "balance": {
+        "n": 259,
+        "mae": 0.749034749034749,
+        "rmse": 5.573655628547306,
+        "p95AbsoluteError": 0
+      },
+      "etaTicks": {
+        "n": 0,
+        "mae": null,
+        "rmse": null,
+        "p95AbsoluteError": null
+      }
+    },
+    "completeMatches": 3,
+    "scored": 259,
+    "pending": 0,
+    "invalid": 0,
+    "dropped": 0,
+    "orphanLabels": 0,
+    "coverage": {
+      "aggregate": {
+        "n": 384,
+        "fraction": 1
+      },
+      "frontier": {
+        "n": 384,
+        "fraction": 1
+      },
+      "commands": {
+        "n": 384,
+        "fraction": 1
+      },
+      "knownFronts": {
+        "n": 372,
+        "fraction": 0.96875
+      }
+    },
+    "etaLabels": 0,
+    "censoringReasons": {
+      "unmodeled-refund": 99,
+      "unmodeled-existing-front": 12,
+      "future-action": 14
+    },
+    "geometryCoverage": {
+      "successfulScans": 1216,
+      "failedScans": 0,
+      "episodeObservations": 160095
+    },
+    "byMatch": [
+      {
+        "matchId": "d52c0546-c41c-43e2-9896-8f6656212e44",
+        "complete": true,
+        "startTick": 0,
+        "endTick": 8537,
+        "forecasts": 148,
+        "paired": 103,
+        "censored": 45,
+        "censoringRate": 0.30405405405405406,
+        "aggregate": {
+          "territory": {
+            "n": 103,
+            "mae": 604.3495145631068,
+            "rmse": 1128.4484149675245,
+            "p95AbsoluteError": 2747
+          },
+          "captured": {
+            "n": 103,
+            "mae": 604.3495145631068,
+            "rmse": 1128.4484149675245,
+            "p95AbsoluteError": 2747
+          },
+          "balance": {
+            "n": 103,
+            "mae": 4.611650485436893,
+            "rmse": 21.967540042844593,
+            "p95AbsoluteError": 32
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 103,
+            "mae": 14.62135922330097,
+            "rmse": 27.05872793169615,
+            "p95AbsoluteError": 66
+          },
+          "captured": {
+            "n": 103,
+            "mae": 14.62135922330097,
+            "rmse": 27.05872793169615,
+            "p95AbsoluteError": 66
+          },
+          "balance": {
+            "n": 103,
+            "mae": 0.4174757281553398,
+            "rmse": 2.996762006611777,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      {
+        "matchId": "87cd3481-c1a3-496a-a980-3608fe73ff5a",
+        "complete": true,
+        "startTick": 0,
+        "endTick": 9328,
+        "forecasts": 132,
+        "paired": 88,
+        "censored": 44,
+        "censoringRate": 0.3333333333333333,
+        "aggregate": {
+          "territory": {
+            "n": 88,
+            "mae": 176.4431818181818,
+            "rmse": 305.8025023680242,
+            "p95AbsoluteError": 665
+          },
+          "captured": {
+            "n": 88,
+            "mae": 176.4431818181818,
+            "rmse": 305.8025023680242,
+            "p95AbsoluteError": 665
+          },
+          "balance": {
+            "n": 88,
+            "mae": 10.386363636363637,
+            "rmse": 37.52756562605922,
+            "p95AbsoluteError": 76
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 88,
+            "mae": 13.477272727272727,
+            "rmse": 27.757472376411954,
+            "p95AbsoluteError": 53
+          },
+          "captured": {
+            "n": 88,
+            "mae": 13.477272727272727,
+            "rmse": 27.757472376411954,
+            "p95AbsoluteError": 53
+          },
+          "balance": {
+            "n": 88,
+            "mae": 0.5568181818181818,
+            "rmse": 5.0124844139408555,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      {
+        "matchId": "cae47608-362c-496d-9ca9-e594b49c70a0",
+        "complete": true,
+        "startTick": 0,
+        "endTick": 9864,
+        "forecasts": 104,
+        "paired": 68,
+        "censored": 36,
+        "censoringRate": 0.34615384615384615,
+        "aggregate": {
+          "territory": {
+            "n": 68,
+            "mae": 184.3235294117647,
+            "rmse": 322.03484466198773,
+            "p95AbsoluteError": 716
+          },
+          "captured": {
+            "n": 68,
+            "mae": 184.3235294117647,
+            "rmse": 322.03484466198773,
+            "p95AbsoluteError": 716
+          },
+          "balance": {
+            "n": 68,
+            "mae": 18.11764705882353,
+            "rmse": 116.57691225362008,
+            "p95AbsoluteError": 25
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 68,
+            "mae": 17.308823529411764,
+            "rmse": 32.76812475562189,
+            "p95AbsoluteError": 59
+          },
+          "captured": {
+            "n": 68,
+            "mae": 17.308823529411764,
+            "rmse": 32.76812475562189,
+            "p95AbsoluteError": 59
+          },
+          "balance": {
+            "n": 68,
+            "mae": 1.5,
+            "rmse": 8.497404448003,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      }
+    ],
+    "episodeCount": 5930,
+    "byHorizon": [
+      {
+        "horizon": 2,
+        "forecasts": 96,
+        "paired": 82,
+        "censored": 14,
+        "censoringRate": 0.14583333333333334,
+        "aggregate": {
+          "territory": {
+            "n": 82,
+            "mae": 14.390243902439025,
+            "rmse": 29.6417635497867,
+            "p95AbsoluteError": 68
+          },
+          "captured": {
+            "n": 82,
+            "mae": 14.390243902439025,
+            "rmse": 29.6417635497867,
+            "p95AbsoluteError": 68
+          },
+          "balance": {
+            "n": 82,
+            "mae": 0,
+            "rmse": 0,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 82,
+            "mae": 14.390243902439025,
+            "rmse": 29.6417635497867,
+            "p95AbsoluteError": 68
+          },
+          "captured": {
+            "n": 82,
+            "mae": 14.390243902439025,
+            "rmse": 29.6417635497867,
+            "p95AbsoluteError": 68
+          },
+          "balance": {
+            "n": 82,
+            "mae": 0,
+            "rmse": 0,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      {
+        "horizon": 5,
+        "forecasts": 96,
+        "paired": 75,
+        "censored": 21,
+        "censoringRate": 0.21875,
+        "aggregate": {
+          "territory": {
+            "n": 75,
+            "mae": 40.946666666666665,
+            "rmse": 58.43343791586001,
+            "p95AbsoluteError": 129
+          },
+          "captured": {
+            "n": 75,
+            "mae": 40.946666666666665,
+            "rmse": 58.43343791586001,
+            "p95AbsoluteError": 129
+          },
+          "balance": {
+            "n": 75,
+            "mae": 0,
+            "rmse": 0,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 75,
+            "mae": 7.493333333333333,
+            "rmse": 13.967581513394984,
+            "p95AbsoluteError": 36
+          },
+          "captured": {
+            "n": 75,
+            "mae": 7.493333333333333,
+            "rmse": 13.967581513394984,
+            "p95AbsoluteError": 36
+          },
+          "balance": {
+            "n": 75,
+            "mae": 0,
+            "rmse": 0,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      {
+        "horizon": 10,
+        "forecasts": 96,
+        "paired": 58,
+        "censored": 38,
+        "censoringRate": 0.3958333333333333,
+        "aggregate": {
+          "territory": {
+            "n": 58,
+            "mae": 805.051724137931,
+            "rmse": 1150.1730229659452,
+            "p95AbsoluteError": 2787
+          },
+          "captured": {
+            "n": 58,
+            "mae": 805.051724137931,
+            "rmse": 1150.1730229659452,
+            "p95AbsoluteError": 2787
+          },
+          "balance": {
+            "n": 58,
+            "mae": 20.75862068965517,
+            "rmse": 52.17807704522974,
+            "p95AbsoluteError": 141
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 58,
+            "mae": 10.137931034482758,
+            "rmse": 20.391005454569324,
+            "p95AbsoluteError": 64
+          },
+          "captured": {
+            "n": 58,
+            "mae": 10.137931034482758,
+            "rmse": 20.391005454569324,
+            "p95AbsoluteError": 64
+          },
+          "balance": {
+            "n": 58,
+            "mae": 2.086206896551724,
+            "rmse": 9.341232289674375,
+            "p95AbsoluteError": 21
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      {
+        "horizon": 20,
+        "forecasts": 96,
+        "paired": 44,
+        "censored": 52,
+        "censoringRate": 0.5416666666666666,
+        "aggregate": {
+          "territory": {
+            "n": 44,
+            "mae": 894.6590909090909,
+            "rmse": 1255.7587981339846,
+            "p95AbsoluteError": 2747
+          },
+          "captured": {
+            "n": 44,
+            "mae": 894.6590909090909,
+            "rmse": 1255.7587981339846,
+            "p95AbsoluteError": 2747
+          },
+          "balance": {
+            "n": 44,
+            "mae": 32.20454545454545,
+            "rmse": 146.1522400537442,
+            "p95AbsoluteError": 131
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 44,
+            "mae": 34.97727272727273,
+            "rmse": 48.95150661624216,
+            "p95AbsoluteError": 73
+          },
+          "captured": {
+            "n": 44,
+            "mae": 34.97727272727273,
+            "rmse": 48.95150661624216,
+            "p95AbsoluteError": 73
+          },
+          "balance": {
+            "n": 44,
+            "mae": 1.6590909090909092,
+            "rmse": 8.236559299301444,
+            "p95AbsoluteError": 1
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      }
+    ],
+    "subsets": {
+      "reinforced": {
+        "forecasts": 52,
+        "paired": 29,
+        "censored": 23,
+        "censoringRate": 0.4423076923076923,
+        "aggregate": {
+          "territory": {
+            "n": 29,
+            "mae": 119.41379310344827,
+            "rmse": 268.3185831599547,
+            "p95AbsoluteError": 753
+          },
+          "captured": {
+            "n": 29,
+            "mae": 119.41379310344827,
+            "rmse": 268.3185831599547,
+            "p95AbsoluteError": 753
+          },
+          "balance": {
+            "n": 29,
+            "mae": 26.24137931034483,
+            "rmse": 64.074041222797,
+            "p95AbsoluteError": 141
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 29,
+            "mae": 16.379310344827587,
+            "rmse": 39.198434169993455,
+            "p95AbsoluteError": 106
+          },
+          "captured": {
+            "n": 29,
+            "mae": 16.379310344827587,
+            "rmse": 39.198434169993455,
+            "p95AbsoluteError": 106
+          },
+          "balance": {
+            "n": 29,
+            "mae": 0,
+            "rmse": 0,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      "non-reinforced": {
+        "forecasts": 332,
+        "paired": 230,
+        "censored": 102,
+        "censoringRate": 0.3072289156626506,
+        "aggregate": {
+          "territory": {
+            "n": 230,
+            "mae": 377.5913043478261,
+            "rmse": 792.2266144832879,
+            "p95AbsoluteError": 2399
+          },
+          "captured": {
+            "n": 230,
+            "mae": 377.5913043478261,
+            "rmse": 792.2266144832879,
+            "p95AbsoluteError": 2399
+          },
+          "balance": {
+            "n": 230,
+            "mae": 8.08695652173913,
+            "rmse": 65.23236060089515,
+            "p95AbsoluteError": 26
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 230,
+            "mae": 14.756521739130434,
+            "rmse": 27.320322106446696,
+            "p95AbsoluteError": 56
+          },
+          "captured": {
+            "n": 230,
+            "mae": 14.756521739130434,
+            "rmse": 27.320322106446696,
+            "p95AbsoluteError": 56
+          },
+          "balance": {
+            "n": 230,
+            "mae": 0.8434782608695652,
+            "rmse": 5.914609766979743,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      "flag-unknown": {
+        "forecasts": 0,
+        "paired": 0,
+        "censored": 0,
+        "censoringRate": null,
+        "aggregate": {
+          "territory": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "captured": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "balance": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "captured": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "balance": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      "reinforcement-observed": {
+        "forecasts": 0,
+        "paired": 0,
+        "censored": 0,
+        "censoringRate": null,
+        "aggregate": {
+          "territory": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "captured": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "balance": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "captured": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "balance": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      },
+      "no-reinforcement-observed": {
+        "forecasts": 384,
+        "paired": 259,
+        "censored": 125,
+        "censoringRate": 0.3255208333333333,
+        "aggregate": {
+          "territory": {
+            "n": 259,
+            "mae": 348.6833976833977,
+            "rmse": 751.937376736134,
+            "p95AbsoluteError": 2332
+          },
+          "captured": {
+            "n": 259,
+            "mae": 348.6833976833977,
+            "rmse": 751.937376736134,
+            "p95AbsoluteError": 2332
+          },
+          "balance": {
+            "n": 259,
+            "mae": 10.11969111969112,
+            "rmse": 65.10368920030837,
+            "p95AbsoluteError": 66
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        },
+        "frontier": {
+          "territory": {
+            "n": 259,
+            "mae": 14.938223938223938,
+            "rmse": 28.894094999994824,
+            "p95AbsoluteError": 59
+          },
+          "captured": {
+            "n": 259,
+            "mae": 14.938223938223938,
+            "rmse": 28.894094999994824,
+            "p95AbsoluteError": 59
+          },
+          "balance": {
+            "n": 259,
+            "mae": 0.749034749034749,
+            "rmse": 5.573655628547306,
+            "p95AbsoluteError": 0
+          },
+          "etaTicks": {
+            "n": 0,
+            "mae": null,
+            "rmse": null,
+            "p95AbsoluteError": null
+          }
+        }
+      }
+    },
+    "episodeCoverage": {
+      "observed": 5930,
+      "forecasted": 51,
+      "fraction": 0.008600337268128162,
+      "playerContactObserved": 56,
+      "playerContactForecasted": 51
+    }
+  },
+  "estimates": {
+    "schema": 1,
+    "shadowOnly": true,
+    "policyInfluence": false,
+    "parametersApplied": false,
+    "status": "observational-estimates",
+    "trainingMatches": [
+      "87cd3481-c1a3-496a-a980-3608fe73ff5a",
+      "cae47608-362c-496d-9ca9-e594b49c70a0"
+    ],
+    "heldoutMatches": [
+      "d52c0546-c41c-43e2-9896-8f6656212e44"
+    ],
+    "excludedIncompleteMatches": 0,
+    "cadenceTicksByActorTerritory": {
+      "<1000": {
+        "n": 3405,
+        "median": 4,
+        "p10": 4,
+        "p90": 4
+      },
+      "1000-9999": {
+        "n": 17585,
+        "median": 3,
+        "p10": 3,
+        "p90": 3
+      },
+      "10000-59999": {
+        "n": 5172,
+        "median": 2,
+        "p10": 2,
+        "p90": 2
+      },
+      ">=60000": {
+        "n": 836,
+        "median": 1,
+        "p10": 1,
+        "p90": 1
+      }
+    },
+    "firstBatchDelayTicks": {
+      "n": 4028,
+      "median": 7,
+      "p10": 3,
+      "p90": 7
+    },
+    "contactGrowthLogRatePerTick": {
+      "n": 23627,
+      "median": 0,
+      "p10": -0.06203409321128688,
+      "p90": 0.023827544951081234
+    },
+    "nativeCandidateToObservedContactRatio": {
+      "n": 224,
+      "median": 1,
+      "p10": 0.6666666666666666,
+      "p90": 1.0625
+    },
+    "reinforcement": {
+      "deliveryFraction": {
+        "n": 234,
+        "median": 1,
+        "p10": 1,
+        "p90": 1
+      },
+      "bankFraction": {
+        "n": 234,
+        "median": 1,
+        "p10": 1,
+        "p90": 1
+      },
+      "debtFraction": {
+        "n": 234,
+        "median": 0,
+        "p10": 0,
+        "p90": 0
+      }
+    },
+    "refundCreditToRemainingForce": {
+      "n": 3599,
+      "median": 1,
+      "p10": 1,
+      "p90": 1
+    },
+    "refundSubsets": {
+      "debtLimited": {
+        "n": 0,
+        "median": null,
+        "p10": null,
+        "p90": null
+      },
+      "capLimited": {
+        "n": 0,
+        "median": null,
+        "p10": null,
+        "p90": null
+      },
+      "unconstrained": {
+        "n": 3599,
+        "median": 1,
+        "p10": 1,
+        "p90": 1
+      }
+    },
+    "etaDurationTicksByInitialTerritory": {
+      "<1000": {
+        "n": 743,
+        "median": 23,
+        "p10": 19,
+        "p90": 43
+      },
+      "1000-9999": {
+        "n": 1280,
+        "median": 16,
+        "p10": 10,
+        "p90": 44
+      },
+      "10000-59999": {
+        "n": 272,
+        "median": 15,
+        "p10": 9,
+        "p90": 31
+      },
+      ">=60000": {
+        "n": 8,
+        "median": 35,
+        "p10": 26,
+        "p90": 42
+      }
+    },
+    "heldoutEtaErrorTicks": {
+      "n": 1026,
+      "mae": 9.758284600389864,
+      "rmse": 17.024635286186907,
+      "p95AbsoluteError": 36
+    },
+    "etaTerminalSamples": 2303,
+    "etaHeldoutSamples": 1026,
+    "rightOrLeftCensoredEpisodes": 425,
+    "limitations": [
+      "Initial descriptive estimates, not causal identification or a calibrated dynamic combat model.",
+      "Cadence excludes intervening commands and cross-band pairs; candidate growth also excludes native returns.",
+      "Contact ratios are local player geometry only, at most 10 ticks old; topology and selection-limit effects remain confounded.",
+      "Support/refund fractions are observed conditional on debt and bank caps; they do not identify a universal constant.",
+      "ETA uses known native returns without reinforcement or subsequent relevant commands; censored episodes are not zero-duration labels.",
+      "Median ETA is a diagnostic baseline, not a deployment parameter. Held-out evaluation needs at least 3 complete matches and 5 training episodes per band."
+    ]
+  },
+  "limitations": [
+    "Raw recordings remain in ignored scratch/frontier-recordings/2026-10-07T14-20-04-059Z; no game HTML, profiles, credentials or user gameplay are committed.",
+    "Draft build was recorded before final release timestamp/docs and startup guard changes; combat/policy mathematics are the same.",
+    "Correlated short-horizon neutral-expansion windows across only three controlled matches; not representative contested/fleet calibration or a win-rate test.",
+    "No valid paired forecast ETA labels in this cohort; offline native-duration baseline is separate."
+  ]
+}

@@ -7,11 +7,11 @@
 
   if (root.TIOConfig) return;
 
-  const VERSION = '10.3.1';
-  const ENGINE_VERSION = 'V2.8.1';
-  const ENGINE_SOURCE = 'content/engine-core-v2-advanced.js (V2.8.1 authoritative runtime)';
+  const VERSION = '10.3.2';
+  const ENGINE_VERSION = 'V2.8.2';
+  const ENGINE_SOURCE = 'content/engine-core-v2-advanced.js (V2.8.2 authoritative runtime)';
   // Always include local wall-clock time and timezone in extension details.
-  const ENGINE_UPDATED_AT = '2026-10-06 23:11:16 EDT';
+  const ENGINE_UPDATED_AT = '2026-10-07 10:19:32 EDT';
   const BRIDGE_VERSION = 1;
   const SETTINGS_SCHEMA = 2;
 
@@ -25,7 +25,7 @@
 
   const DEFAULT_SETTINGS = Object.freeze({
     botEnabled: true,
-    engineVersion: 2, // 2 = V2.8.1 authoritative runtime, 1 = legacy baseline
+    engineVersion: 2, // 2 = V2.8.2 authoritative runtime, 1 = legacy baseline
     autoExpand: true,
     autoAttack: true,
     clickSpeed: 4,

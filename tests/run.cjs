@@ -58,6 +58,7 @@ const server = http.createServer((request, response) => {
       const page = await context.newPage();
       const bootstrap = ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
         'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js', 'content/frontier-model.js',
+        'content/frontier-episodes.js',
         'content/preloader.js', 'content/main-hook.js'].map(read);
       // Test-only access to the ORIGINAL native gr/hR/hQ routines. This hook is
       // never packaged. It restores mutable globals/arrays/functions in finally.
@@ -153,22 +154,29 @@ const server = http.createServer((request, response) => {
               throw Error('Native neutral combat mismatch'); cases++;
           }
           if (api.frontier.report().status.enabled) throw Error('Shadow mode must default off');
+          const originals = [game.ae.ei, game.ae.h0, game.ae.clear, game.bD.gv.n4,
+            game.bD.gv.gw, game.af.qr, game.bi.ee];
           const start = api.frontier.start();
           // Exercise the actual timer -> exact-tick paired label path, not only
           // synchronous start/stop. No extra attacks or online matches.
           const deadline = performance.now() + 5000;
           while (performance.now() < deadline && !api.frontier.report().telemetry.records.some(x =>
-            x.event === 'prediction_scored' && x.predictions.frontier))
+            x.event === 'prediction_scored' && x.predictions.frontier && x.modelCoverage.frontier))
             await new Promise(resolve => setTimeout(resolve, 50));
           const report = api.frontier.stop();
+          const restored = [game.ae.ei, game.ae.h0, game.ae.clear, game.bD.gv.n4,
+            game.bD.gv.gw, game.af.qr, game.bi.ee];
+          if (!originals.every((f, i) => f === restored[i]) || game.shadow.active())
+            throw Error('Opt-in native hooks did not restore original functions');
           if (!start.ok || !report.telemetry || report.status.policyInfluence || report.status.error ||
             !report.telemetry.records.some(x => x.event === 'geometry_snapshot') ||
-            !report.telemetry.records.some(x => x.event === 'prediction' && x.frontier) ||
+            !report.telemetry.records.some(x => x.event === 'prediction' && x.predictions.frontier) ||
             !report.telemetry.records.some(x => x.event === 'prediction_scored' && x.predictions.frontier))
             throw Error('Shadow integration failed: ' + JSON.stringify(report));
           return { width: r.width, height: r.height, cells: r.owners.length, reconciledPlayers: r.counts.length,
             segments: g.meta.segmentCount, boundaryEdges: g.meta.boundaryEdges, extractionMs,
-            exactCombatCases: cases, scoredShadowPredictions: report.telemetry.scored, policyInfluence: false };
+            exactCombatCases: cases, restoredNativeFunctions: originals.length,
+            scoredShadowPredictions: report.telemetry.scored, policyInfluence: false };
         });
         console.log('Official ownership and combat shadow: PASS ' + JSON.stringify(frontier));
         const economics = await page.evaluate(() => {

@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const { environment } = require('../tools/cpu-benchmark.cjs');
 function setup() {
   const box = environment(); box.performance = { now: () => 0 };
-  for (const file of ['shared/config.js', 'content/engine-core-v2-advanced.js', 'content/frontier-model.js', 'content/source-adapter.js'])
+  for (const file of ['shared/config.js', 'content/engine-core-v2-advanced.js', 'content/frontier-model.js', 'content/frontier-episodes.js', 'content/source-adapter.js'])
     vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '..', file), 'utf8'), box);
   return { box, f: box.TIOFrontier, c: box.TIOEngineCoreV2 };
 }
