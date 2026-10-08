@@ -27,6 +27,13 @@ function launch(rec, f = front, s = state()) {
     observationTick: s.gameTick, sourceStateVersion: s.sourceStateVersion }, { ...s, metadata: {} });
 }
 const records = rec => rec.export().records;
+test('spatial-sized records obey both event and byte bounds and drain releases retained records', () => {
+  const { rec } = setup({ capacity: 16384, maxBytes: 65536 });
+  for (let i=0;i<100;i++) rec.add({ event:'spatial-sized-fixture',i,changes:Array.from({length:100},(_,j)=>[j,1,0]) });
+  const out=rec.export();assert.ok(out.bufferedByteBound<=65536);assert.ok(out.dropped>0);
+  rec.export(true);assert.equal(rec.bytes,0);assert.equal(rec.size,0);assert.ok(rec.records.every(x=>x===undefined));
+  assert.throws(()=>setup({maxBytes:1}),/byte capacity/);
+});
 test('four horizons use stable native front/episode IDs and exact provenance', () => {
   const { rec } = setup(); launch(rec); rec.observe(state(), snapshot, core);
   const p = records(rec).filter(r => r.event === 'prediction');

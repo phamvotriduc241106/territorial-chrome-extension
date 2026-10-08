@@ -1572,6 +1572,7 @@
   var _frontierLastScan = -Infinity, _frontierStatus = { enabled: false, policyInfluence: false };
   var _shadowNative = null, _shadowLastTick = -1, _shadowLastScanTick = -1;
   var _shadowGeometryIntervalMs = 500;
+  var _spatialEnabled = false, _spatialSnapshot = null;
   function syncMatchIdentity(g) {
     var token = g && g.ah && g.ah.h1 || g;
     if (token !== _matchToken || !_matchId) {
@@ -1581,6 +1582,7 @@
       if (_frontierStatus.enabled) {
         delete _frontierStatus.lastGeometry; _frontierLastScan = -Infinity;
         _shadowLastTick = -1; _shadowLastScanTick = -10;
+        _spatialSnapshot = null;
       }
     }
   }
@@ -1607,6 +1609,16 @@
     try {
       var state = getState(), geometry = null, metadata = { engineVersion: CFG.ENGINE_VERSION,
         updatedAt: CFG.ENGINE_UPDATED_AT };
+      if (_spatialEnabled && !_spatialSnapshot && state.ready && _shadowNative && _shadowNative.active()) {
+        const native = _shadowNative.spatialBegin();
+        if (!native) throw Error('spatial-baseline-unavailable');
+        _spatialSnapshot = window.TIOSpatial.baseline(native, { matchId: state.matchId,
+          spatialVersion: 0, sourceStateVersion: native.sourceStateVersion, gameTick: native.gameTick });
+        const baseline = window.TIOSpatial.serialize(_spatialSnapshot);
+        if (baseline.runs.length > 262144) throw Error('spatial-baseline-export-cap');
+        _frontierRecorder.add({ event: 'spatial_baseline', ...baseline });
+        _frontierStatus.spatial = { version: 0, cells: native.owners.length, reconciled: true };
+      }
       if (_shadowNative && _shadowNative.fault() && _frontierRecorder.commandCoverage)
         _frontierRecorder.gap(_shadowNative.fault());
       _shadowLastTick = state.gameTick;
@@ -1634,10 +1646,12 @@
     start: function (options) {
       options = options || {};
       if (!window.TIOFrontier || !window.TIOEpisodeTelemetry) return { ok: false, err: 'frontier-module-unavailable' };
+      if (options.spatial === true && !window.TIOSpatial) return { ok: false, err: 'spatial-module-unavailable' };
       if (!_frontierTimer) {
         try { _frontierRecorder = new window.TIOEpisodeTelemetry.Recorder(options); }
         catch (eOptions) { return { ok: false, err: String(eOptions.message || eOptions) }; }
         _frontierStatus = { enabled: true, policyInfluence: false };
+        _spatialEnabled = options.spatial === true; _spatialSnapshot = null;
         _frontierLastScan = -Infinity; _shadowLastTick = -1; _shadowLastScanTick = -10;
         _shadowGeometryIntervalMs = Number.isFinite(options.geometryIntervalMs)
           ? Math.max(0, Math.min(10000, options.geometryIntervalMs)) : 500;
@@ -1653,13 +1667,18 @@
             // Update identity without reading a half-initialized full state.
             syncMatchIdentity(game);
             if (event.event === 'native_tick') { sampleFrontier(); return; }
+            if (_spatialEnabled && event.event === 'native_spatial_delta') {
+              if (!_spatialSnapshot) throw Error('spatial-delta-without-baseline');
+              _spatialSnapshot = window.TIOSpatial.advance(_spatialSnapshot, { ...event, matchId: _matchId }, event.territories);
+              _frontierStatus.spatial = { version: _spatialSnapshot.spatialVersion, cells: _spatialSnapshot.cells, reconciled: true };
+            }
             var geometry = _frontierStatus.lastGeometry;
             _frontierRecorder.native(event, { matchId: _matchId, stateVersion: _observationVersion,
               gameTick: event.gameTick, player: myPlayer(), sourceStateVersion: event.sourceStateVersion,
               contract: game.contract, metadata: { engineVersion: CFG.ENGINE_VERSION, updatedAt: CFG.ENGINE_UPDATED_AT },
               geometryVersion: geometry ? geometry.geometryVersion : null,
               geometryTick: geometry ? geometry.gameTick : null });
-          });
+          }, { spatial: options.spatial === true });
           _frontierRecorder.commandCoverage = installed.ok;
           _frontierStatus.nativeEvents = installed;
         }
@@ -1672,7 +1691,7 @@
       if (_frontierRecorder) _frontierRecorder.add({ event: 'recording_end', matchId: _matchId,
         gameTick: getGameTick(), reason: 'recording-stopped' });
       if (_shadowNative) _shadowNative.stop(); _shadowNative = null;
-      _frontierTimer = null; _frontierStatus.enabled = false; return this.report(); },
+      _frontierTimer = null; _frontierStatus.enabled = false; _spatialSnapshot = null; _spatialEnabled = false; return this.report(); },
     report: function () { return { status: { ..._frontierStatus },
       telemetry: _frontierRecorder ? _frontierRecorder.export() : null }; },
     drain: function () { return { status: { ..._frontierStatus },

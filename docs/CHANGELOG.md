@@ -1,5 +1,25 @@
 # Changelog
 
+## 10.3.3 — 2026-10-07 20:39:28 EDT
+
+- Production V2.8.2 policy is unchanged. All 80 decision/spend fingerprints remain
+  identical; dynamic frontier is a research-only module, not a manifest dependency.
+- Added immutable ownership pages, exact source-attributed capture deltas,
+  per-update territory reconciliation, stale/partial rejection and byte/event caps.
+  Native spatial/debit/credit hooks are opt-in and reversible.
+- Passed hostile spatial reconstruction and ordered-cell attribution before
+  implementing dynamic transitions; additionally matched 252 original native
+  normal/reinforced/support cases.
+- Completed a 24-match native Very Hard cohort: 16 development matches with four
+  match-grouped validation folds, followed by eight untouched final matches after
+  freezing the candidate. Reports retain censored/unsupported cases, identical
+  metric support, episode coverage and match-clustered confidence intervals.
+- Profiled local system Chrome on Apple M4, including rollout tails, throughput,
+  contact extraction, observed JS heap and native instrumentation CPU burden.
+- Preserved calibration assumptions, negative/unsupported observations and
+  sampling limitations. No win-rate or policy-promotion claim. No Workers, WASM,
+  WebGPU, tree-search activation or frontier-driven MPC/UCB commands.
+
 ## 10.3.2 — 2026-10-07 10:19:32 EDT
 
 - Engine V2.8.2: action-conditioned frontier telemetry, still opt-in and shadow-only. Production decisions, spending, permissions and tree-search settings are unchanged.

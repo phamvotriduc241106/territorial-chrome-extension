@@ -59,6 +59,7 @@ const server = http.createServer((request, response) => {
       const bootstrap = ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
         'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js', 'content/frontier-model.js',
         'content/frontier-episodes.js',
+        'content/frontier-spatial.js', 'content/frontier-dynamic.js',
         'content/preloader.js', 'content/main-hook.js'].map(read);
       // Test-only access to the ORIGINAL native gr/hR/hQ routines. This hook is
       // never packaged. It restores mutable globals/arrays/functions in finally.
@@ -155,8 +156,9 @@ const server = http.createServer((request, response) => {
           }
           if (api.frontier.report().status.enabled) throw Error('Shadow mode must default off');
           const originals = [game.ae.ei, game.ae.h0, game.ae.clear, game.bD.gv.n4,
-            game.bD.gv.gw, game.af.qr, game.bi.ee];
-          const start = api.frontier.start();
+            game.bD.gv.gw, game.af.qr, game.bi.ee, game.ad.h4, game.ad.zu, game.ad.k6,
+            game.ad.a0G, game.ad.aJi, game.af.ee, game.bD.gv.m6, game.bD.gv.gy, game.ap.jf.k2];
+          const start = api.frontier.start({spatial:true,maxBytes:33554432});
           // Exercise the actual timer -> exact-tick paired label path, not only
           // synchronous start/stop. No extra attacks or online matches.
           const deadline = performance.now() + 5000;
@@ -165,7 +167,8 @@ const server = http.createServer((request, response) => {
             await new Promise(resolve => setTimeout(resolve, 50));
           const report = api.frontier.stop();
           const restored = [game.ae.ei, game.ae.h0, game.ae.clear, game.bD.gv.n4,
-            game.bD.gv.gw, game.af.qr, game.bi.ee];
+            game.bD.gv.gw, game.af.qr, game.bi.ee, game.ad.h4, game.ad.zu, game.ad.k6,
+            game.ad.a0G, game.ad.aJi, game.af.ee, game.bD.gv.m6, game.bD.gv.gy, game.ap.jf.k2];
           if (!originals.every((f, i) => f === restored[i]) || game.shadow.active())
             throw Error('Opt-in native hooks did not restore original functions');
           if (!start.ok || !report.telemetry || report.status.policyInfluence || report.status.error ||
@@ -173,6 +176,8 @@ const server = http.createServer((request, response) => {
             !report.telemetry.records.some(x => x.event === 'prediction' && x.predictions.frontier) ||
             !report.telemetry.records.some(x => x.event === 'prediction_scored' && x.predictions.frontier))
             throw Error('Shadow integration failed: ' + JSON.stringify(report));
+          if(!report.status.spatial?.reconciled||!report.telemetry.records.some(x=>x.event==='spatial_baseline')||report.telemetry.dropped)
+            throw Error('Integrated spatial baseline/replay unavailable');
           return { width: r.width, height: r.height, cells: r.owners.length, reconciledPlayers: r.counts.length,
             segments: g.meta.segmentCount, boundaryEdges: g.meta.boundaryEdges, extractionMs,
             exactCombatCases: cases, restoredNativeFunctions: originals.length,
