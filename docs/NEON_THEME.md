@@ -1,8 +1,8 @@
 # Neon synthwave theme — v10.3.5
 
 Update stamp: **2026-10-08 13:18:01 EDT**. Production: **V2.8.2**, unchanged.
-Local branch: `codex/neon-synthwave-theme`, based on `d0b701e` (UI PR #2).
-This theme has not been pushed, merged or validated by a new GitHub CI run.
+Pushed branch: `codex/neon-synthwave-theme`, based on `d0b701e` (UI PR #2).
+This is an isolated, unmerged theme changeset; production policy is unchanged.
 
 ## Reference and implementation
 
@@ -86,14 +86,31 @@ Static glows/scanlines have no pulses, transitions or animation loops. Reduced
 motion, visible keyboard focus and text state labels remain enforced. Automated
 axe checks do not establish full accessibility or a 9/10 usability score.
 
-## Before a future push
+## Linux capture and review
 
-The prior Linux baselines still document v10.3.4. They are intentionally
-preserved, **not silently approved for this new theme**. Ordinary Linux visual
-CI will reject them until a Linux candidate capture is reviewed and replaced.
-No new remote CI success is claimed. Run explicit candidate capture after a
-future authorized push, inspect all 13 images, approve Linux baselines, then
-rerun ordinary comparison CI at the unchanged 0.5% threshold.
+[Candidate-only CI run 37817795983](https://github.com/phamvotriduc241106/territorial-chrome-extension/actions/runs/37817795983)
+passed on exact theme head `0b6597c3b9b07c2634570563ae9519cfda4f3990`.
+Linux Chromium 153.0.8010.12 produced 13 screenshots with 103 nonvisual
+assertions, 17 axe scans and zero critical/serious findings. Browser regression,
+UI-state, production regression and packaging steps also passed.
+
+All 13 candidate images were individually visually inspected before replacing
+the prior Linux baselines. Actual packaged fonts, complete status messages,
+advanced settings, save-error/retry and compact/detailed/hidden HUD layouts were
+reviewed. No comparison threshold was loosened: ordinary CI retains the 0.5%
+changed-pixel limit. Linux candidates and macOS baselines remain platform-specific.
+The initial push run 37817796971 correctly rejected the obsolete v10.3.4 image
+height (923 vs 800 px), rather than silently accepting a new theme.
+
+Reproduce candidate capture without approving anything:
+
+```sh
+gh workflow run ci.yml --ref codex/neon-synthwave-theme -f capture_ui_candidates=true
+gh run download 37817795983 --dir scratch/ui-roadmap/ci-theme-capture-37817795983
+```
+
+Ordinary push/PR comparison CI is the final gate after baseline approval; the
+candidate-only run is not claimed as a passing visual comparison.
 
 Local reproduction:
 
