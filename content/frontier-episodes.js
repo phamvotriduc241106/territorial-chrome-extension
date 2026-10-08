@@ -27,14 +27,24 @@
       this.sessionId = root.crypto && root.crypto.randomUUID ? root.crypto.randomUUID()
         : 'session-' + Date.now() + '-' + (++sessions);
       this.records = new Array(this.capacity); this.cursor = 0; this.size = 0; this.sequence = 0;
+      if (options.maxBytes != null && (!Number.isSafeInteger(options.maxBytes) || options.maxBytes < 65536 || options.maxBytes > 33554432))
+        throw Error('Invalid shadow byte capacity');
+      this.maxBytes = options.maxBytes || 8388608; this.bytes = 0; this.recordBytes = new Array(this.capacity).fill(0);
       this.episodes = new Map(); this.pending = []; this.matchId = null; this.lastTick = -1;
       this.commandCoverage = false; this.scored = 0; this.skipped = 0; this.dropped = 0;
       this.matchEnded = false; this.matchActive = false;
     }
     add(record) {
       const entry = { ...record, eventId: this.sessionId + ':' + (++this.sequence) };
-      if (this.size === this.capacity) this.dropped++;
+      const bytes = JSON.stringify(entry).length * 3; // Conservative UTF-8 export bound; not a JS heap estimate.
+      if (bytes > this.maxBytes) { this.dropped++; this.commandCoverage = false; return entry.eventId; }
+      while (this.size && (this.size === this.capacity || this.bytes + bytes > this.maxBytes)) {
+        const oldest = (this.cursor - this.size + this.capacity) % this.capacity;
+        this.bytes -= this.recordBytes[oldest]; this.records[oldest] = undefined; this.recordBytes[oldest] = 0;
+        this.size--; this.dropped++;
+      }
       this.records[this.cursor] = entry; this.cursor = (this.cursor + 1) % this.capacity;
+      this.recordBytes[(this.cursor - 1 + this.capacity) % this.capacity] = bytes; this.bytes += bytes;
       this.size = Math.min(this.capacity, this.size + 1); return entry.eventId;
     }
     match(state, metadata = {}) {
@@ -104,6 +114,8 @@
         }
         if (ep) { ep.commands.push(id); if (ep.commands.length > 256) ep.commands.shift(); }
         this.invalidate(record, 'future-action', [event.actor, event.target].filter(a => typeof a === 'number'));
+      } else if (event.event === 'native_external_credit') {
+        this.invalidate(record, 'unmodeled-external-credit', [event.actor]);
       } else if (event.event === 'native_reinforcement') {
         if (ep) { ep.reinforcementObserved = true; ep.reinforcementCount++; }
         this.invalidate(record, 'unmodeled-reinforcement', [event.actor]);
@@ -266,8 +278,8 @@
       for (let i = 0; i < this.size; i++) records.push(this.records[(this.cursor - this.size + i + this.capacity) % this.capacity]);
       const result = copy({ schema: 2, sessionId: this.sessionId, policyInfluence: false, capacity: this.capacity,
         commandCoverage: this.commandCoverage, horizons: this.horizons, scored: this.scored,
-        skipped: this.skipped, dropped: this.dropped, records });
-      if (drain) { this.size = 0; this.cursor = 0; } return result;
+        skipped: this.skipped, dropped: this.dropped, bufferedByteBound: this.bytes, maxBytes: this.maxBytes, records });
+      if (drain) { this.size = 0; this.cursor = 0; this.bytes = 0; this.records.fill(undefined); this.recordBytes.fill(0); } return result;
     }
   }
   root.TIOEpisodeTelemetry = Object.freeze({ Recorder: EpisodeRecorder, effect });

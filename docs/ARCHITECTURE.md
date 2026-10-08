@@ -30,3 +30,21 @@ Experimental tree search is disabled by default and has no call path from decide
 V2.8.2 loads MAIN-only `content/frontier-model.js` and `content/frontier-episodes.js` after the source adapter and before the hook. Explicit recording installs reversible native land-admission/debit/transfer/batch/reinforcement/return/clear/tick instrumentation. The episode recorder keeps logical native front IDs across force changes, observes exact ticks, conditions on current forces and censors later unmodeled disturbances. Geometry is reconciled at the origin and discarded after compact contact extraction; no raster is exported. Event-serial source versions, whole-observation versions and geometry versions are distinct.
 
 The bridge exposes `frontier-start/stop/report/drain`; the isolated actuator exposes `frontierShadow(command, options)`. None is called by normal autoplay. `tools/frontier-report.cjs`, `frontier-fit.cjs` and `frontier-record.cjs` are offline research tools and are not packaged. Parameter files have no runtime importer. No Workers, shared memory, WASM, WebGPU or tree-search activation are introduced. See FRONTIER_MODEL.md and FRONTIER_CALIBRATION.md.
+
+The new shadow research phase adds MAIN-only `frontier-spatial.js`. Its ownership
+versions expose no mutable buffers: 256-cell pages are shared until a sparse
+update touches them. `frontier.start({spatial:true})` records one reconciled RLE
+baseline and source-attributed deltas, with a bounded byte/event ring. Extra bank,
+cell/naval-debit and non-income credit hooks exist only in this explicit mode.
+
+`frontier-dynamic.js` is an independently loadable **research-only** transition.
+It is intentionally absent from the manifest and runtime package. It evolves
+native ordered frontier queues and uses a bounded sparse overlay, source combat
+arithmetic, source timer phase, reinforcement debt and capped refunds. The phase
+reader is a read-only, signature-checked addition in the local research harness,
+not a packaged source export. No production planner can select this candidate.
+
+The `frontier-study-*` tools separate spatial acceptance, development recording,
+grouped calibration, frozen held-out scoring, Chrome profiling and derived report
+publication. Raw match traces and source stay under ignored `scratch/`; the
+reviewable derived statistics and SHA-256 manifest are under `docs/frontier/`.

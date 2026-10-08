@@ -1,8 +1,53 @@
 # Frontier observability and shadow baseline
 
-Release 10.3.2 / engine V2.8.2. Updated 2026-10-07 10:19:32 EDT.
+Release 10.3.3 / production engine V2.8.2. Updated 2026-10-07 20:39:28 EDT.
 
-This implements action-conditioned observation/geometry/shadow telemetry, not a completed calibrated frontier engine. It is **disabled by default**, local only and never changes production policy or spending safety. Tree search remains disabled. Recorded estimates are offline diagnostics and are not automatically applied.
+Production remains V2.8.2. The static shadow and the new, separately loadable
+dynamic research candidate are **disabled by default**, local only and never
+change production policy or spending safety. Tree search remains disabled.
+Recorded estimates are offline diagnostics and are not automatically applied.
+
+## Immutable spatial recording and dynamic research
+
+Use `frontier.start({spatial:true,capacity:16384,maxBytes:33554432})` to additionally
+record exact cell ownership. The first reconciled snapshot is exported as
+`spatial_baseline` with `owner-rle-v1` encoding. Subsequent
+`native_spatial_delta` records carry base/new spatial versions, match and source
+versions, raw and observation ticks, `[index,oldOwner,newOwner]` changes and native
+territories. Combat changes have actor, target and stable native front IDs;
+outside-combat changes are explicitly unsupported, not assigned to a fictitious
+attack. `native_batch` carries exact candidate indices and ordered source frontier
+cells. Reinforcement, return, external credit and debit events retain source
+states and their own provenance. Never infer conquest from front disappearance.
+
+Snapshots hide their buffers in a WeakMap. Sparse replay copies only touched
+256-cell pages and reconciles every native player count before publishing a new
+immutable version. Match/version/old-owner/count mismatches fail closed. Maximum
+grid size is 4,194,304 cells; a delta has at most 32,768 writes and a rollout overlay
+at most 32,768 changed cells by default. The main baseline export rejects more
+than 262,144 RLE integers. The recording ring has a default 8 MiB conservative
+serialized-byte bound (64 KiB–32 MiB configurable), independent of its event cap.
+This byte bound is not a JS heap guarantee. Export/drop counts must be checked.
+
+Only explicit spatial recording adds five reversible native ownership-writer
+hooks and the additional debit/credit hooks. Source routine signatures are
+verified first. Sink failures do not escape into native game code; instead they
+invalidate telemetry. `stop()` restores wrappers and releases current snapshots.
+No complete grids are exported each tick; full audits are controlled diagnostics.
+
+The dynamic model is **not packaged**. Load `content/frontier-dynamic.js` with the
+spatial/core modules for offline research. `simulate(origin,snapshot,horizon)`
+uses observed queue order, the 2048-cell source selection limit and native timer
+phase, updates contact after each capture, prunes interior/lost queue cells in
+native swap order and simulates exact support/debt and land return caps. The
+research harness alone exposes the private scheduler phase through a verified
+read-only source splice. Missing phase, stale state, unmodeled elimination or
+overlay overflow rejects the candidate rather than falling back invisibly.
+
+All three transitions remain independent: aggregate V2.8, static V2.8.2 and
+dynamic shadow. See [protocol](frontier/RESEARCH_PROTOCOL.md) and the dynamic
+validation report for the 16-development/8-frozen split, category coverage,
+match-clustered uncertainty, conditional ETA and runtime limits.
 
 ## Record a local single-player session
 
@@ -33,7 +78,7 @@ Complete means recording began at tick 0, the competition became active, a termi
 
 Only modern-v3 has the verified ownership decoder: native offset `4*cell`, `ad.h9/fR/fQ`, dimensions `bV.fk/fl`. Owner IDs remain per player; neutral is `aE.fW`; non-land terrain is 65535. Every owner count must equal native `ah.hN` or extraction fails. Maximum raster is 4,194,304 cells. No image-color inference is substituted on failure.
 
-The raster is temporary and is never embedded in planning states or exported. Four-neighbor contacts are extracted only around our player. Maximal straight runs split on owner/orientation changes or every 32 edges. The snapshot has compact typed owner/length/centroid/normal/ID and CSR graph arrays. Candidate target cells are deduplicated separately from boundary length: a corner can touch one target cell on two edges. Maximum 512 segments; overflow rejects the whole geometry rather than omitting contacts. Water, diagonal contact and absent owner pairs cannot invent adjacency. This is not yet adaptive curvature, depth or chokepoint inference. IDs persist for unchanged exact runs, not after split/merge.
+The static-frontier extraction raster is temporary and is never embedded in production planning states. The separately opt-in spatial recorder above exports one bounded baseline and sparse deltas, not a raster every tick. Four-neighbor contacts in the static baseline are extracted only around our player. Maximal straight runs split on owner/orientation changes or every 32 edges. The snapshot has compact typed owner/length/centroid/normal/ID and CSR graph arrays. Candidate target cells are deduplicated separately from boundary length: a corner can touch one target cell on two edges. Maximum 512 segments; overflow rejects the whole geometry rather than omitting contacts. Water, diagonal contact and absent owner pairs cannot invent adjacency. This is not yet adaptive curvature, depth or chokepoint inference. IDs persist for unchanged exact runs, not after split/merge.
 
 Snapshot provenance includes `(matchId, stateVersion, sourceStateVersion, gameTick, geometryVersion)`. `stateVersion` is the whole-observation counter; `sourceStateVersion` is our monotonic native-event serial, not a counter supplied by the game. `gameTick` is the native raw clock. During-tick events also carry `observationTick = gameTick + 1`; between-tick events use the current tick. End-of-tick observations have exact due ticks. Native `ah.h1` replacement identifies a new match. Session/match IDs are local random IDs, not account/browser identifiers. Logical attack/front IDs come from native actor-target admission lifetimes; re-launch receives a new ID. Geometry segment IDs are separate and do not persist through split/merge. Pure rollouts reject mismatched geometry; mutable native objects never reach search.
 
@@ -52,7 +97,7 @@ capture C cells only if offered > captureCost
 
 Normal batches with `forcePerCell <= g` cannot advance. Neutral batches consume `C*g`. Hostile losses absorb incoming counterforce first, then debit the defender bank using native integer arithmetic. This matches the original native routines in 292 controlled cases. Native reinforced batches can draw additional bank support and are **not** represented by this normal-batch kernel. The source exports their reinforcement flag in outgoing observations.
 
-The experimental model still uses initial target-contact counts and a territory-dependent estimated cadence (4/3/2/1 ticks). Recorded native data support those median cadences but do not resolve private timer phase, fresh-launch delays, selection limits, geometry evolution or huge-empire updates. Reinforcements and refunds are observed, not yet simulated; affected intervals are censored. Lost/stopped experimental attack mass is discarded, not refunded. Captures are incremental and conserve hostile territory exactly. Neither an ETA distribution nor a calibrated Lanchester law is claimed.
+The existing **static** model still uses initial target-contact counts and a territory-dependent estimated cadence (4/3/2/1 ticks). Its timer phase, fresh-launch delays, cell selection, geometry evolution and huge-empire updates remain estimates. Reinforcements and refunds are observed, not simulated in that baseline; affected intervals in the schema2 live recorder are censored. Lost/stopped static attack mass is discarded, not refunded. Captures are incremental and conserve hostile territory. These limitations do not describe the separate dynamic candidate above. Neither model claims a trained opponent policy or a probabilistic ETA distribution.
 
 The synchronous API remains `transitionPlanningState(state, action, ticks)`. Only explicit `frontierExperiment: true` with compatible geometry chooses the experimental branch, labelled `native-cost-static-frontier-shadow`. All ordinary callers remain `aggregate-combat-estimate`. Commands and economy use the shared V2.8 arithmetic once; zero/negative time still applies one command without stepping time.
 

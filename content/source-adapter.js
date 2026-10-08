@@ -144,6 +144,15 @@
   // No wrappers exist while diagnostics are off. Sink failures cannot reach game.
   function nativeShadowTelemetry() {
     var sink = null, undos = [], ids = new Map(), sequence = 0, version = 0, token = null, context = null, stepping = false, fault = null;
+    var spatialEnabled = false, spatialVersion = 0, outsideChanges = [], spatialReady = false, incomePhase = false, observationReady = false;
+    function owner(offset) { return ad.h9(offset) ? ad.fR(offset) : ad.fQ(offset) ? aE.fW : 65535; }
+    function spatialFlush(changes, attribution) {
+      if (!spatialReady || !changes.length) return;
+      if (changes.length > 32768) { fault = 'spatial-delta-cap'; spatialReady = false; return; }
+      emit(Object.assign({ event: 'native_spatial_delta', baseVersion: spatialVersion,
+        spatialVersion: ++spatialVersion, changes: changes,
+        territories: Array.from(ah.hN) }, attribution));
+    }
     function refresh() { if (token !== ah.h1) { token = ah.h1; ids.clear(); } }
     function key(p, t) { return p + ':' + t; }
     function id(p, t) { refresh(); var k = key(p, t); if (!ids.has(k)) ids.set(k, ++sequence); return ids.get(k); }
@@ -172,8 +181,26 @@
       version: function () { return version; }, active: function () { return !!sink; }, fronts: fronts,
       fault: function () { return fault; },
       playerState: player,
-      stop: function () { sink = null; for (var i = undos.length - 1; i >= 0; i--) undos[i](); undos = []; ids.clear(); },
-      install: function (callback) {
+      spatialState: function () {
+        if (!sink || !spatialEnabled || (stepping && !observationReady) || !ah.hN || !ah.h1) return null;
+        var n = bV.fk * bV.fl;
+        if (!Number.isSafeInteger(n) || n < 1 || n > 4194304) return null;
+        var owners = new Uint16Array(n), counts = new Uint32Array(aE.fW);
+        for (var i = 0; i < n; i++) { var o = owner(i * 4); owners[i] = o; if (o < aE.fW) counts[o]++; }
+        for (var p = 0; p < aE.fW; p++) if (counts[p] !== ah.hN[p]) return null;
+        return { width: bV.fk, height: bV.fl, neutralId: aE.fW, owners: owners, counts: counts,
+          spatialVersion: spatialVersion, sourceStateVersion: version, gameTick: bi.kr(),
+          frontierQueues: ah.h1.map(function (q) { return q ? Array.from(q, function (f) { return f / 4; }) : []; }),
+          offsets: Array.from(ad.fb, function (f) { return f / 4; }) };
+      },
+      spatialBegin: function () {
+        refresh();
+        var s = this.spatialState(); if (!s) return null;
+        spatialVersion = 0; outsideChanges = []; spatialReady = true; s.spatialVersion = 0; return s;
+      },
+      stop: function () { sink = null; spatialReady = false; spatialEnabled = false; outsideChanges = [];
+        for (var i = undos.length - 1; i >= 0; i--) undos[i](); undos = []; ids.clear(); },
+      install: function (callback, options) {
         if (sink) return { ok: false, err: 'shadow-already-installed' };
         if (typeof n8 !== 'function' || typeof gh !== 'function' || typeof gp !== 'function' || typeof bi === 'undefined' ||
           !bi || typeof bi.ee !== 'function' || typeof ae.ei !== 'function' ||
@@ -189,8 +216,53 @@
           !returnSource.includes('bD.gv.gy(gQ,gR)') || !returnSource.includes('ae.h0(gQ,gP)') ||
           !tickSource.includes('aG.ee()') || !tickSource.includes('bi.ee()'))
           return { ok: false, err: 'native-event-signature-unverified' };
+        spatialEnabled = !!(options && options.spatial);
+        if (spatialEnabled && (!ad || !['h4', 'zu', 'k6', 'a0G', 'aJi'].every(function (k) { return typeof ad[k] === 'function'; }) ||
+          !Function.prototype.toString.call(ad.h4).includes('aJE') ||
+          !Function.prototype.toString.call(ad.zu).includes('aJA') ||
+          !Function.prototype.toString.call(ad.k6).includes('aJH') ||
+          !Function.prototype.toString.call(ad.a0G).includes('aJh') ||
+          !Function.prototype.toString.call(ad.aJi).includes('aJh')))
+          return { ok: false, err: 'native-spatial-signature-unverified' };
+        if (spatialEnabled && (typeof af.ee !== 'function' || typeof bD.gv.m6 !== 'function' || typeof bD.gv.gy !== 'function' ||
+          !ap.jf || typeof ap.jf.k2 !== 'function' || !Function.prototype.toString.call(bD.gv.m6).includes('a5p') ||
+          !Function.prototype.toString.call(bD.gv.gy).includes('a5i') || !Function.prototype.toString.call(ap.jf.k2).includes('12*ah.hb[player]')))
+          return { ok: false, err: 'native-command-signature-unverified' };
         sink = callback; token = ah.h1; version = 0; context = null; fault = null;
+        spatialReady = false; spatialVersion = 0; outsideChanges = [];
         try {
+          if (spatialEnabled) {
+            wrap(af, 'ee', function (original) { return function () { var previous = incomePhase; incomePhase = true;
+              try { return original.apply(this, arguments); } finally { incomePhase = previous; } }; });
+            wrap(bD.gv, 'm6', function (original) { return function (actor, code) {
+              var before = player(actor), sent = original.apply(this, arguments);
+              emit({ event: 'native_command', kind: 'naval-or-cell-command-debit', actor: actor,
+                ratioCode: code, sent: sent, tax: bR.g6[1], actorBefore: before, actorAfter: player(actor) }); return sent;
+            }; });
+            wrap(ap.jf, 'k2', function (original) { return function (actor, target) {
+              var before = player(actor), result = original.apply(this, arguments);
+              emit({ event: 'native_command', kind: 'bot-bank-debit', actor: actor,
+                target: target === aE.fW ? 'neutral' : target, actorBefore: before, actorAfter: player(actor),
+                debit: before.balance - player(actor).balance }); return result;
+            }; });
+            wrap(bD.gv, 'gy', function (original) { return function (actor, requested) {
+              var before = player(actor), accepted = original.apply(this, arguments);
+              if (!incomePhase && !(context && context.returning)) emit({ event: 'native_external_credit',
+                actor: actor, requested: requested, accepted: accepted, actorBefore: before, actorAfter: player(actor),
+                cause: 'outside-land-return-and-income' }); return accepted;
+            }; });
+          }
+          if (spatialEnabled) ['h4', 'zu', 'k6', 'a0G', 'aJi'].forEach(function (name) {
+            wrap(ad, name, function (original) { return function (offset) {
+              var valid = spatialReady && Number.isInteger(offset) && offset >= 0 && offset % 4 === 0 && offset / 4 < bV.fk * bV.fl;
+              var before = valid ? owner(offset) : null, result = original.apply(this, arguments);
+              if (valid) { var after = owner(offset); if (before !== after) {
+                var list = context ? context.changes : outsideChanges;
+                if (list.length >= 32768) { fault = 'spatial-delta-cap'; spatialReady = false; }
+                else list.push([offset / 4, before, after]);
+              } } return result;
+            }; });
+          });
           wrap(ae, 'ei', function (original) { return function (actor, force, target) {
             var existed = ae.kF(actor, target), before = player(actor);
             var result = original.apply(this, arguments);
@@ -245,25 +317,38 @@
             var actor = gQ, target = ae.gl(gQ, gP), previous = context;
             var before = { actor: player(actor), target: player(target), force: ae.gm(actor, gP),
               reinforced: !!ae.gn(actor, gP), counterforce: target < aE.fW ? ae.hc(target, actor) : 0 };
-            var front = id(actor, target); context = { nativeFrontId: front, target: target === aE.fW ? 'neutral' : target };
+            var front = id(actor, target);
+            if (spatialReady && outsideChanges.length) { spatialFlush(outsideChanges, { cause: 'outside-combat' }); outsideChanges = []; }
+            context = { nativeFrontId: front, target: target === aE.fW ? 'neutral' : target, changes: [] };
+            var selected = spatialReady ? Array.from(gZ.subarray(0, gY), function (f) { return f / 4; }) : null;
             try { return oldGH.apply(this, arguments); }
             finally {
               var after = { actor: player(actor), target: player(target), force: ae.hc(actor, target),
                 counterforce: target < aE.fW ? ae.hc(target, actor) : 0 };
+              if (spatialReady) spatialFlush(context.changes, { cause: 'combat', actor: actor,
+                target: target === aE.fW ? 'neutral' : target, nativeFrontId: front });
               emit({ event: 'native_batch', nativeFrontId: front, actor: actor,
                 target: target === aE.fW ? 'neutral' : target, candidateCells: gV, cellCost: aE.gt,
                 returned: !!context.returning,
                 before: before, after: after, reinforced: before.reinforced,
-                territoryDelta: after.actor.territory - before.actor.territory }); context = previous;
+                territoryDelta: after.actor.territory - before.actor.territory,
+                spatialVersion: spatialReady ? spatialVersion : null,
+                selectedFrontier: selected,
+                candidateIndices: spatialReady ? Array.from(gX.subarray(0, gV), function (f) { return f / 4; }) : null,
+                changedCells: spatialReady ? context.changes : null }); context = previous;
             }
           }; gh = newGH; undos.push(function () { if (gh === newGH) gh = oldGH; });
           var oldTick = n8, newTick = function () { var previous = stepping;
-            if (token !== ah.h1) { refresh(); emit({ event: 'native_match_start', phase: 'before-tick', observationTick: bi.kr() }); }
+            if (token !== ah.h1) { refresh(); spatialReady = false; outsideChanges = [];
+              emit({ event: 'native_match_start', phase: 'before-tick', observationTick: bi.kr() }); }
             stepping = true;
             try { return oldTick.apply(this, arguments); } finally { stepping = previous; } };
           n8 = newTick; undos.push(function () { if (n8 === newTick) n8 = oldTick; });
           wrap(bi, 'ee', function (original) { return function () { var result = original.apply(this, arguments);
-            emit({ event: 'native_tick', phase: 'after-tick', observationTick: bi.kr() }); return result; }; });
+            if (spatialReady && outsideChanges.length) { spatialFlush(outsideChanges, { cause: 'outside-combat' }); outsideChanges = []; }
+            observationReady = true;
+            try { emit({ event: 'native_tick', phase: 'after-tick', observationTick: bi.kr() }); }
+            finally { observationReady = false; } return result; }; });
         } catch (error) { this.stop(); return { ok: false, err: String(error) }; }
         return { ok: true, coverage: 'native land admissions, debits, batches, reinforcements, returns, clears, exact end ticks' };
       }

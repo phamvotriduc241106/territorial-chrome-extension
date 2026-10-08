@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "10.3.2",
-  "description": "V2.8.2 Territorial.io engine; native commands, source-aligned planning. Updated 2026-10-07 10:19:32 EDT.",
+  "version": "10.3.3",
+  "description": "V2.8.2 production policy unchanged; opt-in spatial telemetry and shadow-only research. Updated 2026-10-07 20:39:28 EDT.",
   "permissions": [
     "storage"
   ],
@@ -39,6 +39,7 @@
         "content/engine-adapter.js",
         "content/source-adapter.js",
         "content/frontier-model.js",
+        "content/frontier-spatial.js",
         "content/frontier-episodes.js",
         "content/preloader.js",
         "content/main-hook.js"
