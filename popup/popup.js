@@ -410,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   } catch (_) {}
   text("version-label", config.buildVersionLabel());
+  text("theme-updated", config.ENGINE_UPDATED_AT);
   text("version-details", config.buildEngineDetails());
   renderSettings();
   void load();

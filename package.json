@@ -1,6 +1,6 @@
 {
   "name": "territorial-chrome-extension",
-  "version": "10.3.4",
+  "version": "10.3.5",
   "private": true,
   "description": "Territorial.io Manifest V3 extension and reproducible validation tools",
   "engines": {
@@ -23,7 +23,6 @@
     "package": "npm run check && node tools/package-extension.cjs"
   },
   "devDependencies": {
-    "@fontsource/inter": "5.3.0",
     "axe-core": "4.14.0",
     "pixelmatch": "8.0.0",
     "playwright": "1.63.0",

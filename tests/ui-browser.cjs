@@ -175,9 +175,6 @@ const states = {
   "user-hold": { ...baseStatus, blockReason: "user-hold" },
 };
 async function deterministicFont(page, base) {
-  await page.addStyleTag({
-    content: `@font-face{font-family:UIFixture;src:url('${base}/node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2')}@font-face{font-family:UIFixture;src:url('${base}/node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2');font-weight:600}@font-face{font-family:UIFixture;src:url('${base}/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2');font-weight:700}:root{--tio-font:UIFixture,sans-serif}`,
-  });
   await page.evaluate(() => document.fonts.ready);
 }
 async function visual(name, page) {
@@ -293,6 +290,27 @@ async function popupChecks(context, base) {
     () => !document.querySelector(".strategy-btn").disabled,
   );
   await deterministicFont(page, base);
+  check(
+    await page.evaluate(() =>
+      ["Commander Pixel", "Commander Mono"].every((name) =>
+        [...document.fonts].some(
+          (font) => font.family === name && font.status === "loaded",
+        ),
+      ),
+    ),
+    "Both actual packaged synthwave fonts are loaded",
+  );
+  check(
+    await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector("h1")).color ===
+          "rgb(253, 52, 229)" &&
+        getComputedStyle(document.querySelector("h1")).fontFamily.includes(
+          "Commander Pixel",
+        ),
+    ),
+    "Reference theme uses magenta pixel headings, without a test font override",
+  );
   for (const key of Object.keys(states)) {
     await setState(page, key);
     await visual("popup-" + key, page);
@@ -856,7 +874,7 @@ async function hudChecks(context, base) {
   check(stats.hudRender.p95Ms < 16, "HUD P95 render budget 16 ms");
   await page.close();
 }
-async function extensionSmoke() {
+async function extensionSmoke(base) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "tio-ui-profile-"));
   const context = await chromium.launchPersistentContext(profile, {
     channel: "chromium",
@@ -885,6 +903,17 @@ async function extensionSmoke() {
     );
     const page = await context.newPage();
     await page.goto("chrome-extension://" + id + "/popup/popup.html");
+    await page.evaluate(() => document.fonts.ready);
+    check(
+      await page.evaluate(() =>
+        ["Commander Pixel", "Commander Mono"].every((name) =>
+          [...document.fonts].some(
+            (font) => font.family === name && font.status === "loaded",
+          ),
+        ),
+      ),
+      "Real MV3 CSP loads both packaged fonts without remote assets",
+    );
     await page.waitForFunction(
       () =>
         document.querySelector("#enabled-label").textContent ===
@@ -932,6 +961,25 @@ async function extensionSmoke() {
         fullPage: true,
       });
     await axe(page);
+    const fontPage = await context.newPage();
+    await fontPage.goto(base + "/tests/ui-fixture.html");
+    const crossOriginFonts = await fontPage.evaluate(async (extensionId) => {
+      const loaded = [];
+      for (const name of ["vt323", "share-tech-mono"]) {
+        const font = new FontFace(
+          "TIOCrossOrigin" + name,
+          `url("chrome-extension://${extensionId}/shared/fonts/${name}.woff2")`,
+        );
+        await font.load();
+        loaded.push(font.status);
+      }
+      return loaded;
+    }, id);
+    check(
+      crossOriginFonts.every((status) => status === "loaded"),
+      "Both HUD fonts are accessible from a real matched page under MV3",
+    );
+    await fontPage.close();
   } finally {
     await context.close();
     fs.rmSync(profile, { recursive: true, force: true });
@@ -980,7 +1028,7 @@ async function extensionSmoke() {
     await popupChecks(context, base);
     await hudChecks(context, base);
     await context.close();
-    await extensionSmoke();
+    await extensionSmoke(base);
     stats.browser = browser.version();
     stats.platform = process.platform;
     stats.visualMode = onlyA11y
@@ -990,7 +1038,8 @@ async function extensionSmoke() {
         : update
           ? "baseline update"
           : "approved comparison";
-    stats.font = "Pinned Inter test font; runtime uses system fonts";
+    stats.font =
+      "Actual packaged VT323 + Share Tech Mono fonts; no test-only override";
     fs.writeFileSync(
       path.join(out, onlyA11y ? "a11y-results.json" : "results.json"),
       JSON.stringify(stats, null, 2),

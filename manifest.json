@@ -1,11 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Commander",
-  "version": "10.3.4",
-  "description": "Truthful runtime status, accessible controls and compact HUD. V2.8.2 policy unchanged. Updated 2026-10-08 10:53:25 EDT.",
-  "permissions": [
-    "storage"
-  ],
+  "version": "10.3.5",
+  "description": "Truthful runtime status, accessible controls and compact HUD. V2.8.2 policy unchanged. Updated 2026-10-08 13:18:01 EDT.",
+  "permissions": ["storage"],
   "host_permissions": [
     "https://territorial.io/*",
     "https://*.territorial.io/*",
@@ -84,5 +82,19 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "shared/fonts/vt323.woff2",
+        "shared/fonts/share-tech-mono.woff2"
+      ],
+      "matches": [
+        "https://territorial.io/*",
+        "https://*.territorial.io/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ]
+    }
+  ]
 }

@@ -10,15 +10,43 @@
   <body>
     <main class="popup-container">
       <header class="brand">
-        <span class="brand-mark" aria-hidden="true">TC</span>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" focusable="false">
+            <defs>
+              <pattern
+                id="logo-grid"
+                width="6"
+                height="6"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M6 0H0V6"
+                  fill="none"
+                  stroke="#28e7ff"
+                  stroke-opacity=".2"
+                  stroke-width=".5"
+                />
+              </pattern>
+            </defs>
+            <rect width="48" height="48" fill="url(#logo-grid)" />
+            <path
+              fill="#28e7ff"
+              d="M6 36h6v-6h6v-6h6v-6h6v-6h6V6h6v12h-6v6h-6v6h-6v6h-6v6H6zM6 18h6v6h6v6h6v6h6v6h-6v-6h-6v-6h-6v-6H6z"
+            />
+            <path fill="#b5edff" d="M36 6h6v6h-6zM30 12h6v6h-6zM6 36h6v6H6z" />
+          </svg>
+        </span>
         <div>
-          <h1>Territorial Commander</h1>
-          <p>AUTONOMOUS GAME COMPANION</p>
+          <h1>Territorial.io</h1>
+          <p>AUTONOMOUS COMMANDER</p>
+          <p class="build-stamp">
+            UPDATED <span id="theme-updated">2026-10-08 13:18:01 EDT</span>
+          </p>
         </div>
       </header>
       <section class="runtime-card" aria-labelledby="runtime-heading">
         <div class="status-row">
-          <h2 id="runtime-heading">Match status</h2>
+          <h2 id="runtime-heading">Live Match Status</h2>
           <span id="status-text" class="status-badge" data-state="disconnected"
             >Disconnected</span
           >
@@ -36,7 +64,10 @@
       </section>
       <section class="autopilot-card" aria-labelledby="autopilot-label">
         <div>
-          <label id="autopilot-label" for="toggle-bot">Autopilot</label>
+          <label id="autopilot-label" for="toggle-bot"
+            ><span class="pixel-cross" aria-hidden="true"></span>Auto
+            Commander</label
+          >
           <p id="autopilot-description">
             Enabled by default. Starts only after your spawn is confirmed.
           </p>
@@ -178,7 +209,7 @@
         </div>
       </details>
       <details id="help">
-        <summary>Help & keyboard shortcuts</summary>
+        <summary>Quick start & shortcuts</summary>
         <div class="disclosure-body">
           <ol>
             <li>
@@ -226,10 +257,10 @@
         </div>
       </details>
       <details id="about">
-        <summary>About <span id="version-label">v10.3.4</span></summary>
+        <summary>About <span id="version-label">v10.3.5</span></summary>
         <div class="disclosure-body">
           <p id="version-details">
-            V2.8.2 production policy · Updated 2026-10-08 10:53:25 EDT
+            V2.8.2 production policy · Updated 2026-10-08 13:18:01 EDT
           </p>
           <p>Local processing. No camera or microphone access.</p>
         </div>

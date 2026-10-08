@@ -10,9 +10,11 @@
   max-height: calc(100vh - 24px);
   box-sizing: border-box;
   padding: 12px;
-  background: var(--tio-bg, #0c1422);
-  color: var(--tio-text, #f2f6fc);
-  border: 1px solid var(--tio-line, #455975);
+  background: var(--tio-scanlines), var(--tio-bg, #020414);
+  color: var(--tio-text, #b5edff);
+  border: 1px solid var(--tio-pink, #ff49d8);
+  border-top-color: var(--tio-accent, #28e7ff);
+  box-shadow: var(--tio-glow);
   border-radius: 10px;
   font: 12px/1.4 var(--tio-font, sans-serif);
   pointer-events: none;
@@ -36,11 +38,13 @@
   margin-bottom: 8px;
 }
 #tio-hud-v5-panel strong {
-  font-size: 12px;
+  font: 20px/1 var(--tio-pixel);
+  color: var(--tio-accent);
+  text-shadow: 0 0 6px #28e7ff50;
   letter-spacing: 0.4px;
 }
 #tio-hud-state {
-  color: var(--tio-muted, #b6c5d9);
+  color: var(--tio-pink, #ff49d8);
   font-size: 12px;
   text-align: right;
 }
@@ -65,12 +69,13 @@
   margin: 4px 0;
 }
 #tio-hud-v5-panel dt {
-  color: var(--tio-muted, #b6c5d9);
+  color: var(--tio-accent, #28e7ff);
 }
 #tio-hud-v5-panel dd {
   margin: 0;
   text-align: right;
   overflow-wrap: anywhere;
+  color: var(--tio-wait);
 }
 #tio-hud-v5-panel .tio-hint {
   font-size: 12px;
@@ -85,12 +90,14 @@
   border-top: 1px solid var(--tio-line, #455975);
   margin-top: 12px;
   padding-top: 4px;
+  background-image: var(--tio-grid);
+  background-size: 12px 12px;
 }
 #tio-hud-v5-panel .tio-detailed dl div {
   grid-template-columns: 115px 1fr;
 }
 #tio-hud-v5-panel h2 {
-  font-size: 12px;
+  font: 20px/1 var(--tio-pixel);
   margin: 12px 0 4px;
   color: var(--tio-accent, #9dc4ff);
 }
