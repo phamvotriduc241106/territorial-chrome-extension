@@ -1,0 +1,14 @@
+/* Shared presentation tokens only; no game-layout selectors. */
+:root {
+  --tio-bg: #0c1422;
+  --tio-surface: #172438;
+  --tio-raised: #21324a;
+  --tio-text: #f2f6fc;
+  --tio-muted: #b6c5d9;
+  --tio-line: #455975;
+  --tio-accent: #9dc4ff;
+  --tio-good: #75e4c4;
+  --tio-wait: #ffd38a;
+  --tio-error: #ffabab;
+  --tio-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}

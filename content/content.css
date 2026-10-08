@@ -1,200 +1,114 @@
-/* Territorial.io Commander - Floating HUD Overlay Styles */
-
-/* Force agent HUD above game canvas */
+/* Passive, responsive HUD. No draggable header or pointer interception. */
 #tio-hud-v5-panel {
-  position: fixed !important;
-  top: 12px !important;
-  right: 12px !important;
-  z-index: 2147483646 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: none !important;
-}
-
-#tio-hud-container {
+  all: initial;
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 999999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  user-select: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.tio-hud-card {
-  width: 280px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.15);
-  color: #f8fafc;
+  top: 12px;
+  right: 12px;
+  z-index: 2147483646;
+  width: 210px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  box-sizing: border-box;
+  padding: 12px;
+  background: var(--tio-bg, #0c1422);
+  color: var(--tio-text, #f2f6fc);
+  border: 1px solid var(--tio-line, #455975);
+  border-radius: 10px;
+  font: 12px/1.4 var(--tio-font, sans-serif);
+  pointer-events: none;
   overflow: hidden;
-  transition: all 0.3s ease;
 }
-
-.tio-hud-header {
+#tio-hud-v5-panel[hidden] {
+  display: none !important;
+}
+#tio-hud-v5-panel * {
+  box-sizing: border-box;
+  pointer-events: none;
+}
+#tio-hud-v5-panel[data-mode="detailed"] {
+  width: 320px;
+}
+#tio-hud-v5-panel .tio-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: rgba(30, 41, 59, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: move;
-}
-
-.tio-hud-title {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
 }
-
-.tio-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #64748b;
-  box-shadow: 0 0 8px #64748b;
-  transition: background 0.3s, box-shadow 0.3s;
-}
-
-.tio-status-dot.active {
-  background: #10b981;
-  box-shadow: 0 0 10px #10b981;
-  animation: pulse-dot 1.5s infinite;
-}
-
-@keyframes pulse-dot {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.tio-hud-controls-min {
-  display: flex;
-  gap: 6px;
-}
-
-.tio-hud-icon-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: none;
-  color: #94a3b8;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#tio-hud-v5-panel strong {
   font-size: 12px;
-  transition: all 0.2s;
+  letter-spacing: 0.4px;
 }
-
-.tio-hud-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+#tio-hud-state {
+  color: var(--tio-muted, #b6c5d9);
+  font-size: 12px;
+  text-align: right;
 }
-
-.tio-hud-body {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+#tio-hud-v5-panel[data-state="playing"] #tio-hud-state {
+  color: var(--tio-good, #75e4c4);
 }
-
-.tio-hud-card.collapsed .tio-hud-body {
+#tio-hud-v5-panel:is(
+    [data-state="blocked"],
+    [data-state="stale"],
+    [data-state="confirming"]
+  )
+  #tio-hud-state {
+  color: var(--tio-wait, #ffd38a);
+}
+#tio-hud-v5-panel dl {
+  margin: 0;
+}
+#tio-hud-v5-panel dl div {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 8px;
+  margin: 4px 0;
+}
+#tio-hud-v5-panel dt {
+  color: var(--tio-muted, #b6c5d9);
+}
+#tio-hud-v5-panel dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+#tio-hud-v5-panel .tio-hint {
+  font-size: 12px;
+  margin: 8px 0 0;
+  color: var(--tio-muted, #b6c5d9);
+}
+#tio-hud-v5-panel .tio-detailed {
   display: none;
 }
-
-.tio-btn-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+#tio-hud-v5-panel[data-mode="detailed"] .tio-detailed {
+  display: block;
+  border-top: 1px solid var(--tio-line, #455975);
+  margin-top: 12px;
+  padding-top: 4px;
 }
-
-.tio-action-btn {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 41, 59, 0.5);
-  color: #cbd5e1;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s ease;
+#tio-hud-v5-panel .tio-detailed dl div {
+  grid-template-columns: 115px 1fr;
 }
-
-.tio-action-btn:hover {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: rgba(99, 102, 241, 0.4);
-  color: #ffffff;
+#tio-hud-v5-panel h2 {
+  font-size: 12px;
+  margin: 12px 0 4px;
+  color: var(--tio-accent, #9dc4ff);
 }
-
-.tio-action-btn.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(168, 85, 247, 0.4) 100%);
-  border-color: #818cf8;
-  color: #ffffff;
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+#tio-hud-v5-panel .tio-detailed p {
+  font-size: 12px;
+  color: var(--tio-muted, #b6c5d9);
+  margin: 12px 0 0;
+  overflow-wrap: anywhere;
 }
-
-.tio-slider-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tio-slider-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #94a3b8;
-}
-
-.tio-slider-label span {
-  font-weight: 600;
-  color: #818cf8;
-}
-
-.tio-range-input {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #334155;
-  outline: none;
-}
-
-.tio-range-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #818cf8;
-  cursor: pointer;
-  box-shadow: 0 0 8px #818cf8;
-  transition: transform 0.1s;
-}
-
-.tio-range-input::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-/* Completely hidden crosshairs */
-.tio-crosshair-overlay {
+.tio-crosshair-overlay,
+#tio-crosshair,
+.tio-crosshair {
   display: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #tio-hud-v5-panel,
+  #tio-hud-v5-panel * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

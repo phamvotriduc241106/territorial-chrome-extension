@@ -6,6 +6,15 @@ Production gates: `npm test` runs core contracts, version/timestamp checks, mani
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `experiments/`; they are not silently treated as release gates. For example, `tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
+## v10.3.4 UI/UX, updated 2026-10-08 10:53:25 EDT
+
+Production remains V2.8.2. The UI changes do not enable the frontier candidate,
+tree search or a new policy. All 80 frozen decision/spend fingerprints are
+checked independently of the new UI suite. [UI validation](UI_UX_VALIDATION.md)
+documents lifecycle, asynchronous storage, actual MV3 popup integration,
+keyboard, screenshot, geometry and accessibility gates. Human first-use task
+testing remains outstanding: no 9/10 usability rating is claimed.
+
 ## v10.3.3 spatial/dynamic research, updated 2026-10-07 20:39:28 EDT
 
 Production remains V2.8.2; all 80 decision/spend fingerprints are unchanged. The dynamic candidate is not packaged. [Detailed validation](FRONTIER_DYNAMIC_VALIDATION.md) includes 24 complete native-source controlled matches (16 development, 8 frozen final), exact ownership replay, per-category coverage, clustered uncertainty and isolated Chrome/M4 costs. On 10,183 common valid held-out episode/horizon rows, static territory MAE is 23.8928 cells and dynamic MAE is 0.001375 cells; 33.355% of forecasts are censored. These are short conditional transitions, not online win-rate evidence. Another model-validation phase is required; policy promotion is not recommended.

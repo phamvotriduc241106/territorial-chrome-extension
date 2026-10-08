@@ -1,5 +1,14 @@
 # Changelog
 
+## 10.3.4 — 2026-10-08 10:53:25 EDT
+
+- Runtime-derived Ready / Confirming / Playing / Paused / Waiting / Stale states replace preference-derived ACTIVE. Shared read-only presentation model powers popup and HUD.
+- Compact/detailed/hidden click-through HUD, persistent H cycling, spawn-safe autohide and consolidated tokens/styles. Advanced controls, help and exact update details remain reachable in disclosures.
+- Accessible labels, selected-state semantics, visible focus, reduced motion and explicit observed/estimated/unavailable metrics. No invented 60 FPS.
+- Transactional preference writes, visible failures/retry, obsolete-response rejection and immediate requested pause independent of storage completion.
+- Browser lifecycle/settings/keyboard/geometry/visual regression and axe checks are CI gates. Five-person usability study remains required before claiming the roadmap's 9/10 rating.
+- V2.8.2 policy, spending, native source instrumentation and all 80 frozen fingerprints remain unchanged. No experimental policy promotion.
+
 ## 10.3.3 — 2026-10-07 20:39:28 EDT
 
 - Production V2.8.2 policy is unchanged. All 80 decision/spend fingerprints remain
