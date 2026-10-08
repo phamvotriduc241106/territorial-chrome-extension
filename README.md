@@ -2,7 +2,7 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.3.4 · **Production engine:** V2.8.2 · **Updated:** 2026-10-08 10:53:25 EDT
+**Release:** v10.3.5 · **Production engine:** V2.8.2 · **Updated:** 2026-10-08 13:18:01 EDT
 
 ## Install
 
@@ -60,6 +60,9 @@ Runtime: `content/`, `shared/`, `background/`, `popup/`, `icons/`. Research: `ex
 `Z`: pause/resume · `H`: compact/detailed/hidden HUD · `X`: toggle expansion · `C`: 25% allocation · `V`: 40% allocation · `B`: adaptive allocation. Shortcuts ignore editable controls and modifier keys.
 
 The popup reports live connection, spawn confirmation and telemetry freshness separately from the saved enable preference. The toolbar ON badge means only preference enabled. Advanced settings and diagnostics are collapsed by default. HUD is passive/click-through and compact mode hides during initial spawn. See [UI validation and remaining usability gate](docs/UI_UX_VALIDATION.md). No 9/10 rating is claimed without five-user task testing.
+
+v10.3.5 adds the supplied neon synthwave theme, with local pixel/monospace fonts,
+static scanlines and cyan/magenta frames. [Theme details and local validation](docs/NEON_THEME.md).
 
 In the game tab's DevTools console:
 

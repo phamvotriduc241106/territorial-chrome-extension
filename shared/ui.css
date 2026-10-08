@@ -1,14 +1,39 @@
-/* Shared presentation tokens only; no game-layout selectors. */
+/* Local synthwave fonts and shared tokens; no game-layout selectors. */
+@font-face {
+  font-family: "Commander Pixel";
+  src: url("fonts/vt323.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Commander Mono";
+  src: url("fonts/share-tech-mono.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
-  --tio-bg: #0c1422;
-  --tio-surface: #172438;
-  --tio-raised: #21324a;
-  --tio-text: #f2f6fc;
-  --tio-muted: #b6c5d9;
-  --tio-line: #455975;
-  --tio-accent: #9dc4ff;
-  --tio-good: #75e4c4;
-  --tio-wait: #ffd38a;
-  --tio-error: #ffabab;
-  --tio-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --tio-bg: #000617;
+  --tio-surface: #050b1e;
+  --tio-raised: #0b1933;
+  --tio-text: #b5edff;
+  --tio-muted: #89cfe9;
+  --tio-line: #6950d5;
+  --tio-accent: #00f6fd;
+  --tio-pink: #fd34e5;
+  --tio-good: #00f5c4;
+  --tio-wait: #ffff7d;
+  --tio-error: #ff97b5;
+  --tio-font: "Commander Mono", ui-monospace, monospace;
+  --tio-pixel: "Commander Pixel", ui-monospace, monospace;
+  --tio-scanlines: repeating-linear-gradient(
+    0deg,
+    transparent 0 2px,
+    #00000026 2px 3px
+  );
+  --tio-grid:
+    linear-gradient(#16ccff08 1px, transparent 1px),
+    linear-gradient(90deg, #16ccff08 1px, transparent 1px);
+  --tio-glow: 0 0 9px #ff49d82e, inset 0 0 14px #28e7ff0b;
 }

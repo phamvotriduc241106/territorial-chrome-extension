@@ -1,5 +1,13 @@
 # Changelog
 
+## 10.3.5 — 2026-10-08 13:18:01 EDT
+
+- Applies the supplied synthwave visual reference to popup and compact/detailed HUD: sampled navy/cyan/magenta/gold palette, pixel headings, monospace data, static scanlines, neon frames, pixel sword and cyan-glow switches.
+- Packages VT323 and Share Tech Mono locally with OFL licenses. No remote font, image, script or added permission. Font-only web-accessible resources support the in-game HUD.
+- Keeps runtime-derived status, spawn prerequisites, saved-preference semantics, accessible controls and reduced motion. Reference artwork's misleading ACTIVE/activation/multiplayer/performance claims are not copied.
+- Production V2.8.2 remains unchanged. Theme development is local on `codex/neon-synthwave-theme`; no automatic push, PR update or merge.
+- macOS visual baselines use the actual shipped fonts, not a test-only override. Linux theme recapture remains required before a future push; prior release baselines are preserved rather than silently approved.
+
 ## 10.3.4 — 2026-10-08 10:53:25 EDT
 
 - Runtime-derived Ready / Confirming / Playing / Paused / Waiting / Stale states replace preference-derived ACTIVE. Shared read-only presentation model powers popup and HUD.
