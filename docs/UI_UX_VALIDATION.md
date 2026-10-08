@@ -97,7 +97,8 @@ viewports and every OS/font combination are not exhaustively validated.
 | Existing Node runner cases (`npm test`) | 96 passed |
 | UI state/settings/background cases | 5 passed |
 | Browser UI assertions including visual checks | 125 passed |
-| Approved screenshot baselines | 13 matched |
+| Screenshot comparisons per platform (macOS / Linux) | 13 / 13 |
+| Approved images across both platforms | 26 |
 | axe scans | 17 |
 | Critical/serious WCAG-tagged axe violations | 0 |
 | Frozen production decision/spend fingerprints | 80 unchanged |
@@ -139,6 +140,15 @@ requiring fewer than 0.5% changed pixels and identical dimensions. A deliberate
 white-background mutation failed the macOS first comparison (170,564 changed pixels;
 expected exit 1), with evidence under `scratch/ui-roadmap/negative-control/`. CI never updates
 baselines automatically; screenshots/diffs/results are retained for seven days.
+
+The 13 Linux candidates were captured on unchanged runtime source at
+`20e364ac157f188a167a7037baaff237b29bb555` by explicit
+[workflow-dispatch run 37811813643](https://github.com/phamvotriduc241106/territorial-chrome-extension/actions/runs/37811813643).
+Every candidate was visually inspected before approval: eight popup states,
+Advanced, save failure, and three HUD modes. Capture succeeded with 99 non-visual
+assertions, 17 axe scans and zero critical/serious findings; capture alone was
+not treated as a passing visual comparison. Ordinary CI subsequently compares
+these platform baselines at the original 0.5% threshold.
 
 axe checks WCAG 2 A/AA, 2.1 A/AA and 2.2 AA tags and fails on critical/serious
 findings. A zero result in that filter does not establish complete accessibility
@@ -184,14 +194,14 @@ node tests/ui-browser.cjs --update
 npm run test:ui
 ```
 
-## Remaining human acceptance gate
-
 For a new platform, `node tests/ui-browser.cjs --capture` writes **candidate**
 images only to the ignored results directory. It does not create or update an
 approved baseline. The explicit workflow-dispatch `capture_ui_candidates` option
 runs this mode and uploads artifacts for review. Ordinary push/PR runs always
 compare approved baselines and fail if any are missing. Captured artifacts must
 be inspected and approved explicitly before being added to `tests/ui-baselines/`.
+
+## Remaining human acceptance gate
 
 Required study: **5 first-time participants × 4 tasks = 20 attempts**; target
 ≥90% completion means **at least 18/20** successful attempts. Record task times,
