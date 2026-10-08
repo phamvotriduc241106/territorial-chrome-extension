@@ -128,12 +128,15 @@ It uses only temporary profiles and never joins a multiplayer game or changes
 the user's browser settings. Debugger evaluation injects axe for QA; the shipped
 extension CSP is unchanged.
 
-Visual baselines are manually inspected. Test-only pinned Inter fonts avoid
-macOS/Linux font substitution; the shipped UI still uses system fonts and does
+Visual baselines are manually inspected and platform-specific. The initial
+Linux run differed from the macOS first-state baseline by 3,423 pixels, primarily
+text rasterization, despite pinned fonts. The threshold was not loosened.
+Test-only pinned Inter fonts avoid font substitution, but not FreeType/CoreText
+rendering differences; the shipped UI still uses system fonts and does
 not package or fetch these fonts. Visible HUD comparisons crop to the panel so
 empty game space cannot dilute a regression. Pixelmatch uses threshold 0.2,
 requiring fewer than 0.5% changed pixels and identical dimensions. A deliberate
-white-background mutation failed the first comparison (170,564 changed pixels;
+white-background mutation failed the macOS first comparison (170,564 changed pixels;
 expected exit 1), with evidence under `scratch/ui-roadmap/negative-control/`. CI never updates
 baselines automatically; screenshots/diffs/results are retained for seven days.
 
@@ -161,8 +164,9 @@ npm run test:live
 npm run package
 ```
 
-Results and screenshot diffs: ignored `scratch/ui-roadmap/qa/`. Approved images:
-`tests/ui-baselines/`. The live command needs network access to the official site;
+Results and screenshot diffs: ignored `scratch/ui-roadmap/qa/`. Approved macOS
+images: `tests/ui-baselines/`; Linux images: `tests/ui-baselines/linux/`.
+The live command needs network access to the official site;
 regular CI uses local native fixtures, not an unannounced network-dependent test.
 GitHub CI must be checked against the exact pushed head; local passing results
 alone do not establish remote CI success.
@@ -181,6 +185,13 @@ npm run test:ui
 ```
 
 ## Remaining human acceptance gate
+
+For a new platform, `node tests/ui-browser.cjs --capture` writes **candidate**
+images only to the ignored results directory. It does not create or update an
+approved baseline. The explicit workflow-dispatch `capture_ui_candidates` option
+runs this mode and uploads artifacts for review. Ordinary push/PR runs always
+compare approved baselines and fail if any are missing. Captured artifacts must
+be inspected and approved explicitly before being added to `tests/ui-baselines/`.
 
 Required study: **5 first-time participants × 4 tasks = 20 attempts**; target
 ≥90% completion means **at least 18/20** successful attempts. Record task times,

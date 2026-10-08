@@ -13,14 +13,23 @@ const root = path.resolve(__dirname, ".."),
       ? "scratch/ui-roadmap/negative-control"
       : "scratch/ui-roadmap/qa",
   );
-const baselines = path.join(root, "tests/ui-baselines"),
+const baselines = path.join(
+    root,
+    "tests/ui-baselines",
+    process.platform === "linux" ? "linux" : "",
+  ),
   update = process.argv.includes("--update");
 const onlyA11y = process.argv.includes("--a11y");
+const capture = process.argv.includes("--capture");
+assert.ok(
+  !capture || (!update && !onlyA11y),
+  "Candidate capture cannot approve baselines or skip screenshot recording",
+);
 const injectVisualRegression = process.argv.includes(
   "--inject-visual-regression",
 );
 assert.ok(
-  !injectVisualRegression || (!update && !onlyA11y),
+  !injectVisualRegression || (!update && !onlyA11y && !capture),
   "Visual negative control cannot update baselines or skip comparisons",
 );
 const stats = {
@@ -193,6 +202,10 @@ async function visual(name, page) {
     fs.mkdirSync(baselines, { recursive: true });
     fs.writeFileSync(target, actual);
   } else {
+    if (capture) {
+      stats.visuals++;
+      return;
+    }
     check(fs.existsSync(target), "Missing approved visual baseline " + name);
     const a = PNG.sync.read(actual),
       b = PNG.sync.read(fs.readFileSync(target));
@@ -969,6 +982,14 @@ async function extensionSmoke() {
     await context.close();
     await extensionSmoke();
     stats.browser = browser.version();
+    stats.platform = process.platform;
+    stats.visualMode = onlyA11y
+      ? "none"
+      : capture
+        ? "candidate capture only"
+        : update
+          ? "baseline update"
+          : "approved comparison";
     stats.font = "Pinned Inter test font; runtime uses system fonts";
     fs.writeFileSync(
       path.join(out, onlyA11y ? "a11y-results.json" : "results.json"),
