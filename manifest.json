@@ -1,11 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Territorial.io Autonomous Human-Level Agent",
-  "version": "10.3.3",
-  "description": "V2.8.2 production policy unchanged; opt-in spatial telemetry and shadow-only research. Updated 2026-10-07 20:39:28 EDT.",
-  "permissions": [
-    "storage"
-  ],
+  "name": "Territorial.io Commander",
+  "version": "10.3.5",
+  "description": "Truthful runtime status, accessible controls and compact HUD. V2.8.2 policy unchanged. Updated 2026-10-08 13:18:01 EDT.",
+  "permissions": ["storage"],
   "host_permissions": [
     "https://territorial.io/*",
     "https://*.territorial.io/*",
@@ -60,6 +58,7 @@
         "content/engine-core-v1.js",
         "content/engine-core-v2-advanced.js",
         "content/engine-adapter.js",
+        "shared/presentation.js",
         "content/coords.js",
         "content/vision.js",
         "content/grid.js",
@@ -75,7 +74,7 @@
         "content/optimization.js",
         "content/content.js"
       ],
-      "css": ["content/content.css"],
+      "css": ["shared/ui.css", "content/content.css"],
       "run_at": "document_end"
     }
   ],
@@ -83,5 +82,19 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "shared/fonts/vt323.woff2",
+        "shared/fonts/share-tech-mono.woff2"
+      ],
+      "matches": [
+        "https://territorial.io/*",
+        "https://*.territorial.io/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ]
+    }
+  ]
 }

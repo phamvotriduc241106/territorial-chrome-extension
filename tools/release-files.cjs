@@ -15,7 +15,9 @@ function releaseFiles(base = root) {
   for (const file of Object.values(manifest.icons || {})) files.add(file);
   for (const file of Object.values(manifest.action.default_icon || {})) files.add(file);
   // Popup references these files; worker imports shared/config.js above.
-  for (const file of ['popup/popup.js', 'popup/popup.css']) files.add(file);
+  for (const file of ['popup/popup.js', 'popup/popup.css', 'shared/presentation.js', 'shared/ui.css']) files.add(file);
+  for (const file of ['shared/fonts/vt323.woff2', 'shared/fonts/share-tech-mono.woff2',
+    'shared/fonts/vt323-OFL.txt', 'shared/fonts/share-tech-mono-OFL.txt']) files.add(file);
   for (const file of files) {
     if (path.isAbsolute(file) || file.includes('..') || !/^(manifest\.json|(?:content|shared|background|popup|icons)\/)/.test(file))
       throw Error('Unsafe/non-runtime release path: ' + file);

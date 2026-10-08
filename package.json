@@ -1,13 +1,18 @@
 {
   "name": "territorial-chrome-extension",
-  "version": "10.3.3",
+  "version": "10.3.5",
   "private": true,
   "description": "Territorial.io Manifest V3 extension and reproducible validation tools",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "check": "node tests/repository.test.cjs",
     "test": "npm run check && node tests/unit.cjs && node experiments/test-v2-compatibility.cjs && node experiments/hard-mode-crush-test.cjs && node experiments/numerical-stability-test.cjs && node experiments/test-adapter.cjs && node tests/hard-mode-policy.test.cjs && node --test tests/very-hard-standard.test.cjs tests/very-hard-cli.test.cjs tests/cpu-optimization.test.cjs tests/planning-math.test.cjs tests/frontier-model.test.cjs tests/frontier-episodes.test.cjs tests/frontier-spatial.test.cjs tests/frontier-dynamic.test.cjs tests/frontier-study.test.cjs",
     "test:browser": "node tests/run.cjs",
+    "test:ui": "node tests/ui-browser.cjs",
+    "test:a11y": "node tests/ui-browser.cjs --a11y",
+    "test:ui-state": "node --test tests/ui-state.test.cjs",
     "test:live": "node tests/run.cjs --live",
     "test:spatial": "node tools/frontier-spatial-gate.cjs",
     "research:record": "node tools/frontier-study-record.cjs",
@@ -17,5 +22,10 @@
     "benchmark:cpu": "node tools/cpu-benchmark.cjs",
     "package": "npm run check && node tools/package-extension.cjs"
   },
-  "devDependencies": { "playwright": "1.63.0" }
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "pixelmatch": "8.0.0",
+    "playwright": "1.63.0",
+    "pngjs": "7.0.0"
+  }
 }

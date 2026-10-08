@@ -83,6 +83,12 @@
       this.blackFrameStreak = 0;
       this.agentVersion = AGENT_VERSION;
       this.failReason = '';
+      this.uiVisionSample = null;
+      this.uiPreferenceError = null;
+      this.uiUnsavedPatch = null;
+      this.uiStatusSequence = 0;
+      this.uiLastCommandAt = null;
+      if (this.hud.setStatusProvider) this.hud.setStatusProvider(() => this.getStatus());
       this.sprayAngle = 0;
       this.engineStarted = false; // full vision/AI only after arm
       this.idleHudAt = 0;
@@ -400,9 +406,19 @@
     }
 
     applySettings(raw) {
-      this.settings = CFG
+      const normalized = CFG
         ? CFG.normalizeSettings({ ...this.settings, ...(raw || {}) })
         : { ...DEFAULT_SETTINGS, ...this.settings, ...(raw || {}) };
+      const policyUnchanged = Object.keys(DEFAULT_SETTINGS).filter(key => !['hudMode', 'advancedExpanded'].includes(key))
+        .every(key => this.settings[key] === normalized[key]);
+      if (policyUnchanged) {
+        this.settings.hudMode = normalized.hudMode;
+        this.settings.advancedExpanded = normalized.advancedExpanded;
+        if (this.hud.setPreferences) this.hud.setPreferences(this.settings);
+        return; // UI-only preferences must not invalidate the planner's settings identity.
+      }
+      this.settings = normalized;
+      if (this.hud.setPreferences) this.hud.setPreferences(this.settings);
       const interval = CFG
         ? CFG.actionIntervalMs(this.settings)
         : Math.round(1000 / Math.max(1, this.settings.clickSpeed | 0));
@@ -419,7 +435,53 @@
 
     persistSettings(partial) {
       this.applySettings(partial);
-      try { chrome.storage.local.set(this.settings); } catch (_) { /* ignore */ }
+      try { chrome.storage.local.set(partial, () => {
+        const failure = chrome.runtime.lastError;
+        this.uiPreferenceError = failure ? 'Preferences were not saved; the change applies only in this tab.' : null;
+        this.uiUnsavedPatch = failure ? { ...partial } : null;
+      }); } catch (_) {
+        this.uiPreferenceError = 'Preferences were not saved; the change applies only in this tab.';
+        this.uiUnsavedPatch = { ...partial };
+      }
+    }
+
+    /** Read-only UI snapshot: timestamps describe observations, never invented game measurements. */
+    getStatus() {
+      const now = Date.now(), mono = performance.now();
+      const native = this.internal && this.internal.lastState;
+      const hasNative = !!(native && native.ready);
+      const observedAge = hasNative ? Math.max(0, mono - this.internal.lastStateAt) : null;
+      const vision = !hasNative && this.uiVisionSample;
+      const age = hasNative ? observedAge : vision ? Math.max(0, now - vision.at) : null;
+      const territory = hasNative && Number.isFinite(native.territory) ? native.territory : vision ? vision.territory : null;
+      const inGame = !!(this.matchArmed && this.isPlayerSpawnCalibrated && territory > 0 && (!hasNative || native.alive !== false));
+      const nativeReady = !!(this.internal && this.internal.isReady && this.internal.isReady() && this.internal.armed);
+      const fallbackReady = !!(!hasNative && vision && vision.active && this.settings.allowVisionFallback && this.controller.canvas);
+      const ready = nativeReady || fallbackReady;
+      const balance = hasNative && native.balanceKnown === true && Number.isFinite(native.balance)
+        ? native.balance : vision && Number.isFinite(vision.balance) ? vision.balance : null;
+      const adapter = window.TIOGetEngineStatus ? window.TIOGetEngineStatus() : null;
+      const blockReason = this.internalArmPending ? 'arming' : this.controller.userPointerDown ? 'user-hold'
+        : this.failReason ? 'runtime-error' : this.settings.autoExpand === false && this.settings.autoAttack === false
+          ? 'controls-disabled' : inGame && !ready ? 'hook-unavailable' : null;
+      return {
+        statusSampledAt: now, sampleSequence: ++this.uiStatusSequence, telemetryAgeMs: age,
+        pendingSpawn: !!this.pendingSpawn, inGame, armed: !!this.matchArmed,
+        botEnabled: !!this.settings.botEnabled, actuatorReady: ready,
+        automationRunning: !!(this.isActive && this.engineStarted && this.settings.botEnabled),
+        internalReady: nativeReady, blockReason, preferencesError: this.uiPreferenceError,
+        engineVersion: adapter ? adapter.activeVersion : this.settings.engineVersion,
+        engineName: adapter ? adapter.activeEngine : CFG.ENGINE_VERSION, strategy: this.settings.strategy,
+        path: hasNative ? this._lastPath || 'Native' : fallbackReady ? 'Vision fallback' : null,
+        plannedAction: this._decision && this._decision.action || null,
+        policy: this._lastPolicy || this._decision && this._decision.reason || null,
+        balance, balanceProvenance: balance == null ? null : hasNative ? 'observed' : 'estimated',
+        territory, territoryProvenance: territory == null ? null : hasNative ? 'observed' : 'estimated',
+        softCap: hasNative && Number.isFinite(native.softCap) ? native.softCap : null,
+        softCapProvenance: hasNative && Number.isFinite(native.softCap) ? 'observed' : null,
+        fps: !hasNative && vision && Number.isFinite(vision.fps) && vision.fps > 0 ? vision.fps : null,
+        lastCommandAt: this.uiLastCommandAt
+      };
     }
 
     bindSettingsListeners() {
@@ -427,16 +489,24 @@
         if (chrome && chrome.storage && chrome.storage.onChanged) {
           chrome.storage.onChanged.addListener((changes, area) => {
             if (area !== 'local') return;
+            const partial = {};
             for (const key of Object.keys(changes)) {
-              if (key in this.settings) this.settings[key] = changes[key].newValue;
+              if (key in this.settings) partial[key] = changes[key].newValue;
             }
-            this.applySettings(this.settings);
+            this.applySettings(partial);
           });
         }
         if (chrome && chrome.runtime && chrome.runtime.onMessage) {
           chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (msg && msg.action === 'STATE_CHANGED' && msg.settings) {
               this.applySettings(msg.settings);
+              if (this.settings.botEnabled === false) this.controller.clearQueue();
+              sendResponse({ success: true });
+              return false;
+            } else if (msg && msg.action === 'RETRY_SETTINGS') {
+              if (this.uiUnsavedPatch) this.persistSettings(this.uiUnsavedPatch);
+              sendResponse({ success: true });
+              return false;
             } else if (msg && msg.action === 'SET_ENGINE_VERSION') {
               const ver = Number(msg.version) || 2;
               this.persistSettings({ engineVersion: ver });
@@ -446,26 +516,7 @@
               sendResponse({ success: true, version: ver });
               return true;
             } else if (msg && msg.action === 'GET_STATUS') {
-              const adapterStatus = (typeof window !== 'undefined' && typeof window.TIOGetEngineStatus === 'function')
-                ? window.TIOGetEngineStatus()
-                : null;
-              sendResponse({
-                success: true,
-                status: {
-                  inGame: !!this.isGameActive,
-                  armed: !!this.matchArmed,
-                  botEnabled: !!this.settings.botEnabled,
-                  engineVersion: adapterStatus ? adapterStatus.activeVersion : (this.settings.engineVersion || 2),
-                  engineName: adapterStatus ? adapterStatus.activeEngine : 'V2.8.2-Advanced',
-                  strategy: this.settings.strategy || 'aggressive',
-                  internalReady: !!(this.internal && this.internal.isReady && this.internal.isReady()),
-                  path: this._lastPath || 'hy/hg',
-                  policy: this._lastPolicy || 'standby',
-                  balance: this.economy ? (this.economy.estimatedTroopBalance | 0) : 0,
-                  softCap: this.economy ? (this.economy.softCap | 0) : 0,
-                  fps: 60
-                }
-              });
+              sendResponse({ success: true, status: this.getStatus() });
               return true;
             }
           });
@@ -475,9 +526,16 @@
 
     bindHotkeys() {
       window.addEventListener('keydown', (e) => {
-        if (!this.settings.hotkeysEnabled) return;
+        if (!this.settings.hotkeysEnabled || e.repeat || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
         const tag = (e.target && e.target.tagName) || '';
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        const path = e.composedPath ? e.composedPath() : [e.target];
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || path.some(node => node &&
+            (node.isContentEditable || node.matches && node.matches('input,textarea,select,button,summary,[role="textbox"]')))) return;
+        if (e.key === 'h' || e.key === 'H') {
+          const modes = CFG.HUD_MODES;
+          this.persistSettings({ hudMode: modes[(modes.indexOf(this.settings.hudMode) + 1) % modes.length] });
+          return;
+        }
         if (e.key === 'z' || e.key === 'Z') {
           this.persistSettings({ botEnabled: !this.settings.botEnabled });
           if (!this.settings.botEnabled) this.controller.clearQueue();
@@ -613,6 +671,7 @@
     disarmMatch(reason) {
       if (!this.matchArmed && !this.isPlayerSpawnCalibrated && !this.pendingSpawn) return;
       this.matchArmed = false;
+      this.uiLastCommandAt = null;
       this.isPlayerSpawnCalibrated = false;
       this.pendingSpawn = null;
       this.engineStarted = false;
@@ -974,6 +1033,7 @@
           shrinkFrames: this.internalShrinkFrames
         }).then((result) => {
           if (result && result.ok) {
+            this.uiLastCommandAt = Date.now(); // Receipt of a successful native acknowledgement, not an attempted dispatch.
             this.internalFailStreak = 0;
             this.internalAttackCount++;
             this.lastSuccessfulGameTick = Number(st.gameTick) | 0;
@@ -1237,6 +1297,9 @@
       const userDriving = this.controller ? this.controller.userPointerDown === true : false;
       const botOn = this.settings.botEnabled !== false;
       const isGameActive = this.matchArmed && this.isPlayerSpawnCalibrated && hasTerritory;
+      // Observation only; never used by the decision/spend pipeline.
+      this.uiVisionSample = { at: Date.now(), active: isGameActive, territory: realTerr,
+        balance: realBal, fps: visionResult.visionFPS || this.scheduler.measuredFps || null };
       const pulseMs = CFG ? CFG.actionIntervalMs(this.settings) : 160;
 
       const stForPolicy = stEarly;
@@ -1661,6 +1724,7 @@
           };
           fireInt().then((r) => {
             if (r && r.ok) {
+              this.uiLastCommandAt = Date.now();
               this.internalFailStreak = 0;
               this.internalAttackCount++;
               this._lastPath = r.path || (r.last && r.last.path) || 'hg';
@@ -1678,6 +1742,7 @@
               if (canAfford) {
                 this.internal.attackEnemy(commitRatio, intPhase).then((r2) => {
                   if (r2 && r2.ok) {
+                    this.uiLastCommandAt = Date.now();
                     this.internalFailStreak = 0;
                     this._lastPolicy = r2.policy || 'enemy-force';
                     this.lastAttackDispatchTime = performance.now();

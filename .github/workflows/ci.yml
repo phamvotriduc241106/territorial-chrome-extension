@@ -3,6 +3,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      capture_ui_candidates:
+        description: 'Record candidate screenshots for manual review; never approve or commit baselines'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -21,4 +26,19 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - run: npm run test:ui-state
+      - run: npm run test:ui
+        if: github.event_name != 'workflow_dispatch' || !inputs.capture_ui_candidates
+      - name: Capture candidate UI screenshots without approving them
+        if: github.event_name == 'workflow_dispatch' && inputs.capture_ui_candidates
+        run: node tests/ui-browser.cjs --capture
+      - run: npm run test:a11y
       - run: npm run package
+      - name: Retain UI screenshots and accessibility results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ui-validation-${{ github.run_id }}
+          path: scratch/ui-roadmap/qa/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,223 +1,277 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Territorial.io Auto Commander</title>
-  <link rel="stylesheet" href="popup.css">
-  <!-- No remote fonts: MV3 popup CSP can flag external resources -->
-</head>
-<body>
-  <div class="popup-container">
-    <!-- Header -->
-    <div class="popup-header">
-      <div class="brand">
-        <div class="brand-icon">⚔️</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Territorial Commander</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-container">
+      <header class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" focusable="false">
+            <defs>
+              <pattern
+                id="logo-grid"
+                width="6"
+                height="6"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M6 0H0V6"
+                  fill="none"
+                  stroke="#28e7ff"
+                  stroke-opacity=".2"
+                  stroke-width=".5"
+                />
+              </pattern>
+            </defs>
+            <rect width="48" height="48" fill="url(#logo-grid)" />
+            <path
+              fill="#28e7ff"
+              d="M6 36h6v-6h6v-6h6v-6h6v-6h6V6h6v12h-6v6h-6v6h-6v6h-6v6H6zM6 18h6v6h6v6h6v6h6v6h-6v-6h-6v-6h-6v-6H6z"
+            />
+            <path fill="#b5edff" d="M36 6h6v6h-6zM30 12h6v6h-6zM6 36h6v6H6z" />
+          </svg>
+        </span>
         <div>
-          <h1 class="brand-title">Territorial.io</h1>
-          <p class="brand-subtitle">Autonomous Pro Commander</p>
-          <span class="header-updated" id="header-update-label">Updated: 2026-10-07 20:39:28 EDT</span>
+          <h1>Territorial.io</h1>
+          <p>AUTONOMOUS COMMANDER</p>
+          <p class="build-stamp">
+            UPDATED <span id="theme-updated">2026-10-08 13:18:01 EDT</span>
+          </p>
         </div>
+      </header>
+      <section class="runtime-card" aria-labelledby="runtime-heading">
+        <div class="status-row">
+          <h2 id="runtime-heading">Live Match Status</h2>
+          <span id="status-text" class="status-badge" data-state="disconnected"
+            >Disconnected</span
+          >
+        </div>
+        <p id="next-step" role="status">Checking the active game tab...</p>
+        <div class="runtime-actions">
+          <a
+            id="open-game"
+            href="https://territorial.io"
+            target="_blank"
+            rel="noopener"
+            >Open game ↗</a
+          ><button id="retry-connection" type="button">Reconnect</button>
+        </div>
+      </section>
+      <section class="autopilot-card" aria-labelledby="autopilot-label">
+        <div>
+          <label id="autopilot-label" for="toggle-bot"
+            ><span class="pixel-cross" aria-hidden="true"></span>Auto
+            Commander</label
+          >
+          <p id="autopilot-description">
+            Enabled by default. Starts only after your spawn is confirmed.
+          </p>
+          <span id="enabled-label">Preference: enabled</span>
+        </div>
+        <input
+          id="toggle-bot"
+          type="checkbox"
+          role="switch"
+          aria-describedby="autopilot-description"
+          checked
+        />
+      </section>
+      <button id="resume-tab" type="button" hidden>Resume this tab</button>
+      <div id="save-feedback" role="status" aria-live="polite"></div>
+      <div id="error-feedback" role="alert" hidden>
+        <span id="error-message"></span
+        ><button id="retry-save" type="button">Retry</button>
       </div>
-      <div class="status-badge" id="status-badge">
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status-text">OFF</span>
-      </div>
-    </div>
-
-    <!-- Main Toggle Section -->
-    <div class="card card-hero">
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <span class="toggle-title">Auto Commander Bot</span>
-          <span class="toggle-desc">Autonomous multi-front expansion & combat</span>
+      <fieldset class="strategy-field">
+        <legend>Strategy</legend>
+        <div class="strategy-grid">
+          <button
+            type="button"
+            class="strategy-btn"
+            data-strategy="expansionist"
+            aria-pressed="false"
+          >
+            Expand<span>Favor free land</span>
+          </button>
+          <button
+            type="button"
+            class="strategy-btn"
+            data-strategy="aggressive"
+            aria-pressed="true"
+          >
+            Pressure<span>Favor combat</span>
+          </button>
+          <button
+            type="button"
+            class="strategy-btn"
+            data-strategy="defensive"
+            aria-pressed="false"
+          >
+            Defend<span>Favor reserves</span>
+          </button>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="toggle-bot">
-          <span class="slider round"></span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Live Game Status & Telemetry -->
-    <div class="card card-telemetry" id="card-telemetry">
-      <div class="card-header-row">
-        <div class="card-title">📡 Live Match Status</div>
-        <span class="pill-badge" id="pill-conn">Checking Tab...</span>
-      </div>
-      <div class="telemetry-grid">
-        <div class="metric-item">
-          <span class="metric-label">Game State</span>
-          <span class="metric-val" id="tele-state">Standing By</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Policy Kernel</span>
-          <span class="metric-val" id="tele-kernel">V2.8.2 Math</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Actuator</span>
-          <span class="metric-val" id="tele-engine">INTERNAL</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Troop Bank</span>
-          <span class="metric-val" id="tele-balance">—</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-label">Soft-Cap</span>
-          <span class="metric-val" id="tele-cap">—</span>
-        </div>
-      </div>
-      <div class="telemetry-footer" id="tele-policy-row">
-        <span class="policy-label">Action:</span>
-        <span class="policy-val" id="tele-policy">Awaiting spawn click on map</span>
-      </div>
-    </div>
-
-    <!-- Step-by-Step "How to Use" Guide -->
-    <div class="card card-guide">
-      <div class="card-title">📖 Quick Start & How To Play</div>
-      <div class="guide-steps">
-        <div class="step-item">
-          <div class="step-num">1</div>
-          <div class="step-content">
-            <strong>Open Match:</strong> Go to <a href="https://territorial.io" target="_blank" class="step-link">territorial.io</a> and pick <em>Single Player</em> (or <em>Multiplayer</em>).
+        <p>
+          Preferences guide the existing policy; safety reserves still apply.
+        </p>
+      </fieldset>
+      <details id="advanced">
+        <summary>Advanced settings</summary>
+        <div class="disclosure-body">
+          <fieldset>
+            <legend>Policy engine</legend>
+            <div class="engine-grid">
+              <button type="button" id="btn-engine-v2" aria-pressed="true">
+                V2.8.2 <span>Production</span>
+              </button>
+              <button type="button" id="btn-engine-v1" aria-pressed="false">
+                V1 <span>Legacy baseline</span>
+              </button>
+            </div>
+            <p>
+              Experimental tree search is disabled. Frontier models are
+              shadow-only and never issue commands.
+            </p>
+          </fieldset>
+          <label class="control-label" for="input-cps"
+            >Command ceiling
+            <output id="val-cps" for="input-cps">4 /s</output></label
+          >
+          <input type="range" id="input-cps" min="1" max="4" value="4" />
+          <label class="control-label" for="input-ratio"
+            >Troop allocation
+            <output id="val-ratio" for="input-ratio">Adaptive</output></label
+          >
+          <input
+            type="range"
+            id="input-ratio"
+            min="0"
+            max="40"
+            step="5"
+            value="0"
+          />
+          <p>0 = adaptive. Manual limits do not override safe spending.</p>
+          <div class="setting-row">
+            <label for="toggle-expand">Auto-expand</label
+            ><input type="checkbox" id="toggle-expand" role="switch" />
           </div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">2</div>
-          <div class="step-content">
-            <strong>Spawn First:</strong> Click your starting territory pixel on the map. <em>(The bot will remain paused until you choose your spawn)</em>.
+          <div class="setting-row">
+            <label for="toggle-attack">Auto-attack</label
+            ><input type="checkbox" id="toggle-attack" role="switch" />
           </div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">3</div>
-          <div class="step-content">
-            <strong>Press <kbd>Z</kbd> to Activate:</strong> Bot takes command immediately via internal memory hooks — <em>your mouse stays 100% free</em>.
+          <div class="setting-row">
+            <label for="toggle-fallback">Vision fallback</label
+            ><input type="checkbox" id="toggle-fallback" role="switch" />
           </div>
+          <label class="control-label" for="hud-mode">Game HUD</label
+          ><select id="hud-mode">
+            <option value="compact">Compact</option>
+            <option value="detailed">Detailed diagnostics</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <section class="diagnostics" aria-labelledby="diagnostics-title">
+            <h3 id="diagnostics-title">Connection diagnostics</h3>
+            <dl>
+              <div>
+                <dt>Troops</dt>
+                <dd id="tele-balance">Unavailable</dd>
+              </div>
+              <div>
+                <dt>Soft cap</dt>
+                <dd id="tele-cap">Unavailable</dd>
+              </div>
+              <div>
+                <dt>Telemetry</dt>
+                <dd id="tele-age">Unavailable</dd>
+              </div>
+              <div>
+                <dt>Command path</dt>
+                <dd id="tele-engine">Unavailable</dd>
+              </div>
+              <div>
+                <dt
+                  title="Time the native command was acknowledged, not the attempted dispatch"
+                >
+                  Last confirmed command
+                </dt>
+                <dd id="tele-command">Unavailable</dd>
+              </div>
+              <div>
+                <dt>Guard / action</dt>
+                <dd id="tele-policy">Unavailable</dd>
+              </div>
+            </dl>
+          </section>
         </div>
-        <div class="step-item">
-          <div class="step-num">4</div>
-          <div class="step-content">
-            <strong>Autonomous Play:</strong> Automatically bursts <strong>2–4 fronts</strong> into free land, compounds interest, and executes <strong>220% crush strikes</strong> against weak opponents.
-          </div>
+      </details>
+      <details id="help">
+        <summary>Quick start & shortcuts</summary>
+        <div class="disclosure-body">
+          <ol>
+            <li>
+              Open Territorial.io and choose <strong>Single Player</strong>.
+            </li>
+            <li>
+              Select a spawn point. Autopilot waits for verified territory.
+            </li>
+            <li>
+              Autopilot is enabled by default. Use <kbd>Z</kbd> to pause or
+              resume.
+            </li>
+          </ol>
+          <p>
+            Multiplayer behavior is not validated. This interface makes no
+            win-rate guarantee.
+          </p>
+          <dl class="hotkeys">
+            <div>
+              <dt><kbd>Z</kbd></dt>
+              <dd>Pause / resume</dd>
+            </div>
+            <div>
+              <dt><kbd>H</kbd></dt>
+              <dd>Compact → detailed → hidden HUD</dd>
+            </div>
+            <div>
+              <dt><kbd>X</kbd></dt>
+              <dd>Toggle expansion</dd>
+            </div>
+            <div>
+              <dt><kbd>C</kbd> / <kbd>V</kbd></dt>
+              <dd>25% / 40% manual allocation</dd>
+            </div>
+            <div>
+              <dt><kbd>B</kbd></dt>
+              <dd>Adaptive allocation</dd>
+            </div>
+          </dl>
+          <p>
+            Shortcuts are ignored in text fields, editable content and with
+            modifier keys. The toolbar ON badge means enabled preference, not
+            active gameplay.
+          </p>
         </div>
-      </div>
-    </div>
-
-    <!-- Engine Kernel Version Selection -->
-    <div class="card">
-      <div class="card-title">Policy Engine Kernel</div>
-      <div class="engine-grid">
-        <button class="engine-btn active" id="btn-engine-v2" data-version="2">
-          <div class="engine-btn-header">
-            <span class="engine-icon">⚡</span>
-            <span class="btn-name">V2.8.2 Math</span>
-            <span class="badge-main">MAIN</span>
-          </div>
-          <span class="btn-sub">PMP · Spectral Cut · Poisson · Naval Bellman · MCTS</span>
-        </button>
-        <button class="engine-btn" id="btn-engine-v1" data-version="1">
-          <div class="engine-btn-header">
-            <span class="engine-icon">🕰️</span>
-            <span class="btn-name">V1 Baseline Heuristic</span>
-          </div>
-          <span class="btn-sub">Classic bot emulation · Linear midpoint taper</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Mode & Strategy Selection -->
-    <div class="card">
-      <div class="card-title">Strategy Preset</div>
-      <div class="strategy-grid">
-        <button class="strategy-btn" data-strategy="expansionist">
-          <span class="strategy-icon">🗺️</span>
-          <span class="btn-name">Expansionist</span>
-          <span class="btn-sub">Max Free Land</span>
-        </button>
-        <button class="strategy-btn active" data-strategy="aggressive">
-          <span class="strategy-icon">🎯</span>
-          <span class="btn-name">Aggressive</span>
-          <span class="btn-sub">Fast Radial Push</span>
-        </button>
-        <button class="strategy-btn" data-strategy="defensive">
-          <span class="strategy-icon">🛡️</span>
-          <span class="btn-name">Defensive</span>
-          <span class="btn-sub">Turtle & Bank</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Fine Tuning & Controls -->
-    <div class="card">
-      <div class="card-title">Bot Configuration</div>
-      
-      <div class="control-row">
-        <div class="control-label">
-          <span>Speed Limit (Commands / Sec)</span>
-          <span class="val-highlight" id="val-cps">4 /s</span>
+      </details>
+      <details id="about">
+        <summary>About <span id="version-label">v10.3.5</span></summary>
+        <div class="disclosure-body">
+          <p id="version-details">
+            V2.8.2 production policy · Updated 2026-10-08 13:18:01 EDT
+          </p>
+          <p>Local processing. No camera or microphone access.</p>
         </div>
-        <input type="range" class="range-slider" id="input-cps" min="1" max="4" value="4">
-      </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          <span>Troop Percentage</span>
-          <span class="val-highlight" id="val-ratio">AUTO</span>
-        </div>
-        <input type="range" class="range-slider" id="input-ratio" min="0" max="40" step="5" value="0">
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="sub-toggle-row">
-        <span>Auto-Expand Perimeter</span>
-        <label class="switch small">
-          <input type="checkbox" id="toggle-expand">
-          <span class="slider round"></span>
-        </label>
-      </div>
-
-      <div class="sub-toggle-row">
-        <span>Auto-Attack Weak Enemies</span>
-        <label class="switch small">
-          <input type="checkbox" id="toggle-attack">
-          <span class="slider round"></span>
-        </label>
-      </div>
-
-      <div class="sub-toggle-row">
-        <span>Vision Fallback (if hook missed)</span>
-        <label class="switch small">
-          <input type="checkbox" id="toggle-fallback" checked>
-          <span class="slider round"></span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Hotkeys Cheatsheet -->
-    <div class="card card-hotkeys">
-      <div class="card-title">⌨️ In-Game Keyboard Shortcuts</div>
-      <div class="hotkey-list">
-        <div class="hotkey-item"><kbd>Z</kbd> <span><strong>Toggle Bot ON/OFF</strong> (Quick pause / resume)</span></div>
-        <div class="hotkey-item"><kbd>X</kbd> <span><strong>Toggle Auto-Expand</strong> (Hold borders vs Expand)</span></div>
-        <div class="hotkey-item"><kbd>C</kbd> <span><strong>Lock 25% Ratio</strong> (Safe economic build)</span></div>
-        <div class="hotkey-item"><kbd>V</kbd> <span><strong>Lock 40% Ratio</strong> (Heavy breakthrough attacks)</span></div>
-        <div class="hotkey-item"><kbd>B</kbd> <span><strong>Adaptive Ratio (Auto)</strong> (AI optimal scaling)</span></div>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="popup-footer">
-      <div class="version-block">
-        <span class="version" id="version-label">v10.3.3</span>
-        <span class="version-details" id="version-details">V2.8.2 Capital Policy · Updated 2026-10-07 20:39:28 EDT</span>
-      </div>
-      <a href="https://territorial.io" target="_blank" class="game-link">Open Territorial.io ↗</a>
-    </div>
-  </div>
-
-  <script src="../shared/config.js"></script>
-  <script src="popup.js"></script>
-</body>
+      </details>
+      <footer>
+        <kbd>Z</kbd> Pause / resume
+        <span>Native-first · Mouse stays yours</span>
+      </footer>
+    </main>
+    <script src="../shared/config.js"></script>
+    <script src="../shared/presentation.js"></script>
+    <script src="popup.js"></script>
+  </body>
 </html>

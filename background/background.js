@@ -7,8 +7,9 @@ const DEFAULT_SETTINGS = self.TIOConfig.DEFAULT_SETTINGS;
 
 function safeSetBadge(enabled) {
   try {
-    chrome.action.setBadgeText({ text: enabled ? 'ON' : '' });
-    chrome.action.setBadgeBackgroundColor({ color: enabled ? '#10B981' : '#6B7280' });
+    chrome.action.setBadgeText({ text: enabled == null ? '?' : enabled ? 'ON' : '' });
+    chrome.action.setBadgeBackgroundColor({ color: '#455975' });
+    chrome.action.setTitle({ title: enabled == null ? 'Commander preference unavailable. Open popup to retry.' : enabled ? 'Commander enabled (preference only). Open popup for live status.' : 'Commander disabled. Open popup to enable.' });
   } catch (_) {
     /* ignore */
   }
@@ -17,12 +18,13 @@ function safeSetBadge(enabled) {
 chrome.runtime.onInstalled.addListener(() => {
   try {
     chrome.storage.local.get(null, (stored) => {
-      void chrome.runtime.lastError;
+      const readError = chrome.runtime.lastError;
+      if (readError) { safeSetBadge(null); return; }
       const merged = self.TIOConfig.migrateSettings(stored || {});
       chrome.storage.local.set(merged, () => {
-        void chrome.runtime.lastError;
+        const error = chrome.runtime.lastError;
+        safeSetBadge(error ? null : !!merged.botEnabled);
       });
-      safeSetBadge(!!merged.botEnabled);
     });
   } catch (_) {
     /* ignore */
@@ -32,8 +34,8 @@ chrome.runtime.onInstalled.addListener(() => {
 // Also run on service worker wake so badge is correct
 try {
   chrome.storage.local.get(['botEnabled'], (data) => {
-    void chrome.runtime.lastError;
-    safeSetBadge(!!(data && data.botEnabled));
+    const error = chrome.runtime.lastError;
+    safeSetBadge(error ? null : self.TIOConfig.normalizeSettings(data).botEnabled);
   });
 } catch (_) {
   /* ignore */
@@ -54,16 +56,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === 'GET_SETTINGS') {
       chrome.storage.local.get(DEFAULT_SETTINGS, (data) => {
-        void chrome.runtime.lastError;
-        sendResponse(self.TIOConfig.normalizeSettings(data || DEFAULT_SETTINGS));
+        const error = chrome.runtime.lastError;
+        sendResponse(error ? { status: 'error', message: error.message } : self.TIOConfig.normalizeSettings(data || DEFAULT_SETTINGS));
       });
       return true; // async
     }
 
     if (request.action === 'UPDATE_SETTINGS') {
       chrome.storage.local.set(self.TIOConfig.normalizeSettings(request.settings || {}), () => {
-        void chrome.runtime.lastError;
-        sendResponse({ status: 'ok' });
+        const error = chrome.runtime.lastError;
+        sendResponse(error ? { status: 'error', message: error.message } : { status: 'ok' });
       });
       return true;
     }

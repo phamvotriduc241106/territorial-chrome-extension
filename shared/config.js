@@ -7,11 +7,11 @@
 
   if (root.TIOConfig) return;
 
-  const VERSION = '10.3.3';
+  const VERSION = '10.3.5';
   const ENGINE_VERSION = 'V2.8.2';
   const ENGINE_SOURCE = 'content/engine-core-v2-advanced.js (V2.8.2 authoritative runtime)';
   // Always include local wall-clock time and timezone in extension details.
-  const ENGINE_UPDATED_AT = '2026-10-07 20:39:28 EDT';
+  const ENGINE_UPDATED_AT = '2026-10-08 13:18:01 EDT';
   const BRIDGE_VERSION = 1;
   const SETTINGS_SCHEMA = 2;
 
@@ -20,7 +20,7 @@
   }
 
   function buildEngineDetails() {
-    return `${ENGINE_VERSION} Math · Updated ${ENGINE_UPDATED_AT}`;
+    return `${ENGINE_VERSION} production policy · Updated ${ENGINE_UPDATED_AT}`;
   }
 
   const DEFAULT_SETTINGS = Object.freeze({
@@ -35,10 +35,13 @@
     allowVisionFallback: true,
     visionFps: 12,
     allowCameraAccess: false, // Strict Shield: Camera and video access strictly prohibited
+    hudMode: 'compact',
+    advancedExpanded: false,
     settingsSchema: SETTINGS_SCHEMA
   });
 
   const STRATEGIES = Object.freeze(['expansionist', 'aggressive', 'defensive']);
+  const HUD_MODES = Object.freeze(['compact', 'detailed', 'hidden']);
 
   function finiteNumber(value, fallback) {
     const n = Number(value);
@@ -64,6 +67,8 @@
       allowVisionFallback: raw.allowVisionFallback !== false,
       visionFps: Math.round(clamp(finiteNumber(raw.visionFps, DEFAULT_SETTINGS.visionFps), 4, 30)),
       allowCameraAccess: false,
+      hudMode: HUD_MODES.includes(raw.hudMode) ? raw.hudMode : 'compact',
+      advancedExpanded: raw.advancedExpanded === true,
       settingsSchema: SETTINGS_SCHEMA
     };
   }
@@ -103,6 +108,7 @@
     SETTINGS_SCHEMA,
     DEFAULT_SETTINGS,
     STRATEGIES,
+    HUD_MODES,
     BRIDGE,
     buildVersionLabel,
     buildEngineDetails,

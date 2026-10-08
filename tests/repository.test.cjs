@@ -28,6 +28,12 @@ for (const script of manifest.content_scripts) {
   assert.ok(script.js.indexOf(engine) < script.js.indexOf('content/engine-adapter.js'));
 }
 for (const file of files) assert.ok(!file.startsWith('experiments/'));
+for (const group of manifest.web_accessible_resources || []) {
+  for (const file of group.resources) {
+    assert.ok(files.includes(file), 'unpackaged web-accessible resource: ' + file);
+    assert.match(file, /^shared\/fonts\/[a-z0-9-]+\.woff2$/, 'only the public theme fonts should be web-accessible');
+  }
+}
 for (const file of ['manifest.json', 'popup/popup.html', 'README.md',
   'content/engine-adapter.js', engine, 'docs/CHANGELOG.md']) {
   assert.ok(read(file).includes(cfg.ENGINE_UPDATED_AT), 'stale timestamp: ' + file);
@@ -38,7 +44,8 @@ for (const file of files) {
   const text = read(file);
   const references = file.endsWith('.html')
     ? [...text.matchAll(/(?:src|href)="([^"#]+)"/g)].map(m => m[1])
-    : file.endsWith('.js') ? [...text.matchAll(/importScripts\(['"]([^'"]+)['"]\)/g)].map(m => m[1]) : [];
+    : file.endsWith('.js') ? [...text.matchAll(/importScripts\(['"]([^'"]+)['"]\)/g)].map(m => m[1])
+    : file.endsWith('.css') ? [...text.matchAll(/url\(\s*['"]?([^'"()\s]+)['"]?\s*\)/g)].map(m => m[1]) : [];
   for (const reference of references.filter(r => !/^(?:https?:|data:)/.test(r))) {
     const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), reference));
     assert.ok(files.includes(target), 'unpackaged import: ' + file + ' -> ' + target);

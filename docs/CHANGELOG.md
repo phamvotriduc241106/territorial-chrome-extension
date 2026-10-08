@@ -1,5 +1,22 @@
 # Changelog
 
+## 10.3.5 — 2026-10-08 13:18:01 EDT
+
+- Applies the supplied synthwave visual reference to popup and compact/detailed HUD: sampled navy/cyan/magenta/gold palette, pixel headings, monospace data, static scanlines, neon frames, pixel sword and cyan-glow switches.
+- Packages VT323 and Share Tech Mono locally with OFL licenses. No remote font, image, script or added permission. Font-only web-accessible resources support the in-game HUD.
+- Keeps runtime-derived status, spawn prerequisites, saved-preference semantics, accessible controls and reduced motion. Reference artwork's misleading ACTIVE/activation/multiplayer/performance claims are not copied.
+- Production V2.8.2 remains unchanged. Theme is pushed on isolated `codex/neon-synthwave-theme`, stacked on UI PR #2; no automatic merge.
+- macOS and Linux visual baselines use the actual shipped fonts, not a test-only override. Linux candidate CI run 37817795983 passed; all 13 images were individually reviewed before approval. Ordinary comparison retains the unchanged 0.5% threshold.
+
+## 10.3.4 — 2026-10-08 10:53:25 EDT
+
+- Runtime-derived Ready / Confirming / Playing / Paused / Waiting / Stale states replace preference-derived ACTIVE. Shared read-only presentation model powers popup and HUD.
+- Compact/detailed/hidden click-through HUD, persistent H cycling, spawn-safe autohide and consolidated tokens/styles. Advanced controls, help and exact update details remain reachable in disclosures.
+- Accessible labels, selected-state semantics, visible focus, reduced motion and explicit observed/estimated/unavailable metrics. No invented 60 FPS.
+- Transactional preference writes, visible failures/retry, obsolete-response rejection and immediate requested pause independent of storage completion.
+- Browser lifecycle/settings/keyboard/geometry/visual regression and axe checks are CI gates. Five-person usability study remains required before claiming the roadmap's 9/10 rating.
+- V2.8.2 policy, spending, native source instrumentation and all 80 frozen fingerprints remain unchanged. No experimental policy promotion.
+
 ## 10.3.3 — 2026-10-07 20:39:28 EDT
 
 - Production V2.8.2 policy is unchanged. All 80 decision/spend fingerprints remain

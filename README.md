@@ -2,13 +2,13 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.3.3 · **Production engine:** V2.8.2 · **Updated:** 2026-10-07 20:39:28 EDT
+**Release:** v10.3.5 · **Production engine:** V2.8.2 · **Updated:** 2026-10-08 13:18:01 EDT
 
 ## Install
 
 1. Open `chrome://extensions/`, enable Developer mode, and select **Load unpacked** → this repository.
 2. Open a fresh Territorial.io tab, select a single-player game, and choose your spawn.
-3. The bot arms after your spawn selection. Reload the extension and open a fresh tab after updates.
+3. Autopilot is enabled by default, but starts only after your spawn is verified. Use Z to pause/resume. Reload the extension and open a fresh tab after updates.
 
 For a clean runtime-only folder, run `npm run package` and load the printed `dist/territorial-v…` directory. No bundler or npm installation is needed to load the repository directly.
 
@@ -21,6 +21,8 @@ npm ci
 npm test
 npx playwright install chromium
 npm run test:browser
+npm run test:ui
+npm run test:a11y
 npm run test:live
 npm run package
 ```
@@ -55,7 +57,12 @@ Runtime: `content/`, `shared/`, `background/`, `popup/`, `icons/`. Research: `ex
 
 ## Controls and diagnostics
 
-`Z`: toggle bot · `C`: ~25% commit · `V`: 40% commit · `B`: adaptive ratio.
+`Z`: pause/resume · `H`: compact/detailed/hidden HUD · `X`: toggle expansion · `C`: 25% allocation · `V`: 40% allocation · `B`: adaptive allocation. Shortcuts ignore editable controls and modifier keys.
+
+The popup reports live connection, spawn confirmation and telemetry freshness separately from the saved enable preference. The toolbar ON badge means only preference enabled. Advanced settings and diagnostics are collapsed by default. HUD is passive/click-through and compact mode hides during initial spawn. See [UI validation and remaining usability gate](docs/UI_UX_VALIDATION.md). No 9/10 rating is claimed without five-user task testing.
+
+v10.3.5 adds the supplied neon synthwave theme, with local pixel/monospace fonts,
+static scanlines and cyan/magenta frames. [Theme details and local validation](docs/NEON_THEME.md).
 
 In the game tab's DevTools console:
 
