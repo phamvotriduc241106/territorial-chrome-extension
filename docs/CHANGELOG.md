@@ -1,5 +1,15 @@
 # Changelog
 
+## 10.3.6 — 2026-10-09 11:33:39 EDT
+
+- Corrects observation freshness to include cached/delivered snapshot age; the HUD now rejects stale and future status timestamps.
+- Scopes popup observations, ordering watermarks and connection errors to the active tab ID/URL. Status from one tab cannot authorize another tab's Playing headline.
+- Background polling no longer invalidates valid replies slower than the one-second poll interval; explicit retries still supersede obsolete responses.
+- Same-millisecond observations use the native sample sequence to reject older/duplicate packets; invalid ordinals are rejected, and the watermark resets with tab scope. Legacy timestamp-only observations remain compatible.
+- Chrome callback errors are consumed even after a local request timeout, without allowing late callbacks to settle the request again.
+- Adds controlled-clock/browser regressions. Visual QA separately verifies actual release metadata, then temporarily renders only build-label strings from the reviewed screenshot release; no status, metrics, layout or comparison threshold is masked.
+- Production V2.8.2 policy, native instrumentation, permissions and all 80 decision/spend fingerprints remain unchanged. Isolated review branch; no automatic merge.
+
 ## 10.3.5 — 2026-10-08 13:18:01 EDT
 
 - Applies the supplied synthwave visual reference to popup and compact/detailed HUD: sampled navy/cyan/magenta/gold palette, pixel headings, monospace data, static scanlines, neon frames, pixel sword and cyan-glow switches.

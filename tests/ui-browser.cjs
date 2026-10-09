@@ -42,11 +42,13 @@ function check(condition, message) {
   assert.ok(condition, message);
   stats.checks++;
 }
-function fixture() {
+function fixture(initial = {}) {
   const f = (window.__uiFixture = {
     stored: {},
     status: { inGame: false, armed: false, botEnabled: true },
     url: "https://territorial.io/",
+    tabId: 7,
+    messageDelay: 0,
     failGet: false,
     failSet: false,
     failMessage: false,
@@ -56,14 +58,26 @@ function fixture() {
     listeners: [],
     messages: [],
     writes: [],
+    unreadErrors: 0,
+    errorRead: false,
   });
+  Object.assign(f, initial);
+  let lastError = null;
   const runtime = {
-    lastError: null,
+    get lastError() {
+      f.errorRead = true;
+      return lastError;
+    },
+    set lastError(value) {
+      lastError = value;
+    },
     onMessage: { addListener: (fn) => f.listeners.push(fn) },
   };
   function callback(cb, value, error) {
     runtime.lastError = error ? { message: error } : null;
+    f.errorRead = false;
     cb(value);
+    if (error && !f.errorRead) f.unreadErrors++;
     runtime.lastError = null;
   }
   window.chrome = {
@@ -106,13 +120,13 @@ function fixture() {
     },
     tabs: {
       query: (query, cb) =>
-        setTimeout(() => callback(cb, [{ id: 7, url: f.url }]), 0),
+        setTimeout(() => callback(cb, [{ id: f.tabId, url: f.url }]), 0),
       sendMessage: (id, msg, cb) => {
         f.messages.push(msg);
         if (f.failMessage) {
           setTimeout(
             () => callback(cb, undefined, "Fixture connection failure"),
-            0,
+            f.messageDelay,
           );
           return;
         }
@@ -131,7 +145,10 @@ function fixture() {
               reply && "timestamp" in reply ? reply.timestamp : Date.now(),
           },
         };
-        setTimeout(() => callback(cb, response), reply ? reply.delay : 0);
+        setTimeout(
+          () => callback(cb, response),
+          reply ? reply.delay : f.messageDelay,
+        );
       },
     },
   };
@@ -174,6 +191,295 @@ const states = {
   stale: { ...baseStatus, telemetryAgeMs: 4000 },
   "user-hold": { ...baseStatus, blockReason: "user-hold" },
 };
+async function statusRegressionChecks(context, base) {
+  async function popup(setup, verify) {
+    // Playwright clocks are context-wide; never leak a frozen clock into visual QA.
+    const timed = await context.browser().newContext();
+    await timed.route("**/*", (route) =>
+      route.request().url().startsWith(base) ? route.continue() : route.abort(),
+    );
+    const page = await timed.newPage();
+    await page.clock.install({ time: new Date("2026-10-09T14:00:00Z") });
+    await page.addInitScript(fixture, { ...setup, status: baseStatus });
+    await page.goto(base + "/popup/popup.html");
+    await verify(page);
+    await timed.close();
+  }
+  await popup({}, async (page) => {
+    await page.clock.runFor(50);
+    await page.evaluate(() => {
+      __uiFixture.sameTick = Date.now();
+      __uiFixture.replies = [
+        {
+          delay: 0,
+          timestamp: __uiFixture.sameTick,
+          status: {
+            ...__uiFixture.status,
+            sampleSequence: 10,
+            blockReason: "user-hold",
+          },
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(20);
+    await page.evaluate(() => {
+      __uiFixture.replies = [
+        {
+          delay: 0,
+          timestamp: __uiFixture.sameTick,
+          status: { ...__uiFixture.status, sampleSequence: 9 },
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(20);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "blocked",
+      "Lower sequence at the same millisecond cannot restore Playing",
+    );
+    await page.evaluate(() => {
+      __uiFixture.replies = [
+        {
+          delay: 0,
+          timestamp: __uiFixture.sameTick,
+          status: {
+            ...__uiFixture.status,
+            sampleSequence: 11,
+            botEnabled: false,
+          },
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(20);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "paused",
+      "Higher sequence at the same millisecond is accepted",
+    );
+    for (const sampleSequence of [11, 1.5, undefined]) {
+      await page.evaluate(
+        ({ sampleSequence }) => {
+          __uiFixture.replies = [
+            {
+              delay: 0,
+              timestamp: __uiFixture.sameTick,
+              status: { ...__uiFixture.status, sampleSequence },
+            },
+          ];
+          document.querySelector("#retry-connection").click();
+        },
+        { sampleSequence },
+      );
+      await page.clock.runFor(20);
+      check(
+        (await page.locator("#status-text").getAttribute("data-state")) ===
+          "paused",
+        "Duplicate, malformed or missing same-tick ordinal cannot overwrite Paused",
+      );
+    }
+  });
+  await popup({ messageDelay: 2000, failMessage: true }, async (page) => {
+    await page.clock.runFor(3500);
+    check(
+      (await page.evaluate(() => __uiFixture.unreadErrors)) === 0,
+      "Late Chrome errors are read even after the request timeout has settled",
+    );
+  });
+  await popup({ messageDelay: 1100 }, async (page) => {
+    await page.clock.runFor(3500);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "playing",
+      "Periodic polling must not cancel every valid 1100 ms status reply",
+    );
+    check(
+      Number.parseInt(await page.locator("#tele-age").textContent(), 10) >=
+        1100,
+      "Displayed telemetry age includes actual delivery delay",
+    );
+    check(
+      (await page.evaluate(
+        () =>
+          __uiFixture.messages.filter((m) => m.action === "GET_STATUS").length,
+      )) <= 3,
+      "Background status polling is single-flight",
+    );
+    await page.evaluate(() => {
+      __uiFixture.messageDelay = 2000;
+    });
+    await page.clock.runFor(6000);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "stale",
+      "Timed-out replies still age out",
+    );
+    check(
+      (await page.locator("#tele-balance").textContent()) === "Unavailable",
+      "Timed-out observations hide cached bank",
+    );
+    await page.evaluate(() => {
+      __uiFixture.messageDelay = 0;
+    });
+    await page.clock.runFor(2500);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "playing",
+      "Status polling recovers after a timeout",
+    );
+  });
+  await popup({}, async (page) => {
+    await page.clock.runFor(50);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "playing",
+      "Initial game tab is live",
+    );
+    await page.evaluate(() => {
+      __uiFixture.tabId = 8;
+      __uiFixture.failMessage = true;
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(50);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) !==
+        "playing",
+      "Failed response from a different tab cannot retain the previous tab's Playing state",
+    );
+    check(
+      (await page.locator("#tele-balance").textContent()) === "Unavailable",
+      "Previous tab's bank is discarded before reading a different tab",
+    );
+    await page.evaluate(() => {
+      __uiFixture.tabId = 9;
+      __uiFixture.failMessage = false;
+      __uiFixture.replies = [
+        {
+          status: { ...__uiFixture.status, botEnabled: false, balance: 77 },
+          delay: 0,
+          timestamp: Date.now() - 2000,
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(50);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "paused",
+      "New tab's valid older timestamp is not compared against the previous tab",
+    );
+    check(
+      (await page.locator("#tele-balance").textContent()) === "77",
+      "New tab's own metrics are shown",
+    );
+    await page.evaluate(() => {
+      __uiFixture.url = "https://territorial.io/?new-document";
+      __uiFixture.replies = [
+        {
+          status: { ...__uiFixture.status, botEnabled: false, balance: 66 },
+          delay: 0,
+          timestamp: Date.now() - 2100,
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(50);
+    check(
+      (await page.locator("#tele-balance").textContent()) === "66",
+      "Changed document URL resets the same tab's ordering watermark",
+    );
+    await page.evaluate(() => {
+      __uiFixture.failMessage = true;
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(50);
+    check(
+      await page.locator("#error-feedback").isVisible(),
+      "Current tab failure has a retryable error",
+    );
+    await page.evaluate(() => {
+      __uiFixture.url = "https://example.com/";
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(50);
+    check(
+      await page.locator("#error-feedback").isHidden(),
+      "Old connection error does not follow an unsupported tab",
+    );
+  });
+  for (const failMessage of [false, true])
+    await popup({ messageDelay: 1100, failMessage }, async (page) => {
+      await page.clock.runFor(500);
+      await page.evaluate(() => {
+        __uiFixture.tabId = 8;
+        __uiFixture.failMessage = false;
+        __uiFixture.status = {
+          ...__uiFixture.status,
+          botEnabled: false,
+          balance: 77,
+        };
+        __uiFixture.messageDelay = 0;
+      });
+      await page.clock.runFor(700);
+      check(
+        (await page.locator("#status-text").getAttribute("data-state")) ===
+          "paused",
+        "Tab switch during a delayed reply/error rechecks the recipient before displaying status",
+      );
+      check(
+        (await page.locator("#tele-balance").textContent()) === "77",
+        "Mid-flight tab switch displays only the new tab's bank",
+      );
+    });
+  const hud = await context.newPage();
+  await hud.goto(base + "/tests/ui-fixture.html");
+  for (const file of [
+    "shared/config.js",
+    "shared/presentation.js",
+    "content/hud.js",
+  ])
+    await hud.addScriptTag({ path: path.join(root, file) });
+  await hud.evaluate((status) => {
+    const frozen = { ...status, statusSampledAt: Date.now() - 4000 };
+    __TIO_HUD_EARLY__.setStatusProvider(() => frozen);
+    __TIO_HUD_EARLY__.setPreferences({ hudMode: "detailed" });
+  }, baseStatus);
+  check(
+    (await hud.locator("#tio-hud-v5-panel").getAttribute("data-state")) ===
+      "stale",
+    "HUD ages a cached status timestamp instead of assuming every provider response is new",
+  );
+  check(
+    (await hud.locator("#tio-hud-troops").textContent()) === "Unavailable",
+    "HUD hides stale bank",
+  );
+  await hud.evaluate((status) => {
+    __TIO_HUD_EARLY__.setStatusProvider(() => ({
+      ...status,
+      statusSampledAt: Date.now() + 5000,
+    }));
+  }, baseStatus);
+  check(
+    (await hud.locator("#tio-hud-v5-panel").getAttribute("data-state")) ===
+      "blocked",
+    "HUD rejects future snapshots",
+  );
+  await hud.evaluate((status) => {
+    const frozen = {
+      ...status,
+      telemetryAgeMs: 100,
+      statusSampledAt: Date.now() - 500,
+    };
+    __TIO_HUD_EARLY__.setStatusProvider(() => frozen);
+  }, baseStatus);
+  check(
+    Number.parseInt(await hud.locator("#tio-hud-age").textContent(), 10) >= 600,
+    "HUD telemetry age includes snapshot cache time",
+  );
+  await hud.close();
+}
 async function deterministicFont(page, base) {
   await page.evaluate(() => document.fonts.ready);
 }
@@ -188,12 +494,68 @@ async function visual(name, page) {
       ),
   );
   const target = path.join(baselines, name + ".png");
-  const actual =
-    name.startsWith("hud-") && name !== "hud-hidden"
-      ? await page
-          .locator("#tio-hud-v5-panel")
-          .screenshot({ animations: "disabled" })
-      : await page.screenshot({ fullPage: true, animations: "disabled" });
+  // Assert the real release labels first. Only these volatile strings use the
+  // already-reviewed baseline release during capture; restore them immediately.
+  // Geometry, colors, status, controls and metrics are never normalized.
+  const labels = await page.evaluate(
+    (reference) => {
+      const cfg = window.TIOConfig;
+      if (cfg.ENGINE_VERSION !== reference.engineVersion)
+        throw Error(
+          "Policy engine label changed; visual baseline review required",
+        );
+      const replacements = {
+        "theme-updated": [cfg.ENGINE_UPDATED_AT, reference.updatedAt],
+        "version-label": [cfg.buildVersionLabel(), "v" + reference.version],
+        "version-details": [
+          cfg.buildEngineDetails(),
+          reference.engineVersion +
+            " production policy · Updated " +
+            reference.updatedAt,
+        ],
+        "tio-hud-engine-details": [
+          cfg.buildVersionLabel() + " · " + cfg.buildEngineDetails(),
+          "v" +
+            reference.version +
+            " · " +
+            reference.engineVersion +
+            " production policy · Updated " +
+            reference.updatedAt,
+        ],
+      };
+      const original = {};
+      for (const [id, [live, baseline]] of Object.entries(replacements)) {
+        const node = document.getElementById(id);
+        if (!node) continue;
+        if (node.textContent !== live)
+          throw Error("Incorrect live release label: " + id);
+        original[id] = node.textContent;
+        node.textContent = baseline;
+      }
+      return original;
+    },
+    JSON.parse(
+      fs.readFileSync(
+        path.join(root, "tests/ui-baselines/metadata.json"),
+        "utf8",
+      ),
+    ),
+  );
+  stats.checks++;
+  let actual;
+  try {
+    actual =
+      name.startsWith("hud-") && name !== "hud-hidden"
+        ? await page
+            .locator("#tio-hud-v5-panel")
+            .screenshot({ animations: "disabled" })
+        : await page.screenshot({ fullPage: true, animations: "disabled" });
+  } finally {
+    await page.evaluate((labels) => {
+      for (const [id, value] of Object.entries(labels))
+        document.getElementById(id).textContent = value;
+    }, labels);
+  }
   fs.writeFileSync(path.join(out, name + ".png"), actual);
   if (update) {
     fs.mkdirSync(baselines, { recursive: true });
@@ -655,7 +1017,10 @@ async function hudChecks(context, base) {
   await page.addScriptTag({ path: path.join(root, "content/hud.js") });
   await page.evaluate((status) => {
     window.fixtureStatus = { ...status, statusSampledAt: Date.now() };
-    __TIO_HUD_EARLY__.setStatusProvider(() => fixtureStatus);
+    __TIO_HUD_EARLY__.setStatusProvider(() => ({
+      ...fixtureStatus,
+      statusSampledAt: Date.now(),
+    }));
   }, baseStatus);
   for (const size of [
     { width: 1280, height: 720 },
@@ -1025,23 +1390,36 @@ async function extensionSmoke(base) {
     await context.route("**/*", (route) =>
       route.request().url().startsWith(base) ? route.continue() : route.abort(),
     );
-    await popupChecks(context, base);
-    await hudChecks(context, base);
+    await statusRegressionChecks(context, base);
+    if (!process.argv.includes("--status-regressions")) {
+      await popupChecks(context, base);
+      await hudChecks(context, base);
+    }
     await context.close();
-    await extensionSmoke(base);
+    if (!process.argv.includes("--status-regressions"))
+      await extensionSmoke(base);
     stats.browser = browser.version();
     stats.platform = process.platform;
-    stats.visualMode = onlyA11y
-      ? "none"
-      : capture
-        ? "candidate capture only"
-        : update
-          ? "baseline update"
-          : "approved comparison";
+    stats.visualMode = process.argv.includes("--status-regressions")
+      ? "status regressions only"
+      : onlyA11y
+        ? "none"
+        : capture
+          ? "candidate capture only"
+          : update
+            ? "baseline update"
+            : "approved comparison";
     stats.font =
       "Actual packaged VT323 + Share Tech Mono fonts; no test-only override";
     fs.writeFileSync(
-      path.join(out, onlyA11y ? "a11y-results.json" : "results.json"),
+      path.join(
+        out,
+        process.argv.includes("--status-regressions")
+          ? "status-results.json"
+          : onlyA11y
+            ? "a11y-results.json"
+            : "results.json",
+      ),
       JSON.stringify(stats, null, 2),
     );
     console.log(JSON.stringify(stats, null, 2));

@@ -2,7 +2,10 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.3.5 · **Production engine:** V2.8.2 · **Updated:** 2026-10-08 13:18:01 EDT
+**Release:** v10.3.6 · **Production engine:** V2.8.2 · **Updated:** 2026-10-09 11:33:39 EDT
+
+v10.3.6 fixes status freshness, delayed polling and cross-tab observation races
+without changing production policy. See [bug scan and verification](docs/DEBUG_STATUS.md).
 
 ## Install
 

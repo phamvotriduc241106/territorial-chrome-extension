@@ -59,6 +59,17 @@ test("zero is a measured value; unavailable and estimated metrics remain explici
   assert.equal(metric(42, "estimated"), "~42 (estimate)");
   assert.equal(metric(NaN, "observed"), "Unavailable");
 });
+test("cached telemetry ages by observation age plus snapshot delivery/cache time", () => {
+  const sampled = { ...playing, telemetryAgeMs: 2800 };
+  assert.equal(derive(sampled, {}, 200).key, "playing");
+  assert.equal(derive(sampled, {}, 201).key, "stale");
+  assert.equal(derive(sampled, {}, 201).fresh, false);
+  for (const telemetryAgeMs of [null, NaN, -1, Infinity]) {
+    const state = derive({ ...playing, telemetryAgeMs }, {}, 0);
+    assert.equal(state.fresh, false);
+    assert.notEqual(state.key, "playing");
+  }
+});
 test("presentation-only preferences preserve planner identity and never change pacing or engine", () => {
   const { environment } = require("../tools/cpu-benchmark.cjs"),
     box = environment(),

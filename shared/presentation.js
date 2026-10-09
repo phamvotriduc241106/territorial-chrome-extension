@@ -33,6 +33,9 @@
         Number.isFinite(ageMs) &&
         ageMs >= 0;
       const sampleAge = status.telemetryAgeMs;
+      // A cached/delivered snapshot does not stop its underlying observation aging.
+      const observationAge =
+        Number.isFinite(sampleAge) && sampleAge >= 0 ? sampleAge + ageMs : null;
       const needsSample =
         status.inGame === true ||
         status.armed === true ||
@@ -42,15 +45,13 @@
         valid &&
         ageMs <= STALE_MS &&
         (!needsSample ||
-          (Number.isFinite(sampleAge) &&
-            sampleAge >= 0 &&
-            sampleAge <= STALE_MS));
+          (observationAge !== null && observationAge <= STALE_MS));
       if (!valid) key = "blocked";
       else if (settings.botEnabled === false || status.botEnabled === false)
         key = "paused";
       else if (
         ageMs > STALE_MS ||
-        (needsSample && Number.isFinite(sampleAge) && sampleAge > STALE_MS)
+        (needsSample && observationAge !== null && observationAge > STALE_MS)
       )
         key = "stale";
       else if (status.pendingSpawn === true) key = "confirming";

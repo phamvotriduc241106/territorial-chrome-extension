@@ -12,8 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let retryAction = null,
     errorKind = null,
     lastStatus = null,
+    statusTabKey = null,
     latestRequest = 0,
     latestSample = 0,
+    latestSequence = null,
+    activeStatusRequests = 0,
     renderedAdvanced = null,
     alive = true;
   const controls = [
@@ -44,10 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }, timeout);
       try {
         invoke((result) => {
+          // Chrome requires lastError to be consumed inside every callback,
+          // including one arriving after our own timeout already settled.
+          const failure = chrome.runtime.lastError;
           if (finished) return;
           finished = true;
           clearTimeout(timer);
-          const failure = chrome.runtime.lastError;
           if (failure)
             reject(Error(failure.message || "Extension request failed"));
           else resolve(result);
@@ -147,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
     text(
       "tele-age",
       st && Number.isFinite(st.telemetryAgeMs)
-        ? Math.round(st.telemetryAgeMs) + " ms old"
+        ? Math.round(st.telemetryAgeMs + age) + " ms old"
         : "Unavailable",
     );
     text("tele-engine", (st && st.path) || "Unavailable");
@@ -159,14 +164,29 @@ document.addEventListener("DOMContentLoaded", () => {
         : "Unavailable",
     );
   }
+  function adoptStatusTab(tab) {
+    const tabKey = tab ? `${tab.id}:${tab.url}` : null;
+    if (tabKey === statusTabKey) return false;
+    statusTabKey = tabKey;
+    lastStatus = null;
+    latestSample = 0;
+    latestSequence = null;
+    if (errorKind === "connection" || errorKind === "runtime-preference")
+      clearError();
+    renderStatus();
+    return true;
+  }
   async function queryLiveStatus() {
     const request = ++latestRequest;
+    activeStatusRequests++;
     try {
       const tab = await activeTab();
       if (!alive || request !== latestRequest) return;
+      adoptStatusTab(tab);
       if (!tab) {
         lastStatus = null;
         latestSample = 0;
+        latestSequence = null;
         renderStatus();
         return;
       }
@@ -176,6 +196,13 @@ document.addEventListener("DOMContentLoaded", () => {
         1200,
       );
       if (!alive || request !== latestRequest) return;
+      // Focus/navigation may change while the recipient is answering.
+      const currentTab = await activeTab();
+      if (!alive || request !== latestRequest) return;
+      if (adoptStatusTab(currentTab)) {
+        void queryLiveStatus();
+        return;
+      }
       if (
         !response ||
         response.success !== true ||
@@ -184,19 +211,46 @@ document.addEventListener("DOMContentLoaded", () => {
       )
         throw Error("Invalid status response");
       const st = response.status;
+      const sequence = st.sampleSequence;
       if (
         !Number.isFinite(st.statusSampledAt) ||
         st.statusSampledAt > Date.now() ||
         st.statusSampledAt <= 0
       )
         throw Error("Invalid status timestamp");
-      if (st.statusSampledAt < latestSample) return;
+      if (
+        sequence !== undefined &&
+        (!Number.isSafeInteger(sequence) || sequence < 1)
+      )
+        throw Error("Invalid status sequence");
+      if (
+        st.statusSampledAt < latestSample ||
+        (st.statusSampledAt === latestSample &&
+          latestSequence !== null &&
+          (sequence === undefined || sequence <= latestSequence))
+      )
+        return;
       latestSample = st.statusSampledAt;
+      latestSequence = sequence === undefined ? null : sequence;
       lastStatus = st;
       renderStatus();
       if (errorKind === "connection") clearError();
     } catch (e) {
       if (!alive || request !== latestRequest) return;
+      try {
+        const currentTab = await activeTab();
+        if (!alive || request !== latestRequest) return;
+        if (adoptStatusTab(currentTab)) {
+          void queryLiveStatus();
+          return;
+        }
+      } catch (_) {
+        if (!alive || request !== latestRequest) return;
+        // An unknown recipient cannot inherit a previously confirmed game's data.
+        lastStatus = null;
+        latestSample = 0;
+        latestSequence = null;
+      }
       renderStatus();
       if (!lastStatus) {
         text(
@@ -210,6 +264,8 @@ document.addEventListener("DOMContentLoaded", () => {
           queryLiveStatus,
           "connection",
         );
+    } finally {
+      activeStatusRequests--;
     }
   }
   function renderSettings() {
@@ -417,7 +473,9 @@ document.addEventListener("DOMContentLoaded", () => {
   void queryLiveStatus();
   const poll = setInterval(() => {
     renderStatus();
-    void queryLiveStatus();
+    // Explicit retries may supersede replies; the watchdog must not starve
+    // a valid response that takes longer than the polling interval.
+    if (!activeStatusRequests) void queryLiveStatus();
   }, 1000);
   window.addEventListener("unload", () => {
     alive = false;

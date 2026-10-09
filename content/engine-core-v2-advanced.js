@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.3.5
+ * Territorial.io deterministic policy kernel v10.3.6
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -3536,7 +3536,7 @@
   }
 
   const EngineCore = {
-    version: '10.3.5',
+    version: '10.3.6',
     DIFF,
     DUMP,
     LIVE,
@@ -3608,7 +3608,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-08 13:18:01 EDT',
+    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-09 11:33:39 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {
