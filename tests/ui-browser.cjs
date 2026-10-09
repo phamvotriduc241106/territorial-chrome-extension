@@ -58,15 +58,26 @@ function fixture(initial = {}) {
     listeners: [],
     messages: [],
     writes: [],
+    unreadErrors: 0,
+    errorRead: false,
   });
   Object.assign(f, initial);
+  let lastError = null;
   const runtime = {
-    lastError: null,
+    get lastError() {
+      f.errorRead = true;
+      return lastError;
+    },
+    set lastError(value) {
+      lastError = value;
+    },
     onMessage: { addListener: (fn) => f.listeners.push(fn) },
   };
   function callback(cb, value, error) {
     runtime.lastError = error ? { message: error } : null;
+    f.errorRead = false;
     cb(value);
+    if (error && !f.errorRead) f.unreadErrors++;
     runtime.lastError = null;
   }
   window.chrome = {
@@ -194,6 +205,89 @@ async function statusRegressionChecks(context, base) {
     await verify(page);
     await timed.close();
   }
+  await popup({}, async (page) => {
+    await page.clock.runFor(50);
+    await page.evaluate(() => {
+      __uiFixture.sameTick = Date.now();
+      __uiFixture.replies = [
+        {
+          delay: 0,
+          timestamp: __uiFixture.sameTick,
+          status: {
+            ...__uiFixture.status,
+            sampleSequence: 10,
+            blockReason: "user-hold",
+          },
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(20);
+    await page.evaluate(() => {
+      __uiFixture.replies = [
+        {
+          delay: 0,
+          timestamp: __uiFixture.sameTick,
+          status: { ...__uiFixture.status, sampleSequence: 9 },
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(20);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "blocked",
+      "Lower sequence at the same millisecond cannot restore Playing",
+    );
+    await page.evaluate(() => {
+      __uiFixture.replies = [
+        {
+          delay: 0,
+          timestamp: __uiFixture.sameTick,
+          status: {
+            ...__uiFixture.status,
+            sampleSequence: 11,
+            botEnabled: false,
+          },
+        },
+      ];
+      document.querySelector("#retry-connection").click();
+    });
+    await page.clock.runFor(20);
+    check(
+      (await page.locator("#status-text").getAttribute("data-state")) ===
+        "paused",
+      "Higher sequence at the same millisecond is accepted",
+    );
+    for (const sampleSequence of [11, 1.5, undefined]) {
+      await page.evaluate(
+        ({ sampleSequence }) => {
+          __uiFixture.replies = [
+            {
+              delay: 0,
+              timestamp: __uiFixture.sameTick,
+              status: { ...__uiFixture.status, sampleSequence },
+            },
+          ];
+          document.querySelector("#retry-connection").click();
+        },
+        { sampleSequence },
+      );
+      await page.clock.runFor(20);
+      check(
+        (await page.locator("#status-text").getAttribute("data-state")) ===
+          "paused",
+        "Duplicate, malformed or missing same-tick ordinal cannot overwrite Paused",
+      );
+    }
+  });
+  await popup({ messageDelay: 2000, failMessage: true }, async (page) => {
+    await page.clock.runFor(3500);
+    check(
+      (await page.evaluate(() => __uiFixture.unreadErrors)) === 0,
+      "Late Chrome errors are read even after the request timeout has settled",
+    );
+  });
   await popup({ messageDelay: 1100 }, async (page) => {
     await page.clock.runFor(3500);
     check(

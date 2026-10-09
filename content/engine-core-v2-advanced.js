@@ -3608,7 +3608,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-09 11:00:45 EDT',
+    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-09 11:33:39 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {

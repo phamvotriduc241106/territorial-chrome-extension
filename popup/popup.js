@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusTabKey = null,
     latestRequest = 0,
     latestSample = 0,
+    latestSequence = null,
     activeStatusRequests = 0,
     renderedAdvanced = null,
     alive = true;
@@ -46,10 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }, timeout);
       try {
         invoke((result) => {
+          // Chrome requires lastError to be consumed inside every callback,
+          // including one arriving after our own timeout already settled.
+          const failure = chrome.runtime.lastError;
           if (finished) return;
           finished = true;
           clearTimeout(timer);
-          const failure = chrome.runtime.lastError;
           if (failure)
             reject(Error(failure.message || "Extension request failed"));
           else resolve(result);
@@ -167,6 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusTabKey = tabKey;
     lastStatus = null;
     latestSample = 0;
+    latestSequence = null;
     if (errorKind === "connection" || errorKind === "runtime-preference")
       clearError();
     renderStatus();
@@ -182,6 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!tab) {
         lastStatus = null;
         latestSample = 0;
+        latestSequence = null;
         renderStatus();
         return;
       }
@@ -206,14 +211,27 @@ document.addEventListener("DOMContentLoaded", () => {
       )
         throw Error("Invalid status response");
       const st = response.status;
+      const sequence = st.sampleSequence;
       if (
         !Number.isFinite(st.statusSampledAt) ||
         st.statusSampledAt > Date.now() ||
         st.statusSampledAt <= 0
       )
         throw Error("Invalid status timestamp");
-      if (st.statusSampledAt < latestSample) return;
+      if (
+        sequence !== undefined &&
+        (!Number.isSafeInteger(sequence) || sequence < 1)
+      )
+        throw Error("Invalid status sequence");
+      if (
+        st.statusSampledAt < latestSample ||
+        (st.statusSampledAt === latestSample &&
+          latestSequence !== null &&
+          (sequence === undefined || sequence <= latestSequence))
+      )
+        return;
       latestSample = st.statusSampledAt;
+      latestSequence = sequence === undefined ? null : sequence;
       lastStatus = st;
       renderStatus();
       if (errorKind === "connection") clearError();
@@ -231,6 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // An unknown recipient cannot inherit a previously confirmed game's data.
         lastStatus = null;
         latestSample = 0;
+        latestSequence = null;
       }
       renderStatus();
       if (!lastStatus) {

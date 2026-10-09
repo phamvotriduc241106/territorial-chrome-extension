@@ -11,7 +11,7 @@
   const ENGINE_VERSION = 'V2.8.2';
   const ENGINE_SOURCE = 'content/engine-core-v2-advanced.js (V2.8.2 authoritative runtime)';
   // Always include local wall-clock time and timezone in extension details.
-  const ENGINE_UPDATED_AT = '2026-10-09 11:00:45 EDT';
+  const ENGINE_UPDATED_AT = '2026-10-09 11:33:39 EDT';
   const BRIDGE_VERSION = 1;
   const SETTINGS_SCHEMA = 2;
 
