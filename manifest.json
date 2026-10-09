@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Commander",
-  "version": "10.3.5",
-  "description": "Truthful runtime status, accessible controls and compact HUD. V2.8.2 policy unchanged. Updated 2026-10-08 13:18:01 EDT.",
+  "version": "10.3.6",
+  "description": "Truthful runtime status, accessible controls and compact HUD. V2.8.2 policy unchanged. Updated 2026-10-09 11:00:45 EDT.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://territorial.io/*",

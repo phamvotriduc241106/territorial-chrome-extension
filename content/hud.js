@@ -78,10 +78,11 @@
       const started = performance.now();
       this.ensurePanel();
       const status = this.provider ? this.provider() : null;
+      const snapshotAge = status ? Date.now() - status.statusSampledAt : 0;
       const state = window.TIOPresentation.derivePresentationState(
         status,
         { botEnabled: status ? status.botEnabled : true },
-        0,
+        snapshotAge,
       );
       // Do not obscure the initial spawn. Detailed mode can inspect connection without intercepting clicks.
       this.container.hidden =
@@ -143,7 +144,7 @@
       set(
         "tio-hud-age",
         st && Number.isFinite(st.telemetryAgeMs)
-          ? Math.round(st.telemetryAgeMs) + " ms"
+          ? Math.round(st.telemetryAgeMs + snapshotAge) + " ms"
           : "Unavailable",
       );
       set(
