@@ -8,7 +8,7 @@
 - Same-millisecond observations use the native sample sequence to reject older/duplicate packets; invalid ordinals are rejected, and the watermark resets with tab scope. Legacy timestamp-only observations remain compatible.
 - Chrome callback errors are consumed even after a local request timeout, without allowing late callbacks to settle the request again.
 - Adds controlled-clock/browser regressions. Visual QA separately verifies actual release metadata, then temporarily renders only build-label strings from the reviewed screenshot release; no status, metrics, layout or comparison threshold is masked.
-- Production V2.8.2 policy, native instrumentation, permissions and all 80 decision/spend fingerprints remain unchanged. Local isolated branch; no push or merge for this debugging request.
+- Production V2.8.2 policy, native instrumentation, permissions and all 80 decision/spend fingerprints remain unchanged. Isolated review branch; no automatic merge.
 
 ## 10.3.5 — 2026-10-08 13:18:01 EDT
 

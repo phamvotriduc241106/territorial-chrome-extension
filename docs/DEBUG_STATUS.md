@@ -3,7 +3,9 @@
 Updated **2026-10-09 11:33:39 EDT**. Isolated local branch:
 `codex/debug-runtime-status`, based on `edea02b` (Commander UI branch after
 theme PR #3 was merged into it). GitHub main remains `b407960` at this scan.
-This debugging changeset has not been pushed, merged or run through GitHub CI.
+This isolated debugging changeset remains unmerged. Remote validation results
+are tracked independently in the review PR checks; the local evidence below
+does not substitute for Linux CI.
 
 ## Reproduced defects and fixes
 
@@ -68,7 +70,7 @@ Status, metrics, colors, geometry, controls and the **0.5%** pixel threshold are
 not normalized or relaxed. Playwright clocks use isolated contexts so they
 cannot freeze the ordinary visual/extension tests.
 
-Linux rendering and GitHub CI have **not** been run for this local branch.
+Linux rendering and GitHub CI are separate review gates, recorded in PR checks.
 Passing local tests is not a comprehensive security audit, a real-match
 win-rate result or a claim of zero remaining bugs.
 
