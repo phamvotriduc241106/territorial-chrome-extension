@@ -103,3 +103,13 @@ No Workers, WASM, WebGPU, new tree search, frontier-driven MPC/UCB, automatic mu
 ## Initial implementation scope
 
 Implement work package A and the read-only review advisory from B in an isolated research module, with deterministic fixtures and seeded accounting/property tests. Record a development-only candidate/baseline comparison without reconstructing missing planner inputs from the old projections. Then extend recording in C before deciding whether live candidate treatment is justified. This is useful executable progress while preserving the production baseline needed for comparison.
+
+## Initial implementation — research only
+
+`research/contact-risk-candidate.cjs` implements the opening cap and non-executable banking advisory. It requires matching match/source/state-version provenance, finite fresh age, complete adjacent coverage, exact opponent bank/incoming fields and a separately approved baseline budget. Busy opponents remain in risk accounting. Only neutral expansion inside the opening scope is reduced; holds/fights and out-of-scope states are not promoted or enlarged.
+
+The ledger uses the existing source-verified human debit function and native ratio units. Binary search finds the largest allowed quantized command, preserving the baseline reserve, minimum attack and budget. Waiting has zero tax/debit. The advisory requests review during density-hold territory loss; it does not invent a feasible attack.
+
+Run `node research/run-contact-risk-fixtures.cjs` for explicitly synthetic examples, and `node --test tests/contact-risk-candidate.test.cjs` for eight regression/property tests including 5,000 seeded accounting cases, native-unit maximality, input immutability, stale/partial rejection, near-int32 balances and release isolation. These prove mechanical properties, **not** better Impossible strength. The published old traces cannot pass the new exact-input contract without inventing missing data; they are not treated as full replay inputs.
+
+Next remains work package C: exact planner/command recording followed by bounded shadow evaluation and held-out development. No manifest import, native actuator call, runtime settings change, production release bump, or changed frozen decision fingerprint is part of this implementation.

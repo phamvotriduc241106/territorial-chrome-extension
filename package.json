@@ -8,7 +8,7 @@
   },
   "scripts": {
     "check": "node tests/repository.test.cjs",
-    "test": "npm run check && node tests/unit.cjs && node experiments/test-v2-compatibility.cjs && node experiments/hard-mode-crush-test.cjs && node experiments/numerical-stability-test.cjs && node experiments/test-adapter.cjs && node tests/hard-mode-policy.test.cjs && node --test tests/very-hard-standard.test.cjs tests/very-hard-cli.test.cjs tests/cpu-optimization.test.cjs tests/planning-math.test.cjs tests/frontier-model.test.cjs tests/frontier-episodes.test.cjs tests/frontier-spatial.test.cjs tests/frontier-dynamic.test.cjs tests/frontier-study.test.cjs tests/spawn-confirmation.test.cjs tests/live-chrome-audit.test.cjs tests/impossible-audit-evidence.test.cjs",
+    "test": "npm run check && node tests/unit.cjs && node experiments/test-v2-compatibility.cjs && node experiments/hard-mode-crush-test.cjs && node experiments/numerical-stability-test.cjs && node experiments/test-adapter.cjs && node tests/hard-mode-policy.test.cjs && node --test tests/very-hard-standard.test.cjs tests/very-hard-cli.test.cjs tests/cpu-optimization.test.cjs tests/planning-math.test.cjs tests/frontier-model.test.cjs tests/frontier-episodes.test.cjs tests/frontier-spatial.test.cjs tests/frontier-dynamic.test.cjs tests/frontier-study.test.cjs tests/spawn-confirmation.test.cjs tests/live-chrome-audit.test.cjs tests/impossible-audit-evidence.test.cjs tests/contact-risk-candidate.test.cjs",
     "test:browser": "node tests/run.cjs",
     "test:ui": "node tests/ui-browser.cjs",
     "test:a11y": "node tests/ui-browser.cjs --a11y",
