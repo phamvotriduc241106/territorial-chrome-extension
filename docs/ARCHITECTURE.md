@@ -23,6 +23,16 @@ The MAIN hook validates the recognized source contract, target availability, cur
 
 No bundler is required. Chrome loads the repository directly, or the clean directory produced by `npm run package`. The explicit release closure rejects references outside production directories. Historical reports keep their original paths and claims as archival text; they are not current release documentation.
 
+The v10.3.4 popup and passive HUD share `shared/presentation.js` and
+`shared/ui.css`. Presentation derives lifecycle state from the orchestrator's
+read-only, timestamped `GET_STATUS` response, independently of saved preferences.
+It never supplies targets, budgets or commands to the engine. The toolbar badge
+reports only the saved enable preference. `hudMode` and `advancedExpanded` are
+presentation-only settings: changing either preserves planner settings identity,
+engine selection and command pacing. Pause remains an explicit user command;
+failed persistence is displayed as local-only rather than silently acknowledged.
+See [UI contracts and validation](UI_UX_VALIDATION.md).
+
 V2.8 retains one shipped kernel file, but separates planning-state normalization, command application, income stepping, aggregate settlement and utility evaluation into shared functions. MPC and the endgame bandit use that same model. The source adapter supplies modern-v3 income parameters; the MAIN hook snapshots economy, outgoing fronts, global bank totals and leader identity; both orchestrator paths pass the context to planning. See PLANNING_MODEL.md.
 
 Experimental tree search is disabled by default and has no call path from decide(). Native actuation remains independent of speculation: every command is repriced and validated from live state. Planning utilities are not calibrated win probabilities. The 10.2.4 restructuring was behavior-preserving; 10.3.0 intentionally changes planning mathematics.

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local Commander UI fixture</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="../content/content.css" />
+    <style>
+      body {
+        margin: 0;
+        background: #193e35;
+        color: white;
+        font: 14px sans-serif;
+      }
+      h1 {
+        padding: 20px;
+        font-size: 16px;
+      }
+      canvas {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+      }
+      #typing,
+      #editable {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+      }
+      #editable {
+        left: 250px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Local game fixture — no native commands</h1>
+    <canvas aria-hidden="true" width="1280" height="720"></canvas>
+    <input id="typing" aria-label="Player name" />
+    <div
+      id="editable"
+      contenteditable="true"
+      role="textbox"
+      aria-label="Editable game note"
+    >
+      Type here
+    </div>
+  </body>
+</html>

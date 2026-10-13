@@ -1,288 +1,485 @@
-// Territorial.io Auto Commander - Popup Controller (error-safe)
-
-document.addEventListener('DOMContentLoaded', () => {
-  const config = window.TIOConfig;
-  const toggleBot = document.getElementById('toggle-bot');
-  const toggleExpand = document.getElementById('toggle-expand');
-  const toggleAttack = document.getElementById('toggle-attack');
-  const toggleFallback = document.getElementById('toggle-fallback');
-
-  const inputCPS = document.getElementById('input-cps');
-  const inputRatio = document.getElementById('input-ratio');
-  const valCPS = document.getElementById('val-cps');
-  const valRatio = document.getElementById('val-ratio');
-
-  const statusBadge = document.getElementById('status-badge');
-  const statusText = document.getElementById('status-text');
-  const versionLabel = document.getElementById('version-label');
-  const versionDetails = document.getElementById('version-details');
-  const strategyBtns = document.querySelectorAll('.strategy-btn');
-  const btnEngineV2 = document.getElementById('btn-engine-v2');
-  const btnEngineV1 = document.getElementById('btn-engine-v1');
-
-  // Telemetry DOM elements
-  const pillConn = document.getElementById('pill-conn');
-  const teleState = document.getElementById('tele-state');
-  const teleKernel = document.getElementById('tele-kernel');
-  const teleEngine = document.getElementById('tele-engine');
-  const teleBalance = document.getElementById('tele-balance');
-  const teleCap = document.getElementById('tele-cap');
-  const telePolicy = document.getElementById('tele-policy');
-
-  const headerUpdateLabel = document.getElementById('header-update-label');
-
-  let currentSettings = config.normalizeSettings(config.DEFAULT_SETTINGS);
-  if (versionLabel) versionLabel.textContent = config.buildVersionLabel ? config.buildVersionLabel() : `v${config.VERSION}`;
-  if (versionDetails) versionDetails.textContent = config.buildEngineDetails ? config.buildEngineDetails() : `${config.ENGINE_VERSION} Math · Updated ${config.ENGINE_UPDATED_AT}`;
-  if (headerUpdateLabel && config.ENGINE_UPDATED_AT) headerUpdateLabel.textContent = `Updated: ${config.ENGINE_UPDATED_AT}`;
-
-  function updateTelemetry(st) {
-    if (!st) {
-      if (pillConn) {
-        pillConn.textContent = 'Disconnected';
-        pillConn.className = 'pill-badge';
+// Popup preferences are transactional; gameplay headlines use only fresh runtime data.
+document.addEventListener("DOMContentLoaded", () => {
+  "use strict";
+  const config = window.TIOConfig,
+    view = window.TIOPresentation,
+    el = (id) => document.getElementById(id);
+  let confirmed = config.normalizeSettings(),
+    draft = confirmed,
+    loaded = false,
+    saving = false,
+    queued = {};
+  let retryAction = null,
+    errorKind = null,
+    lastStatus = null,
+    statusTabKey = null,
+    latestRequest = 0,
+    latestSample = 0,
+    latestSequence = null,
+    activeStatusRequests = 0,
+    renderedAdvanced = null,
+    alive = true;
+  const controls = [
+    ...document.querySelectorAll(
+      "input,select,.strategy-btn,.engine-grid button",
+    ),
+  ];
+  const text = (id, value) => {
+    el(id).textContent = value;
+  };
+  function error(message, retry, kind = "preference") {
+    text("error-message", message);
+    el("error-feedback").hidden = false;
+    retryAction = retry;
+    errorKind = kind;
+  }
+  function clearError() {
+    el("error-feedback").hidden = true;
+    retryAction = null;
+    errorKind = null;
+  }
+  function call(invoke, timeout = 1500) {
+    return new Promise((resolve, reject) => {
+      let finished = false;
+      const timer = setTimeout(() => {
+        finished = true;
+        reject(Error("Request timed out"));
+      }, timeout);
+      try {
+        invoke((result) => {
+          // Chrome requires lastError to be consumed inside every callback,
+          // including one arriving after our own timeout already settled.
+          const failure = chrome.runtime.lastError;
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          if (failure)
+            reject(Error(failure.message || "Extension request failed"));
+          else resolve(result);
+        });
+      } catch (e) {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          reject(e);
+        }
       }
-      if (teleState) teleState.textContent = 'Tab Inactive';
-      if (teleBalance) teleBalance.textContent = '—';
-      if (teleCap) teleCap.textContent = '—';
-      if (telePolicy) telePolicy.textContent = 'Open territorial.io to connect';
-      return;
-    }
-
-    if (pillConn) {
-      if (st.inGame) {
-        pillConn.textContent = 'Live Match';
-        pillConn.className = 'pill-badge active';
-      } else if (st.armed) {
-        pillConn.textContent = 'Spawn Ready';
-        pillConn.className = 'pill-badge waiting';
-      } else {
-        pillConn.textContent = 'Connected';
-        pillConn.className = 'pill-badge';
-      }
-    }
-
-    if (teleState) {
-      if (st.inGame) {
-        teleState.textContent = st.botEnabled ? 'Active Playing' : 'Paused (Press Z)';
-      } else if (st.armed) {
-        teleState.textContent = 'Awaiting Spawn';
-      } else {
-        teleState.textContent = 'Lobby / Standby';
-      }
-    }
-
-    if (teleEngine) {
-      teleEngine.textContent = st.internalReady ? 'INTERNAL (bB)' : (st.path || 'CLICK-VH');
-    }
-
-    if (teleKernel) {
-      teleKernel.textContent = st.engineVersion === 1 ? 'V1 Heuristic' : `${config.ENGINE_VERSION} Math`;
-    }
-
-    if (teleBalance) {
-      teleBalance.textContent = st.balance > 0 ? Number(st.balance).toLocaleString() : '—';
-    }
-
-    if (teleCap) {
-      teleCap.textContent = st.softCap > 0 ? Number(st.softCap).toLocaleString() : '—';
-    }
-
-    if (telePolicy) {
-      if (!st.inGame && !st.armed) {
-        telePolicy.textContent = 'Waiting to join match...';
-      } else if (st.armed && !st.inGame) {
-        telePolicy.textContent = 'Ready — click map to spawn!';
-      } else {
-        telePolicy.textContent = st.policy || 'Active play';
-      }
+    });
+  }
+  function validTab(tab) {
+    try {
+      const u = new URL(tab.url);
+      return (
+        tab.id != null &&
+        u.protocol === "https:" &&
+        (u.hostname === "territorial.io" ||
+          u.hostname.endsWith(".territorial.io"))
+      );
+    } catch (_) {
+      return false;
     }
   }
-
-  function queryLiveStatus() {
+  async function activeTab() {
+    const tabs = await call((done) =>
+      chrome.tabs.query({ active: true, currentWindow: true }, done),
+    );
+    return tabs && tabs[0] && validTab(tabs[0]) ? tabs[0] : null;
+  }
+  async function notify(patch) {
+    const tab = await activeTab();
+    if (!tab) return false;
+    const result = await call((done) =>
+      chrome.tabs.sendMessage(
+        tab.id,
+        { action: "STATE_CHANGED", settings: patch },
+        done,
+      ),
+    );
+    return !!(result && result.success);
+  }
+  function renderStatus() {
+    const age = lastStatus ? Date.now() - lastStatus.statusSampledAt : 0;
+    const state = view.derivePresentationState(lastStatus, confirmed, age);
+    text("status-text", state.label);
+    el("status-text").dataset.state = state.key;
+    text("next-step", state.hint);
+    el("open-game").hidden = state.key !== "disconnected";
+    const st = state.fresh ? lastStatus : null;
+    const resume = !!(
+      st &&
+      st.botEnabled === false &&
+      confirmed.botEnabled &&
+      !saving
+    );
+    el("resume-tab").hidden = !resume;
+    if (resume)
+      text(
+        "next-step",
+        "This tab is paused. Resume here or press Z in the game.",
+      );
+    if (st && st.preferencesError && el("error-feedback").hidden) {
+      error(
+        st.preferencesError,
+        async () => {
+          try {
+            const tab = await activeTab();
+            if (!tab) throw Error("No connected game tab");
+            await call((done) =>
+              chrome.tabs.sendMessage(
+                tab.id,
+                { action: "RETRY_SETTINGS" },
+                done,
+              ),
+            );
+            void queryLiveStatus();
+          } catch (_) {
+            error(
+              "Game preference retry failed. Reconnect and try again.",
+              queryLiveStatus,
+              "connection",
+            );
+          }
+        },
+        "runtime-preference",
+      );
+    } else if (st && !st.preferencesError && errorKind === "runtime-preference")
+      clearError();
+    text(
+      "tele-balance",
+      view.metric(st && st.balance, st && st.balanceProvenance),
+    );
+    text("tele-cap", view.metric(st && st.softCap, st && st.softCapProvenance));
+    text(
+      "tele-age",
+      st && Number.isFinite(st.telemetryAgeMs)
+        ? Math.round(st.telemetryAgeMs + age) + " ms old"
+        : "Unavailable",
+    );
+    text("tele-engine", (st && st.path) || "Unavailable");
+    text("tele-policy", (st && (st.blockReason || st.policy)) || "Unavailable");
+    text(
+      "tele-command",
+      st && Number.isFinite(st.lastCommandAt)
+        ? new Date(st.lastCommandAt).toLocaleTimeString()
+        : "Unavailable",
+    );
+  }
+  function adoptStatusTab(tab) {
+    const tabKey = tab ? `${tab.id}:${tab.url}` : null;
+    if (tabKey === statusTabKey) return false;
+    statusTabKey = tabKey;
+    lastStatus = null;
+    latestSample = 0;
+    latestSequence = null;
+    if (errorKind === "connection" || errorKind === "runtime-preference")
+      clearError();
+    renderStatus();
+    return true;
+  }
+  async function queryLiveStatus() {
+    const request = ++latestRequest;
+    activeStatusRequests++;
     try {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        void chrome.runtime.lastError;
-        if (!tabs || !tabs[0] || !tabs[0].id) {
-          updateTelemetry(null);
+      const tab = await activeTab();
+      if (!alive || request !== latestRequest) return;
+      adoptStatusTab(tab);
+      if (!tab) {
+        lastStatus = null;
+        latestSample = 0;
+        latestSequence = null;
+        renderStatus();
+        return;
+      }
+      const response = await call(
+        (done) =>
+          chrome.tabs.sendMessage(tab.id, { action: "GET_STATUS" }, done),
+        1200,
+      );
+      if (!alive || request !== latestRequest) return;
+      // Focus/navigation may change while the recipient is answering.
+      const currentTab = await activeTab();
+      if (!alive || request !== latestRequest) return;
+      if (adoptStatusTab(currentTab)) {
+        void queryLiveStatus();
+        return;
+      }
+      if (
+        !response ||
+        response.success !== true ||
+        !response.status ||
+        typeof response.status !== "object"
+      )
+        throw Error("Invalid status response");
+      const st = response.status;
+      const sequence = st.sampleSequence;
+      if (
+        !Number.isFinite(st.statusSampledAt) ||
+        st.statusSampledAt > Date.now() ||
+        st.statusSampledAt <= 0
+      )
+        throw Error("Invalid status timestamp");
+      if (
+        sequence !== undefined &&
+        (!Number.isSafeInteger(sequence) || sequence < 1)
+      )
+        throw Error("Invalid status sequence");
+      if (
+        st.statusSampledAt < latestSample ||
+        (st.statusSampledAt === latestSample &&
+          latestSequence !== null &&
+          (sequence === undefined || sequence <= latestSequence))
+      )
+        return;
+      latestSample = st.statusSampledAt;
+      latestSequence = sequence === undefined ? null : sequence;
+      lastStatus = st;
+      renderStatus();
+      if (errorKind === "connection") clearError();
+    } catch (e) {
+      if (!alive || request !== latestRequest) return;
+      try {
+        const currentTab = await activeTab();
+        if (!alive || request !== latestRequest) return;
+        if (adoptStatusTab(currentTab)) {
+          void queryLiveStatus();
           return;
         }
-        try {
-          chrome.tabs.sendMessage(tabs[0].id, { action: 'GET_STATUS' }, (resp) => {
-            void chrome.runtime.lastError;
-            if (resp && resp.success && resp.status) {
-              updateTelemetry(resp.status);
-            } else {
-              updateTelemetry(null);
-            }
-          });
-        } catch (_) {
-          updateTelemetry(null);
-        }
-      });
-    } catch (_) {
-      updateTelemetry(null);
-    }
-  }
-
-  // Load existing settings (guard missing chrome APIs)
-  try {
-    chrome.storage.local.get(currentSettings, (stored) => {
-      // Consume lastError so Chrome does not show "Errors" on extension page
-      void chrome.runtime.lastError;
-      currentSettings = config.normalizeSettings({ ...currentSettings, ...(stored || {}) });
-      updateUIFromSettings();
-    });
-  } catch (e) {
-    updateUIFromSettings();
-  }
-
-  function updateUIFromSettings() {
-    if (toggleBot) toggleBot.checked = !!currentSettings.botEnabled;
-    if (toggleExpand) toggleExpand.checked = !!currentSettings.autoExpand;
-    if (toggleAttack) toggleAttack.checked = !!currentSettings.autoAttack;
-    if (toggleFallback) toggleFallback.checked = !!currentSettings.allowVisionFallback;
-
-    if (inputCPS) inputCPS.value = currentSettings.clickSpeed;
-    if (inputRatio) inputRatio.value = currentSettings.sliderPercentage;
-
-    if (valCPS) valCPS.textContent = `${currentSettings.clickSpeed} /s`;
-    if (valRatio) valRatio.textContent = currentSettings.sliderPercentage > 0
-      ? `${currentSettings.sliderPercentage}%`
-      : 'AUTO';
-
-    const isV2 = (Number(currentSettings.engineVersion) || 2) === 2;
-    if (btnEngineV2) {
-      if (isV2) btnEngineV2.classList.add('active');
-      else btnEngineV2.classList.remove('active');
-    }
-    if (btnEngineV1) {
-      if (!isV2) btnEngineV1.classList.add('active');
-      else btnEngineV1.classList.remove('active');
-    }
-
-    const active = currentSettings.botEnabled;
-    if (statusBadge && statusText) {
-      if (active) {
-        statusBadge.classList.add('active');
-        statusText.textContent = 'ACTIVE';
-      } else {
-        statusBadge.classList.remove('active');
-        statusText.textContent = 'OFF';
+      } catch (_) {
+        if (!alive || request !== latestRequest) return;
+        // An unknown recipient cannot inherit a previously confirmed game's data.
+        lastStatus = null;
+        latestSample = 0;
+        latestSequence = null;
       }
-    }
-
-    strategyBtns.forEach((btn) => {
-      if (btn.dataset.strategy === currentSettings.strategy) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
+      renderStatus();
+      if (!lastStatus) {
+        text(
+          "next-step",
+          "Connection unavailable. Retry, or reload the game tab.",
+        );
       }
-    });
-  }
-
-  function notifyContentScript() {
-    // Safe messaging: never leave uncaught lastError (common chrome://extensions "Errors")
-    try {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        void chrome.runtime.lastError;
-        if (!tabs || !tabs[0] || !tabs[0].id) return;
-        try {
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            { action: 'STATE_CHANGED', settings: currentSettings },
-            () => {
-              // Expected when tab is not territorial.io or content script not injected
-              void chrome.runtime.lastError;
-            }
-          );
-        } catch (_) {
-          /* ignore */
-        }
-      });
-    } catch (_) {
-      /* ignore */
+      if (el("error-feedback").hidden)
+        error(
+          "Game connection could not be confirmed. Retry or reload the tab.",
+          queryLiveStatus,
+          "connection",
+        );
+    } finally {
+      activeStatusRequests--;
     }
   }
-
-  function saveAndNotify() {
-    currentSettings = config.normalizeSettings(currentSettings);
+  function renderSettings() {
+    controls.forEach((c) => {
+      c.disabled = (!loaded || saving) && c.id !== "toggle-bot";
+    });
+    for (const [id, key] of [
+      ["toggle-bot", "botEnabled"],
+      ["toggle-expand", "autoExpand"],
+      ["toggle-attack", "autoAttack"],
+      ["toggle-fallback", "allowVisionFallback"],
+    ])
+      el(id).checked = draft[key];
+    el("input-cps").value = draft.clickSpeed;
+    el("input-ratio").value = draft.sliderPercentage;
+    text("val-cps", draft.clickSpeed + " /s");
+    text(
+      "val-ratio",
+      draft.sliderPercentage ? draft.sliderPercentage + "%" : "Adaptive",
+    );
+    el("input-cps").setAttribute(
+      "aria-valuetext",
+      draft.clickSpeed + " commands per second",
+    );
+    el("input-ratio").setAttribute(
+      "aria-valuetext",
+      draft.sliderPercentage ? draft.sliderPercentage + " percent" : "Adaptive",
+    );
+    el("hud-mode").value = draft.hudMode;
+    if (renderedAdvanced !== draft.advancedExpanded) {
+      el("advanced").open = draft.advancedExpanded;
+      renderedAdvanced = draft.advancedExpanded;
+    }
+    document
+      .querySelectorAll(".strategy-btn")
+      .forEach((b) =>
+        b.setAttribute(
+          "aria-pressed",
+          String(b.dataset.strategy === draft.strategy),
+        ),
+      );
+    el("btn-engine-v2").setAttribute(
+      "aria-pressed",
+      String(draft.engineVersion === 2),
+    );
+    el("btn-engine-v1").setAttribute(
+      "aria-pressed",
+      String(draft.engineVersion === 1),
+    );
+    text(
+      "enabled-label",
+      loaded
+        ? "Preference: " + (confirmed.botEnabled ? "enabled" : "disabled")
+        : "Preference: checking...",
+    );
+    renderStatus();
+  }
+  async function load() {
     try {
-      chrome.storage.local.set(currentSettings, () => {
-        void chrome.runtime.lastError;
-        updateUIFromSettings();
-        notifyContentScript();
-      });
-    } catch (_) {
-      updateUIFromSettings();
+      const stored = await call((done) =>
+        chrome.storage.local.get(config.DEFAULT_SETTINGS, done),
+      );
+      confirmed = config.normalizeSettings(stored);
+      draft = confirmed;
+      loaded = true;
+      clearError();
+      renderSettings();
+    } catch (e) {
+      loaded = false;
+      renderSettings();
+      error(
+        "Preferences could not be loaded. Autopilot can still be paused in this tab.",
+        load,
+      );
     }
   }
-
-  if (toggleBot) {
-    toggleBot.addEventListener('change', (e) => {
-      currentSettings.botEnabled = e.target.checked;
-      saveAndNotify();
-    });
+  function update(patch) {
+    const normalized = config.normalizeSettings({ ...draft, ...patch });
+    for (const key of Object.keys(patch)) queued[key] = normalized[key];
+    draft = normalized;
+    renderSettings();
+    void flush();
   }
-  if (toggleExpand) {
-    toggleExpand.addEventListener('change', (e) => {
-      currentSettings.autoExpand = e.target.checked;
-      saveAndNotify();
-    });
+  async function deliver(patch) {
+    try {
+      const applied = await notify(patch);
+      text(
+        "save-feedback",
+        applied
+          ? "Saved and received by the game tab."
+          : "Saved. Apply on the next connected game tab.",
+      );
+      if (applied && errorKind === "delivery") clearError();
+      void queryLiveStatus();
+    } catch (e) {
+      text("save-feedback", "Saved; game delivery is unconfirmed.");
+      error(
+        "Preference saved, but the game tab did not confirm it. Retry delivery or reconnect.",
+        () => deliver(patch),
+        "delivery",
+      );
+    }
   }
-  if (toggleAttack) {
-    toggleAttack.addEventListener('change', (e) => {
-      currentSettings.autoAttack = e.target.checked;
-      saveAndNotify();
-    });
+  async function flush() {
+    if (saving || !Object.keys(queued).length) return;
+    const patch = queued;
+    queued = {};
+    saving = true;
+    clearError();
+    text("save-feedback", "Saving preference...");
+    renderSettings();
+    try {
+      await call((done) => chrome.storage.local.set(patch, done));
+      confirmed = config.normalizeSettings({ ...confirmed, ...patch });
+      text("save-feedback", "Preference saved. Connecting to the game...");
+      await deliver(patch);
+    } catch (e) {
+      text("save-feedback", "Not saved.");
+      error(
+        "Save failed. Previous preferences are retained. A requested pause remains local to this tab.",
+        () => update(patch),
+      );
+    } finally {
+      saving = false;
+      draft = config.normalizeSettings({ ...confirmed, ...queued });
+      renderSettings();
+      void flush();
+    }
   }
-  if (toggleFallback) {
-    toggleFallback.addEventListener('change', (e) => {
-      currentSettings.allowVisionFallback = e.target.checked;
-      saveAndNotify();
-    });
-  }
-  if (inputCPS) {
-    inputCPS.addEventListener('input', (e) => {
-      currentSettings.clickSpeed = parseInt(e.target.value, 10) || config.DEFAULT_SETTINGS.clickSpeed;
-      if (valCPS) valCPS.textContent = `${currentSettings.clickSpeed} /s`;
-      saveAndNotify();
-    });
-  }
-  if (inputRatio) {
-    inputRatio.addEventListener('input', (e) => {
-      const parsed = parseInt(e.target.value, 10);
-      currentSettings.sliderPercentage = Number.isFinite(parsed) ? parsed : 0;
-      if (valRatio) valRatio.textContent = currentSettings.sliderPercentage > 0
-        ? `${currentSettings.sliderPercentage}%`
-        : 'AUTO';
-      saveAndNotify();
-    });
-  }
-
-  strategyBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      currentSettings.strategy = btn.dataset.strategy;
-      saveAndNotify();
-    });
+  el("toggle-bot").addEventListener("change", () => {
+    const enabled = el("toggle-bot").checked;
+    // Pause does not wait for storage. Never resume before a successful preference write.
+    if (!enabled)
+      void notify({ botEnabled: false })
+        .then(() => queryLiveStatus())
+        .catch(() => {});
+    update({ botEnabled: enabled });
   });
-
-  if (btnEngineV2) {
-    btnEngineV2.addEventListener('click', () => {
-      currentSettings.engineVersion = 2;
-      saveAndNotify();
-    });
+  el("resume-tab").addEventListener("click", () =>
+    update({ botEnabled: true }),
+  );
+  for (const [id, key] of [
+    ["toggle-expand", "autoExpand"],
+    ["toggle-attack", "autoAttack"],
+    ["toggle-fallback", "allowVisionFallback"],
+  ]) {
+    el(id).addEventListener("change", () => update({ [key]: el(id).checked }));
   }
-
-  if (btnEngineV1) {
-    btnEngineV1.addEventListener('click', () => {
-      currentSettings.engineVersion = 1;
-      saveAndNotify();
-    });
+  for (const [id, key] of [
+    ["input-cps", "clickSpeed"],
+    ["input-ratio", "sliderPercentage"],
+  ]) {
+    el(id).addEventListener("input", () =>
+      update({ [key]: Number(el(id).value) }),
+    );
   }
-
-  // Query live game telemetry immediately and poll every second while popup is open
-  queryLiveStatus();
-  const pollTimer = setInterval(queryLiveStatus, 1000);
-  window.addEventListener('unload', () => clearInterval(pollTimer));
+  document
+    .querySelectorAll(".strategy-btn")
+    .forEach((b) =>
+      b.addEventListener("click", () =>
+        update({ strategy: b.dataset.strategy }),
+      ),
+    );
+  el("btn-engine-v2").addEventListener("click", () =>
+    update({ engineVersion: 2 }),
+  );
+  el("btn-engine-v1").addEventListener("click", () =>
+    update({ engineVersion: 1 }),
+  );
+  el("hud-mode").addEventListener("change", () =>
+    update({ hudMode: el("hud-mode").value }),
+  );
+  el("advanced").addEventListener("toggle", () => {
+    if (loaded && el("advanced").open !== draft.advancedExpanded)
+      update({ advancedExpanded: el("advanced").open });
+  });
+  el("retry-save").addEventListener("click", () => {
+    if (retryAction) retryAction();
+  });
+  el("retry-connection").addEventListener("click", queryLiveStatus);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      for (const d of document.querySelectorAll("details")) d.open = false;
+      if (loaded && draft.advancedExpanded) update({ advancedExpanded: false });
+    }
+  });
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local") return;
+      const patch = Object.fromEntries(
+        Object.entries(changes).map(([k, v]) => [k, v.newValue]),
+      );
+      confirmed = config.normalizeSettings({ ...confirmed, ...patch });
+      if (!saving) {
+        draft = config.normalizeSettings({ ...confirmed, ...queued });
+        renderSettings();
+      }
+    });
+  } catch (_) {}
+  text("version-label", config.buildVersionLabel());
+  text("theme-updated", config.ENGINE_UPDATED_AT);
+  text("version-details", config.buildEngineDetails());
+  renderSettings();
+  void load();
+  void queryLiveStatus();
+  const poll = setInterval(() => {
+    renderStatus();
+    // Explicit retries may supersede replies; the watchdog must not starve
+    // a valid response that takes longer than the polling interval.
+    if (!activeStatusRequests) void queryLiveStatus();
+  }, 1000);
+  window.addEventListener("unload", () => {
+    alive = false;
+    latestRequest++;
+    clearInterval(poll);
+  });
 });
