@@ -67,6 +67,8 @@ Baseline kernel SHA-256: `8331d51ebfbc55bbf91efe4ca0d543231a01be75d3844cdee2d9ab
 
 These identify prior observations. Verify fresh source/signatures; do not simply whitelist an old hash or bypass a changed contract.
 
+Identity gap to close: the current live recorder hashes a **follow-up HTTP GET** after navigation, not the navigation response body itself. Capture/hash the actual loaded original source before rewriting/patching where supported, and distinguish it from any later fetch. If the two identities cannot be reconciled, mark that source binding unsupported; do not assume separate requests were identical.
+
 Evidence-backed concern: early expansion produced multiple contacts while neighboring banks exceeded ours; the final density-hold override persisted during territory decline. It uses `combatBankTarget=0.55` without an explicit shrink/trend exception in that final block. This identifies a candidate mechanism, **not proof that an alternative attack would win**.
 
 ## 4. Non-negotiable safety and research boundaries
@@ -141,6 +143,8 @@ Additionally, `content/main-hook.js` currently sorts and **truncates `enemies` t
 If a larger risk-only view is needed, add a separate opt-in bounded observation path and keep the production 32-entry behavior unchanged. Test larger empires with >32 physical contacts. The candidate accepts at most 511 opponent records.
 
 Enemy `incoming` comes from the source adapter's `incoming(p, me)` call. Trace its source definition before calling it directed incoming force **against us**. Keep unknown directed pressure null; never substitute zero or sum unrelated reinforcement to claim an incoming attack.
+
+The current hook catches some incoming lookup exceptions and leaves zero. Add opt-in field-validity/error provenance before treating every numeric zero as a source-confirmed absence of force. Do not change production defaults just to improve observation completeness.
 
 ### 6.3 Join command events correctly
 
