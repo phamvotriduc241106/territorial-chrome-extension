@@ -45,10 +45,12 @@ async function run(options = {}) {
   const seconds = options.seconds ?? 300;
   assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 900);
   const difficultyLabel = options.difficultyLabel ?? 'Very Hard';
-  assert.ok(['Normal', 'Hard', 'Very Hard'].includes(difficultyLabel));
+  assert.ok(['Normal', 'Hard', 'Very Hard', 'Impossible'].includes(difficultyLabel));
   const players = options.players ?? 64;
   assert.ok(Number.isInteger(players) && players >= 2 && players <= 512);
-  const spawn = options.spawn ?? { x: 550, y: 160 };
+  const mapLabel = options.mapLabel ?? null;
+  assert.ok(mapLabel === null || ['Europe', 'Asia'].includes(mapLabel));
+  const spawn = options.spawn ?? (mapLabel ? { x: 700, y: 400 } : { x: 550, y: 160 });
   assert.ok(Number.isFinite(spawn.x) && Number.isFinite(spawn.y));
   const output = options.output ?? path.join(root, 'scratch/live-chrome-audit',
     new Date().toISOString().replace(/[:.]/g, '-'));
@@ -58,7 +60,7 @@ async function run(options = {}) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'tio-live-chrome-'));
   const report = { schema: 1, evidenceKind: 'live-official-installed-extension-diagnostic',
     startedAt: new Date().toISOString(), release: currentRelease(),
-    difficultyLabel, players, spawn, samples: [], outcome: 'error',
+    difficultyLabel, players, mapLabel, spawn, samples: [], outcome: 'error',
     terminalConfirmed: false, manualCombatCommands: 0, accelerated: false,
     policyInfluence: 'existing-production-autoplay-only', performanceMicrobenchmark: false };
   let context;
@@ -107,6 +109,13 @@ async function run(options = {}) {
     report.extensionWorkers = context.serviceWorkers().map(w => w.url());
     await page.getByText('Custom Scenario', { exact: false }).click();
     await page.locator('#input1').fill(String(players));
+    if (mapLabel) {
+      await page.getByRole('button', { name: 'Settings', exact: true }).nth(0).click();
+      await page.getByText(new RegExp('^[⚪🟢] Realistic Map$')).click();
+      await page.getByText(mapLabel, { exact: false }).click();
+      report.mapSelectionEvidence = await page.locator('body').innerText();
+      await page.getByRole('button', { name: '⬅️ Back', exact: true }).click();
+    }
     await page.getByRole('button', { name: 'Settings', exact: true }).nth(2).click();
     // Click the current official UI label; do not equate hook's policy DIFF=5
     // with game difficulty. Current Very Hard is native value 4.
@@ -115,7 +124,9 @@ async function run(options = {}) {
     report.scenario = await page.evaluate(() => {
       const g = window.__TIO_GAME__, d = g.aE.data;
       return { nativeDifficulty: d.botDifficultyValue, playerCount: d.playerCount,
-        mapType: d.mapType, mapIndex: d.mapProceduralIndex, mapSeed: d.mapSeed };
+        mapType: d.mapType, mapIndex: d.mapProceduralIndex, mapSeed: d.mapSeed,
+        nativeMapSettings: Object.fromEntries(Object.entries(d).filter(([key, value]) =>
+          /map/i.test(key) && ['number', 'string', 'boolean'].includes(typeof value))) };
     });
     assert.equal(report.scenario.playerCount, players);
     await page.getByRole('button', { name: '⚔️ Play', exact: true }).click();
@@ -134,6 +145,13 @@ async function run(options = {}) {
     while (Date.now() < deadline) {
       const sample = { at: new Date().toISOString(), native: await readNative(), agent: await readAgent() };
       report.samples.push(sample);
+      fs.appendFileSync(path.join(output, 'live-progress.ndjson'), JSON.stringify(sample) + '\n');
+      if (report.samples.length === 1 || report.samples.length % 30 === 0)
+        console.log(JSON.stringify({ progress: true, mapLabel, difficultyLabel,
+          scenario: report.scenario, sample: report.samples.length,
+          tick: sample.native?.gameTick, territory: sample.native?.territory,
+          balance: sample.native?.balance, alivePlayers: sample.native?.alivePlayers,
+          commands: sample.agent?.commands, reason: sample.agent?.decision?.reason }));
       const outcome = terminal(sample.native);
       if (outcome) {
         report.outcome = outcome;
@@ -166,6 +184,9 @@ async function run(options = {}) {
 
 if (require.main === module) {
   const seconds = Number(process.argv[2] ?? 300);
-  run({ seconds }).catch(error => { console.error(String(error)); process.exitCode = 1; });
+  const difficultyLabel = process.argv[3] ?? 'Very Hard';
+  const players = Number(process.argv[4] ?? 64);
+  const mapLabel = process.argv[5] ?? null;
+  run({ seconds, difficultyLabel, players, mapLabel }).catch(error => { console.error(String(error)); process.exitCode = 1; });
 }
 module.exports = { run, terminal, summarize };
