@@ -1,5 +1,14 @@
 # Changelog
 
+## 10.3.7 — 2026-10-09 16:13:36 EDT
+
+- Observed the installed extension on the official site in visible Google Chrome, selecting the native Very Hard UI setting and playing through normal spawn controls.
+- Fixes false spawn arming from terrain pixels when native state reports zero land, a dead/invalid player or an incomplete spawn. Native-confirmed ownership remains authoritative; spawn-time vision is skipped when mapped state is available or fallback is disabled.
+- Requires a native observation received after the spawn click, and resets the previous not-alive timer when confirming a new match.
+- Adds a truthful no-land-route status when the last survivor has remaining neutral cells, no land contacts/fronts and no native boat capability. This is read-only UI state, not an alternate policy.
+- Adds 13 focused regressions and an opt-in real-time installed-extension diagnostic recorder. Native difficulty, UI label, source/release hashes, actual acknowledgements, termination and censored cutoffs are recorded separately. Last survivor is not called an official win. No scheduler acceleration or hand-edited combat state.
+- Keeps V2.8.2 decisions/spend, frontier instrumentation/frozen research and disabled tree search unchanged. No production strength or win-rate improvement claim.
+
 ## 10.3.6 — 2026-10-09 11:33:39 EDT
 
 - Corrects observation freshness to include cached/delivered snapshot age; the HUD now rejects stale and future status timestamps.

@@ -461,9 +461,14 @@
       const balance = hasNative && native.balanceKnown === true && Number.isFinite(native.balance)
         ? native.balance : vision && Number.isFinite(vision.balance) ? vision.balance : null;
       const adapter = window.TIOGetEngineStatus ? window.TIOGetEngineStatus() : null;
+      const noLandRoute = inGame && hasNative && native.alivePlayers === 1 &&
+        Number.isFinite(native.freeLandCells) && native.freeLandCells > 0 &&
+        native.activeFronts === 0 && native.shipsEnabled === false &&
+        Array.isArray(native.physicalNeighbors) && native.physicalNeighbors.length === 0;
       const blockReason = this.internalArmPending ? 'arming' : this.controller.userPointerDown ? 'user-hold'
         : this.failReason ? 'runtime-error' : this.settings.autoExpand === false && this.settings.autoAttack === false
-          ? 'controls-disabled' : inGame && !ready ? 'hook-unavailable' : null;
+          ? 'controls-disabled' : inGame && !ready ? 'hook-unavailable'
+            : noLandRoute ? 'no-land-route' : null;
       return {
         statusSampledAt: now, sampleSequence: ++this.uiStatusSequence, telemetryAgeMs: age,
         pendingSpawn: !!this.pendingSpawn, inGame, armed: !!this.matchArmed,
@@ -597,6 +602,7 @@
       this.engineStarted = true;
       this.lastAttackDispatchTime = 0;
       this.internalFailStreak = 0;
+      this.internalNotAliveSince = 0;
       this.internalAttackCount = 0;
       this.lastSuccessfulGameTick = -1;
       this.lastStrategicTerritory = null;
@@ -629,6 +635,11 @@
     /** Confirm pending spawn directly from the exact internal game state. */
     tryConfirmSpawnFromInternal() {
       if (this.matchArmed || !this.pendingSpawn || !this.internal) return false;
+      // Require an observation received after this click. A previous round's
+      // cached positive territory must not confirm a new spawn selection.
+      if (!Number.isFinite(this.internal.lastStateAt) ||
+          !Number.isFinite(this.pendingSpawn.t) ||
+          this.internal.lastStateAt < this.pendingSpawn.t) return false;
       const st = this.internal.lastState;
       if (!st || !st.ready || st.player == null || st.player < 0 ||
           st.alive === false || !(Number(st.territory) > 0)) return false;
@@ -638,6 +649,10 @@
     /** Confirm pending spawn when mine pixels appear (fallback path). */
     tryConfirmSpawnFromVision(visionResult) {
       if (this.matchArmed || !this.pendingSpawn || !visionResult) return false;
+      // A mapped native observation is authoritative, including zero land,
+      // a dead player, or an incomplete spawn. Terrain color is not ownership.
+      if (this.settings.allowVisionFallback === false ||
+          (this.internal && this.internal.lastState && this.internal.lastState.ready)) return false;
       const age = performance.now() - this.pendingSpawn.t;
       if (age > 12000) {
         this.pendingSpawn = null;
@@ -815,7 +830,11 @@
       // color calibration or canvas readback succeeding first.
       if (this.tryConfirmSpawnFromInternal()) return;
 
-      const visionResult = this.vision.processFrame();
+      // Do not read/calibrate terrain when native ownership is available. The
+      // first map click may only open the game's spawn-confirmation button.
+      const nativeReady = !!(this.internal && this.internal.lastState && this.internal.lastState.ready);
+      const visionResult = !nativeReady && this.settings.allowVisionFallback !== false
+        ? this.vision.processFrame() : null;
       if (visionResult && visionResult.typeMatrix) {
         if (this.tryConfirmSpawnFromVision(visionResult)) {
           // If MAIN is usable, wait for its arm handshake to avoid dual-path

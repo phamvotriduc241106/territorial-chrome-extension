@@ -22,6 +22,8 @@
     "controls-disabled": "Expansion and attacks are both disabled.",
     "runtime-error":
       "The commander reported an error. Check Advanced diagnostics.",
+    "no-land-route":
+      "No land route to remaining neutral cells; native boats are unavailable.",
   };
   function derivePresentationState(status, settings = {}, ageMs = 0) {
     let key = "disconnected",
