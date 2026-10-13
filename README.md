@@ -55,6 +55,8 @@ model-validation phase is required; no frontier model controls autoplay.
 
 ## Repository
 
+- [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
+- [Impossible-mode improvement proposal](docs/IMPOSSIBLE_IMPROVEMENT_PROPOSAL.md)
 - [Architecture and ownership](docs/ARCHITECTURE.md)
 - [Validation and benchmark limits](docs/VALIDATION.md)
 - [20-match Very Hard test standard](docs/VERY_HARD_TEST.md)
