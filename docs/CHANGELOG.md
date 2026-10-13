@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.3.8 — 2026-10-13 12:39:34 EDT
+
+- Restrict both content-script worlds, host permissions and public font resources to `https://territorial.io/*`. Production engine V2.8.2 unchanged.
+- Remove localhost, loopback and wildcard-subdomain injection.
+- Toolbar popup remains available on explicit click; no automatic popup is introduced.
+- Add regression checks for exact official-site scope. Chrome 155.0.8059.40 verified two allowed and five excluded URL fixtures (mock page bodies; actual unpacked-extension injection).
+
 ## 10.3.7 — 2026-10-09 16:13:36 EDT
 
 - Observed the installed extension on the official site in visible Google Chrome, selecting the native Very Hard UI setting and playing through normal spawn controls.

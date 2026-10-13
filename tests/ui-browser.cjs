@@ -1327,7 +1327,15 @@ async function extensionSmoke(base) {
       });
     await axe(page);
     const fontPage = await context.newPage();
-    await fontPage.goto(base + "/tests/ui-fixture.html");
+    // Production fonts are deliberately unavailable on localhost. Exercise
+    // actual MV3 access from the allowed origin without fetching the live game.
+    await fontPage.route("https://territorial.io/**", (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: "<!doctype html><html><body>Official-origin font fixture</body></html>",
+      }),
+    );
+    await fontPage.goto("https://territorial.io/tests/ui-fixture.html");
     const crossOriginFonts = await fontPage.evaluate(async (extensionId) => {
       const loaded = [];
       for (const name of ["vt323", "share-tech-mono"]) {

@@ -6,6 +6,11 @@ const assert = require('node:assert/strict');
 const { root, releaseFiles } = require('../tools/release-files.cjs');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const manifest = JSON.parse(read('manifest.json'));
+// Only the exact official HTTPS host can receive production scripts/resources.
+const officialMatches = ['https://territorial.io/*'];
+assert.deepEqual(manifest.host_permissions, officialMatches);
+for (const script of manifest.content_scripts) assert.deepEqual(script.matches, officialMatches);
+for (const group of manifest.web_accessible_resources) assert.deepEqual(group.matches, officialMatches);
 const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 const sandbox = {};
