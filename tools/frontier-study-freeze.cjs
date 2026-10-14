@@ -6,8 +6,11 @@ const root=path.resolve(__dirname,'..'),study=path.join(root,'scratch/dynamic-fr
 const files=['content/frontier-dynamic.js','content/frontier-spatial.js','content/source-adapter.js',
   'content/frontier-episodes.js','content/main-hook.js','tools/frontier-study-record.cjs','tools/frontier-study-report.cjs'];
 const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-function check(freeze){for(const[file,sha]of Object.entries(freeze.files)){
-  if(hash(path.join(root,file))!==sha)throw Error('Frozen pipeline changed: '+file);
+function check(freeze,options={}){
+  const archived=options.archive?JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(options.archive))):null;
+  for(const[file,sha]of Object.entries(freeze.files)){
+  const actual=archived?crypto.createHash('sha256').update(archived.files[file]??'').digest('hex'):hash(path.join(root,file));
+  if(actual!==sha)throw Error('Frozen pipeline changed: '+file);
 }return freeze;}
 function run(mode){const output=path.join(study,'candidate-freeze.json');
   if(mode==='--check')return check(JSON.parse(fs.readFileSync(output)));

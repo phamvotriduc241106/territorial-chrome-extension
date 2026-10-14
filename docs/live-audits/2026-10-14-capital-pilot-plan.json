@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "createdAt": "2026-10-14T23:12:15.079Z",
+  "kind": "development-safety-pilot-not-final-validation",
+  "policyPromotionAllowed": false,
+  "release": {
+    "extensionVersion": "10.3.9",
+    "engineVersion": "V2.8.2",
+    "updatedAt": "2026-10-14 19:08:36 EDT",
+    "releaseSha256": "81d9db93d855a2b830acd84d1e07afa73bb6fcff6dbbd119b0c63719d66babd1",
+    "engineSha256": "a573f803539ed699b9b9589bf01cb794f7b62a6d74e09c35fbf2d080ddaf4427",
+    "settings": {
+      "botEnabled": true,
+      "engineVersion": 2,
+      "autoExpand": true,
+      "autoAttack": true,
+      "clickSpeed": 4,
+      "sliderPercentage": 0,
+      "hotkeysEnabled": true,
+      "strategy": "aggressive",
+      "allowVisionFallback": true,
+      "visionFps": 12,
+      "allowCameraAccess": false,
+      "hudMode": "compact",
+      "advancedExpanded": false,
+      "settingsSchema": 2
+    }
+  },
+  "policySha256": "9f4bca72d1b3e75d71ad42da64ded7b0d0116dcd9485475fe0e2ab4d33e3980d",
+  "expectedSourceSha256": "155a2db1cc6f256317fc6178ce12993c76b51630ba5985be4e9ef1d7cad7fcff",
+  "conditions": {
+    "difficultyLabel": "Impossible",
+    "players": 512,
+    "seconds": 300,
+    "shadow": true
+  },
+  "ordering": "Preassigned counterbalanced order, not randomized or paired; geographic bot placement not frozen.",
+  "schedule": [
+    {
+      "id": 1,
+      "policy": "baseline",
+      "mapLabel": "Asia"
+    },
+    {
+      "id": 2,
+      "policy": "capital-v1",
+      "mapLabel": "Asia"
+    },
+    {
+      "id": 3,
+      "policy": "capital-v1",
+      "mapLabel": "Europe"
+    },
+    {
+      "id": 4,
+      "policy": "baseline",
+      "mapLabel": "Europe"
+    }
+  ]
+}

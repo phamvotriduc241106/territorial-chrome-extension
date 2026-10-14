@@ -1276,6 +1276,9 @@
     safeRatio = Math.min(safeRatio, maxSafeRatio(bal, leave));
     if (!(safeRatio > 0)) return { ok: false, err: 'unsafe-spend' };
     var cost = estimateAttackCost(bal, safeRatio);
+    if(planContext.experimental && (cost>planContext.experimental.maxDebit ||
+        Math.floor(bal*(encodeIl(safeRatio)+1)/1024)<plan.minAttack))
+      return {ok:false,err:'experimental-budget-expired'};
     if (balKnown && (cost >= bal || bal - cost < leave)) {
       var safer = maxSafeRatio(bal, leave);
       if (safer <= 0 || estimateAttackCost(bal, safer) >= bal) {
@@ -1288,6 +1291,10 @@
     // Re-read balance after ratio set (stale bank)
     if (balKnown) {
       var bal2 = getBalance(me);
+      if(planContext.experimental && (estimateAttackCost(bal2,safeRatio)>planContext.experimental.maxDebit ||
+          bal2-estimateAttackCost(bal2,safeRatio)<leave ||
+          Math.floor(bal2*(il+1)/1024)<plan.minAttack))
+        return {ok:false,err:'experimental-budget-expired'};
       if (!(bal2 > 0) || estimateAttackCost(bal2, safeRatio) >= bal2) {
         return { ok: false, err: bal2 < 0 ? 'negative-troops' : 'unsafe-spend', balance: bal2, phase: phase };
       }
@@ -1310,6 +1317,9 @@
         troopSet: set.paths,
         target: jd,
         adjacent: true,
+        ...(planContext.experimental?{experimental:{mode:'capital-v1',matchId:_matchId,
+          validatedTick:getGameTick(),requiredReserve:leave,maxDebit:planContext.experimental.maxDebit,
+          observedDebit:bal-getBalance(me)}}:{}),
         balance: getBalance(me),
         territory: getTerritory(me),
         reserved: minRemainingBalance(bal, terr, phase)
@@ -1521,6 +1531,30 @@
     var balance = getBalance(me), territory = getTerritory(me);
     var phase = expand ? 'LAND_RUSH' : (opts.phase || 'PRESSURE');
     var liveState = getState();
+    var experiment=opts.experimental;
+    if(experiment || _experimentalPolicy!=='off'){
+      var candidate=window.TIOCapitalPolicy;
+      if(!candidate || _experimentalPolicy!==candidate.MODE || !experiment ||
+          experiment.mode!==candidate.MODE || _experimentalMatchId!==liveState.matchId ||
+          experiment.matchId!==liveState.matchId || !Number.isSafeInteger(experiment.stateVersion) ||
+          experiment.stateVersion<0 || experiment.stateVersion>liveState.stateVersion ||
+          !Number.isSafeInteger(experiment.gameTick) || experiment.gameTick>liveState.gameTick ||
+          liveState.gameTick-experiment.gameTick>candidate.PARAMETERS.maxTickLag ||
+          !Number.isSafeInteger(experiment.maxDebit) || experiment.maxDebit<=0 ||
+          !Number.isSafeInteger(experiment.ceilingUnits) || experiment.ceilingUnits<10 || experiment.ceilingUnits>737 ||
+          !Number.isSafeInteger(experiment.requiredReserve) || experiment.requiredReserve<0 ||
+          typeof experiment.pressure!=='boolean' || !Number.isFinite(opts.ratio) || opts.ratio<0.01 ||
+          Math.round(opts.ratio*1024)>experiment.ceilingUnits)
+        return {ok:false,err:'experimental-provenance-rejected'};
+      var risk=candidate.inspect(liveState,0);
+      if(!risk.ok)return {ok:false,err:'experimental-state-rejected',reason:risk.reason};
+      if(experiment.pressure){var foe=liveState.enemies.find(function(e){return e.id===target;});
+        if(expand || !foe || !foe.available || risk.incoming>0 || opts.shrinkFrames!==0 || opts.areaTrend<0 ||
+            liveState.balance<Math.ceil(candidate.PARAMETERS.minimumAdvantage*foe.effectiveBal))
+          return {ok:false,err:'experimental-opportunity-expired'};
+      }
+      opts.minRemaining=Math.max(experiment.requiredReserve,risk.reserve,Number(opts.minRemaining)||0);
+    }
     var liveEnemies = liveState.enemies || [];
     var context = {
       balance: balance, balanceKnown: balanceIsKnown(me), territory: territory,
@@ -1536,6 +1570,7 @@
       shrinkFrames: opts.shrinkFrames,
       adjEnemies: liveEnemies,
       incoming: liveEnemies.reduce(function(sum, e) { return sum + Math.max(0, Number(e.incoming) || 0); }, 0)
+      ,experimental:experiment
     };
     var budget = planSpend(context);
     if (!budget.canAfford) return { ok: false, err: budget.reason, reason: budget.reason };
@@ -1568,6 +1603,7 @@
     return window.TIOProfiler ? window.TIOProfiler.measureCall('state.extract', extractState, null, EMPTY_PROFILE_ARGS) : extractState();
   }
   var _observationVersion = 0, _matchToken = null, _matchId = null;
+  var _experimentalPolicy='off',_experimentalMatchId=null;
   var _frontierRecorder = null, _frontierTimer = null, _frontierGeometryVersion = 0;
   var _frontierLastScan = -Infinity, _frontierStatus = { enabled: false, policyInfluence: false };
   var _shadowNative = null, _shadowLastTick = -1, _shadowLastScanTick = -1;
@@ -1576,6 +1612,7 @@
   function syncMatchIdentity(g) {
     var token = g && g.ah && g.ah.h1 || g;
     if (token !== _matchToken || !_matchId) {
+      _experimentalPolicy='off';_experimentalMatchId=null;
       _matchToken = token;
       _matchId = window.crypto && typeof window.crypto.randomUUID === 'function'
         ? window.crypto.randomUUID() : 'local-' + Date.now() + '-' + _observationVersion;
@@ -1766,7 +1803,8 @@
       if (t <= 0) continue;
       alivePlayers++;
       totalEnemyTerritory += t;
-      var enemyBalance = getBalance(p) | 0;
+      var enemyBalanceInfo = getBalanceInfo(p);
+      var enemyBalance = enemyBalanceInfo.value | 0;
       totalEnemyBalance += Math.max(0, enemyBalance);
       if (t > terr) globalRank++;
       if (t > leaderTerritory) {
@@ -1774,16 +1812,22 @@
         leaderId = p;
       }
       if (!physicalSet[p]) continue;
-      var incoming = 0;
+      var incoming = 0, incomingKnown=false;
       try {
-        if (g && g.modern && typeof g.modern.incoming === 'function') incoming = Math.max(0, g.modern.incoming(p, me) | 0);
+        if (g && g.modern && typeof g.modern.incoming === 'function') {
+          var observedIncoming=g.modern.incoming(p, me);
+          incomingKnown=Number.isSafeInteger(observedIncoming)&&observedIncoming>=0;
+          incoming=incomingKnown?observedIncoming:0;
+        }
         else if (g && g.ae && typeof g.ae.hU === 'function') incoming = Math.max(0, g.ae.hU(p, me) | 0);
       } catch (eIncoming) {}
       enemies.push({
         id: p | 0,
         bal: enemyBalance,
+        balanceKnown: enemyBalanceInfo.known,
         effectiveBal: enemyBalance + incoming,
         incoming: incoming,
+        incomingKnown: incomingKnown,
         terr: t,
         economy: economyOf(p),
         adjacent: true,
@@ -1820,6 +1864,8 @@
       patched: !!window.__TIO_SCRIPT_PATCHED__,
       hookVer: HOOK_VER,
       contract: contract,
+      singlePlayer:!!(g && g.modern && typeof g.modern.singlePlayer==='function' && g.modern.singlePlayer()),
+      experimentalPolicy:_experimentalPolicy,
       err: window.__TIO_GAME_ERR__ || null,
       player: me,
       alive: me >= 0 ? isAlive(me) : false,
@@ -1928,6 +1974,15 @@
         _spendLockUntil = 0;
         _spendLockBal = null;
         result = { ok: true, armed: false, state: getState() };
+      } else if(data.type==='set-experiment'){
+        var expState=getState();
+        if(data.mode==='off' || data.mode==='capital-v1' && expState.singlePlayer &&
+            expState.contract==='live-modern-v3' && window.TIOCapitalPolicy){
+          _experimentalPolicy=data.mode;_experimentalMatchId=data.mode==='off'?null:expState.matchId;
+          result={ok:true,mode:_experimentalPolicy,state:getState()};
+        }else result={ok:false,err:'experimental-single-player-only'};
+      } else if(mutatesGame && _experimentalPolicy!=='off' && data.type!=='attack'){
+        result={ok:false,err:'experimental-route-required'};
       } else if (mutatesGame && !_armed) {
         result = { ok: false, err: 'not-armed' };
       } else if (mutatesGame && !getState().ready) {
@@ -1950,7 +2005,7 @@
         result = setTroopRatio(data.ratio != null ? data.ratio : 0.25);
         result.state = getState();
       } else if (data.type === 'attack') {
-        if (data.ratio != null) setTroopRatio(data.ratio);
+        if (data.ratio != null && !data.experimental) setTroopRatio(data.ratio);
         result = attackSmart({
           ratio: data.ratio,
           preferNeutral: data.preferNeutral !== false,
@@ -1965,6 +2020,7 @@
           gameTimeSec: data.gameTimeSec,
           areaTrend: data.areaTrend,
           shrinkFrames: data.shrinkFrames
+          ,experimental:data.experimental
         });
       } else if (data.type === 'attack-burst') {
         if (data.ratio != null) setTroopRatio(data.ratio);

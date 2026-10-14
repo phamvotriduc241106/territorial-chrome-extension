@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Capital native boundary</title></head>
+<body data-status="running"><pre id="result">RUNNING</pre>
+<script src="../shared/config.js"></script><script src="../shared/performance.js"></script>
+<script src="../content/engine-core-v2-advanced.js"></script><script src="../shared/capital-policy.js"></script>
+<script>
+const f={bank:[10000,12000,0],land:[100,100,0],active:new Set(),tick:100,single:true,incoming:0,calls:0};
+window.__TIO_GAME__={contract:'live-modern-v3',ah:{h1:[]},modern:{
+  me:()=>0,neutral:()=>3,balance:p=>f.bank[p],territory:p=>f.land[p]||0,alive:p=>(f.land[p]||0)>0,
+  gameTick:()=>f.tick,singlePlayer:()=>f.single,softCap:()=>10000,activeCount:()=>f.active.size,frontCap:()=>4,
+  canAttack:()=>true,incoming:()=>f.incoming,outgoing:()=>[],economy:()=>null,
+  neighbors:(p,x)=>[3,1].filter(id=>!x||!f.active.has(id)),contains:(p,t)=>[3,1].includes(t),
+  available:(p,t)=>[3,1].includes(t)&&!f.active.has(t),active:(p,t)=>f.active.has(t),setRatio:()=>{},
+  attack:(il,target)=>{f.calls++;f.bank[0]-=TIOEngineCore.humanAttackDebit(f.bank[0],Math.floor(f.bank[0]*(il+1)/1024)).debit;f.active.add(target);}
+}};
+window.__TIO_SCRIPT_PATCHED__=true;
+</script><script src="../content/main-hook.js"></script>
+<script>
+(async()=>{let seq=0,checks=0;
+  const assert=(ok,message)=>{if(!ok)throw Error(message);checks++;};
+  const rpc=(type,payload={})=>new Promise((resolve,reject)=>{
+    const id=++seq,timer=setTimeout(()=>{window.removeEventListener('message',listen);reject(Error('RPC timeout'));},2000);
+    function listen(e){if(e.source===window&&e.data?.source==='tio-engine-main'&&e.data.id===id){
+      clearTimeout(timer);window.removeEventListener('message',listen);resolve(e.data.result);}}
+    window.addEventListener('message',listen);window.postMessage({source:'tio-engine-isolated',version:1,id,type,...payload},location.origin);
+  });
+  try{
+    assert((await rpc('state')).state.experimentalPolicy==='off','default off');
+    assert((await rpc('set-experiment',{mode:'capital-v1'})).ok,'explicit single-player activation');
+    await rpc('arm');
+    const s=(await rpc('state')).state;
+    const payload={ratio:82/1024,preferNeutral:true,freeLand:.08,phase:'LAND_RUSH',attackSequence:8,
+      gameTimeSec:20,areaTrend:0,shrinkFrames:0,minRemaining:6000,
+      experimental:{mode:'capital-v1',matchId:s.matchId,stateVersion:s.stateVersion,gameTick:s.gameTick,
+        maxDebit:917,ceilingUnits:82,requiredReserve:6000,pressure:false}};
+    const sent=await rpc('attack',payload);
+    assert(sent.ok&&sent.experimental?.mode==='capital-v1'&&f.calls===1,'candidate reaches actual native sender once');
+    assert(sent.experimental.observedDebit===917&&f.bank[0]===9083,'exact admitted debit');
+    assert(sent.balance>=sent.experimental.requiredReserve,'native reserve survives');
+    const busy=await rpc('attack',payload);assert(!busy.ok&&f.calls===1,'single-flight/front prevents double debit');
+    async function reset(){await rpc('disarm');f.bank[0]=10000;f.bank[1]=12000;f.active.clear();f.incoming=0;await rpc('arm');}
+    for(const [label,mutate] of [
+      ['old tick',p=>p.experimental.gameTick=87],['future version',p=>p.experimental.stateVersion=999999],
+      ['wrong match',p=>p.experimental.matchId='old'],['excess ratio',p=>p.ratio=.2],
+      ['debit ceiling',p=>p.experimental.maxDebit=1],['disabled expansion',p=>p.autoExpand=false],
+      ['invalid target coverage',()=>f.incoming=NaN],['unknown opponent bank',()=>f.bank[1]=NaN],
+      ['increased contact reserve',()=>f.bank[1]=19000],
+      ['online mode',()=>f.single=false],['expired pressure',p=>{p.preferNeutral=false;p.target=1;p.experimental.pressure=true;}]
+    ]){await reset();const p=JSON.parse(JSON.stringify(payload));mutate(p);
+      const r=await rpc('attack',p);assert(!r.ok&&f.calls===1,label+' must reach no sender');f.single=true;}
+    await reset();assert(!(await rpc('attack',{ratio:.08,preferNeutral:true})).ok,'missing tag cannot fall back to baseline');
+    assert(!(await rpc('attack-burst',payload)).ok,'alternate route disabled');
+    await rpc('set-experiment',{mode:'off'});f.single=false;
+    assert(!(await rpc('set-experiment',{mode:'capital-v1'})).ok,'online activation denied');f.single=true;
+    await rpc('set-experiment',{mode:'capital-v1'});window.__TIO_GAME__.ah.h1=[];
+    assert((await rpc('state')).state.experimentalPolicy==='off','new match revokes activation');
+    assert(!(await rpc('attack',payload)).ok&&f.calls===1,'old match tag never dispatches');
+    document.querySelector('#result').textContent='PASS '+checks+' native candidate checks';document.body.dataset.status='passed';
+  }catch(e){document.querySelector('#result').textContent='FAIL '+e.stack;document.body.dataset.status='failed';}
+})();
+</script></body></html>

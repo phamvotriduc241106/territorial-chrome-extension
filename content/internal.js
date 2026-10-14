@@ -108,6 +108,11 @@
     }
 
     isReady() { return this.ready; }
+    async setExperimentalPolicy(mode) {
+      const result=await callMain('set-experiment',{mode},700);
+      if(result.ok && result.state){this.lastState=result.state;this.lastStateAt=performance.now();}
+      return result;
+    }
     // Explicit diagnostic-only activation. Normal autoplay never calls this.
     frontierShadow(command = 'report', options = {}) {
       if (!['start', 'stop', 'report', 'drain'].includes(command)) return Promise.reject(Error('Invalid frontier command'));
@@ -150,6 +155,7 @@
         gameTimeSec: opts.gameTimeSec,
         areaTrend: opts.areaTrend,
         shrinkFrames: opts.shrinkFrames
+        ,experimental: opts.experimental
       }, PROTOCOL.actionTimeoutMs || 1200);
     }
 

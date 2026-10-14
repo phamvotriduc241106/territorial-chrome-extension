@@ -2,7 +2,9 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.3.8 · **Production engine:** V2.8.2 · **Updated:** 2026-10-13 12:39:34 EDT
+**Release:** v10.3.9 · **Production engine:** V2.8.2 · **Updated:** 2026-10-14 19:08:36 EDT
+
+Adds a default-off, per-match **capital-v1** single-player experiment: contact-aware command caps and early weak-target opportunities. Native safety remains authoritative. This is an experimental controller, not a validated strength upgrade.
 
 The in-page dashboard and engine run only on `https://territorial.io/`.
 Localhost, loopback and subdomains are excluded. The toolbar popup remains
@@ -58,6 +60,7 @@ model-validation phase is required; no frontier model controls autoplay.
 - [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
 - [Cycle 01: exact planner/native observation and action shadow](docs/PLANNER_SHADOW_CYCLE_01.md)
 - [Cycle 02: banking alternatives, Asia loss and negative findings](docs/BANKING_ALTERNATIVES_CYCLE_02.md)
+- [Capital-v1: opt-in live gameplay candidate and pilot](docs/CAPITAL_POLICY_PILOT.md)
 - [Impossible-mode improvement proposal](docs/IMPOSSIBLE_IMPROVEMENT_PROPOSAL.md)
 - [Architecture and ownership](docs/ARCHITECTURE.md)
 - [Validation and benchmark limits](docs/VALIDATION.md)
