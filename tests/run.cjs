@@ -117,15 +117,24 @@ const server = http.createServer((request, response) => {
         if (!game.modern.singlePlayer()) throw Error('Test must remain single-player');
         const target = before.neighbors.includes(before.neutralId) ? before.neutralId : before.neighbors[0];
         if (target == null) throw Error('No test border');
+        const directedBefore = game.modern.incoming(before.player, target);
         const result = api.attackSmart({ ratio: 0.2, preferNeutral: target === before.neutralId, target });
         const after = api.state();
         const expected = core.estimateAttackCost(before.balance, result.ratio);
         if (!result.ok || before.balance - after.balance !== expected || after.activeFronts !== before.activeFronts + 1) {
           throw Error('Live debit/front mismatch: ' + JSON.stringify({ before, after, result, expected }));
         }
+        const sent = core.humanAttackDebit(before.balance,
+          Math.floor(before.balance * (result.il + 1) / 1024)).sent;
+        const directedAfter = game.modern.incoming(before.player, target);
+        if (directedAfter - directedBefore !== sent)
+          throw Error('Native hc(attacker,target) does not match the admitted front force');
+        if (target === before.neutralId && game.modern.incoming(target,before.player) !== 0)
+          throw Error('Neutral must not be treated as the sender of our outgoing force');
         return { difficulty: game.aE.data.botDifficultyValue, players: game.aE.data.playerCount,
           balanceBefore: before.balance, balanceAfter: after.balance,
-          exactDebit: expected, activeFronts: after.activeFronts, target: result.target };
+          exactDebit: expected, activeFronts: after.activeFronts, target: result.target,
+          directedForce: { attacker:before.player,target,added:directedAfter-directedBefore,sent } };
       });
       console.log('Official single-player attack: PASS ' + JSON.stringify(smoke));
       if (expectedContract === 'live-modern-v3') {

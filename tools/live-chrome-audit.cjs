@@ -14,6 +14,12 @@ const { createAnalysis } = require('../research/planner-shadow-analysis.cjs');
 const root = path.resolve(__dirname, '..');
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+function mapSelectionPattern(label) {
+  assert.ok(['Europe','Asia'].includes(label));
+  // Full labels distinguish Asia from Caucasia; alternation avoids splitting
+  // the green emoji's UTF-16 surrogate pair in a non-Unicode character class.
+  return new RegExp('^(?:⚪|🟢)\\s+' + label + '$', 'u');
+}
 
 function terminal(state) {
   if (!state || !state.ready || !(state.gameTick > 0)) return null;
@@ -52,7 +58,10 @@ async function run(options = {}) {
   assert.ok(Number.isInteger(players) && players >= 2 && players <= 512);
   const mapLabel = options.mapLabel ?? null;
   assert.ok(mapLabel === null || ['Europe', 'Asia'].includes(mapLabel));
-  const spawn = options.spawn ?? (mapLabel ? { x: 700, y: 400 } : { x: 550, y: 160 });
+  // Asia's old shared Europe point failed native spawn confirmation. This is
+  // a fixed visually inspected inland point, not a spawn optimizer or a seed.
+  const spawn = options.spawn ?? (mapLabel === 'Asia' ? { x: 650, y: 480 }
+    : mapLabel ? { x: 700, y: 400 } : { x: 550, y: 160 });
   assert.ok(Number.isFinite(spawn.x) && Number.isFinite(spawn.y));
   const output = options.output ?? path.join(root, 'scratch/live-chrome-audit',
     new Date().toISOString().replace(/[:.]/g, '-'));
@@ -65,7 +74,7 @@ async function run(options = {}) {
     difficultyLabel, players, mapLabel, spawn, samples: [], outcome: 'error',
     terminalConfirmed: false, manualCombatCommands: 0, accelerated: false,
     policyInfluence: 'existing-production-autoplay-only', performanceMicrobenchmark: false };
-  const researchFreeze = Object.fromEntries(['planner-observer.cjs','contact-risk-candidate.cjs','planner-shadow-analysis.cjs']
+  const researchFreeze = Object.fromEntries(['planner-observer.cjs','contact-risk-candidate.cjs','planner-shadow-analysis.cjs','banking-alternatives.cjs']
     .map(file => [file,sha256(fs.readFileSync(path.join(root,'research',file)))]));
   report.researchFreeze = researchFreeze;
   let context;
@@ -153,27 +162,28 @@ async function run(options = {}) {
     const preload = await page.evaluate(() => window.__TIO_PRELOAD_RESULT__);
     assert.equal(preload?.status, 'pre-exec-patched', 'Fail closed for unmapped official source');
     report.contract = preload.kind;
-    if (options.shadow === true) {
+    if (options.shadow === true || options.bankingAlternatives === true) {
       const opts={sourceHash:report.sourceSha256,experimentId:path.basename(output),maxEvents:4096,maxBytes:4194304};
       await page.evaluate(installerExpression('native',opts));
       await isolatedEval(installerExpression('planner',opts));
       const { kernel }=require('./cpu-benchmark.cjs');
-      analysis=createAnalysis(kernel().TIOEngineCore,report.sourceSha256);
+      analysis=createAnalysis(kernel().TIOEngineCore,report.sourceSha256,{bankingAlternatives:options.bankingAlternatives===true});
+      report.bankingAlternativesShadow=options.bankingAlternatives===true;
     }
     report.extensionWorkers = context.serviceWorkers().map(w => w.url());
     await page.getByText('Custom Scenario', { exact: false }).click();
     await page.locator('#input1').fill(String(players));
     if (mapLabel) {
       await page.getByRole('button', { name: 'Settings', exact: true }).nth(0).click();
-      await page.getByText(new RegExp('^[⚪🟢] Realistic Map$')).click();
-      await page.getByText(mapLabel, { exact: false }).click();
+      await page.getByText(/^(?:⚪|🟢) Realistic Map$/u).click();
+      await page.getByText(mapSelectionPattern(mapLabel)).click();
       report.mapSelectionEvidence = await page.locator('body').innerText();
       await page.getByRole('button', { name: '⬅️ Back', exact: true }).click();
     }
     await page.getByRole('button', { name: 'Settings', exact: true }).nth(2).click();
     // Click the current official UI label; do not equate hook's policy DIFF=5
     // with game difficulty. Current Very Hard is native value 4.
-    await page.getByText(new RegExp('^[⚪🟢] ' + difficultyLabel + '$')).click();
+    await page.getByText(new RegExp('^(?:⚪|🟢) ' + difficultyLabel + '$', 'u')).click();
     await page.getByRole('button', { name: '⬅️ Back', exact: true }).click();
     report.scenario = await page.evaluate(() => {
       const g = window.__TIO_GAME__, d = g.aE.data;
@@ -239,12 +249,13 @@ async function run(options = {}) {
 }
 
 if (require.main === module) {
-  const args = process.argv.slice(2).filter(arg => arg !== '--shadow');
+  const args = process.argv.slice(2).filter(arg => !['--shadow','--banking-shadow'].includes(arg));
   const seconds = Number(args[0] ?? 300);
   const difficultyLabel = args[1] ?? 'Very Hard';
   const players = Number(args[2] ?? 64);
   const mapLabel = args[3] ?? null;
   const shadow = process.argv.includes('--shadow');
-  run({ seconds, difficultyLabel, players, mapLabel, shadow }).catch(error => { console.error(String(error)); process.exitCode = 1; });
+  const bankingAlternatives = process.argv.includes('--banking-shadow');
+  run({ seconds, difficultyLabel, players, mapLabel, shadow, bankingAlternatives }).catch(error => { console.error(String(error)); process.exitCode = 1; });
 }
-module.exports = { run, terminal, summarize };
+module.exports = { run, terminal, summarize, mapSelectionPattern };
