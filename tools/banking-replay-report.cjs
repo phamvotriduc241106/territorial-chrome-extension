@@ -17,6 +17,8 @@ function replay(file){
     const a=createAnalysis(kernel().TIOEngineCore,b.report.sourceSha256,{keepAllLookups:true,bankingAlternatives:true});
     a.nativeBatch(b.native,b.report.shadow?.nativeObserver);
     const rows=a.plannerBatch(b.planner),summary=a.summary();
+    for(const key of ['decisions','supported','unsupported','joinedCommands'])
+      if(summary[key]!==b.report.shadow?.[key])throw Error('Replay quality mismatch: '+run.id+' '+key);
     const settings=JSON.stringify([...new Set(b.planner.filter(e=>e.kind==='decision').map(e=>JSON.stringify(e.settings)))]);
     return{id:run.id,status:'development-replay',outcome:b.report.outcome,
       sourceHash:b.report.sourceSha256,release:b.report.release,settingsHash:sha(settings),

@@ -53,7 +53,8 @@ test('freshness, provenance, controls, field consistency and unknown target data
   const mutations=[a=>a[1].ageMs=701,a=>a[1].stateVersion=1,a=>a[1].coverage='partial',
     a=>a[1].sourceHash='b'.repeat(64),a=>a[4]=null,a=>delete a[1].situation.adjEnemies[0].available,
     a=>a[5].activeFronts=0.5,a=>a[5].areaTrend=-12,a=>a[5].incoming=2,
-    a=>a[5].adjEnemies=[],a=>a[5].softCap=1,a=>a[2].plan.balance=1];
+    a=>a[5].adjEnemies=[],a=>a[5].softCap=1,a=>a[2].plan.balance=1,
+    a=>{delete a[5].gameTick;delete a[1].situation.tick;},a=>a[1].situation.adjEnemies[0].id=512];
   for(const mutate of mutations){const a=fixture();mutate(a);const r=evaluate(...a);
     assert.equal(r.status,'unsupported');assert.equal(r.ledger,null);}
   for(const mutate of [a=>a[4].autoAttack=false,a=>a[4].botEnabled=false,a=>a[4].sliderPercentage=20]){
@@ -116,4 +117,28 @@ test('source-bound Europe replay exposes independent blockers without inventing 
   assert.equal(summary.bankingAlternatives.targetBlockers['reserve-or-minimum-attack'],64);
   assert.equal(summary.joinedCommands,30);assert.equal(summary.unsupported,0);
   assert.equal(rows.filter(r=>r.banking?.status==='blocked').length,390);
+});
+test('complete new evidence retains both setup errors and reproduces every published admission and proposal count',()=>{
+  const fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),crypto=require('node:crypto');
+  const {replay}=require('../tools/banking-replay-report.cjs');
+  const m=require('../docs/live-audits/2026-10-14-banking-cycle.json');
+  assert.equal(m.attempts,3);assert.equal(m.independentMatches,1);assert.equal(m.sourceBoundMatches,1);
+  assert.equal(m.runs.filter(r=>r.outcome==='error').length,2);
+  for(const run of m.runs){
+    const bytes=fs.readFileSync(path.join(__dirname,'../docs/live-audits',run.artifact.file));
+    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),run.artifact.sha256);
+    const b=JSON.parse(zlib.gunzipSync(bytes));
+    if(!run.combatExposure){assert.equal(b.report.samples.length,0);assert.equal(b.native.length,0);continue;}
+    assert.equal(b.report.shadow.candidateActive,false);assert.equal(b.report.outcome,'loss');
+    const commands=b.native.filter(e=>e.kind==='native-command');assert.equal(commands.length,22);
+    for(const e of commands){assert.equal(e.observedDebit,
+      core.humanAttackDebit(e.before,Math.floor(e.before*(e.il+1)/1024)).debit);}
+    assert.equal(run.shadow.decisions,421);assert.equal(run.shadow.bankingAlternatives.proposals,0);
+    assert.deepEqual(run.replaySummary.bankingAlternatives,run.shadow.bankingAlternatives);
+  }
+  const report=replay('docs/live-audits/2026-10-14-banking-cycle.json');
+  assert.equal(report.runs.filter(r=>r.status==='setup-error').length,2);
+  const run=report.runs.find(r=>r.status==='development-replay');
+  assert.equal(run.banking.evaluated,421);assert.equal(run.banking.blocked,116);
+  assert.equal(run.banking.targetBlockers['insufficient-bank-advantage'],812);
 });

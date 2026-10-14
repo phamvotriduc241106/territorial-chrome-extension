@@ -58,7 +58,7 @@ async function run(options = {}) {
   assert.ok(Number.isInteger(players) && players >= 2 && players <= 512);
   const mapLabel = options.mapLabel ?? null;
   assert.ok(mapLabel === null || ['Europe', 'Asia'].includes(mapLabel));
-  // Asia's old shared Europe point overlapped a bot's initial claim. This is
+  // Asia's old shared Europe point failed native spawn confirmation. This is
   // a fixed visually inspected inland point, not a spawn optimizer or a seed.
   const spawn = options.spawn ?? (mapLabel === 'Asia' ? { x: 650, y: 480 }
     : mapLabel ? { x: 700, y: 400 } : { x: 550, y: 160 });
@@ -175,7 +175,7 @@ async function run(options = {}) {
     await page.locator('#input1').fill(String(players));
     if (mapLabel) {
       await page.getByRole('button', { name: 'Settings', exact: true }).nth(0).click();
-      await page.getByText(new RegExp('^[⚪🟢] Realistic Map$')).click();
+      await page.getByText(/^(?:⚪|🟢) Realistic Map$/u).click();
       await page.getByText(mapSelectionPattern(mapLabel)).click();
       report.mapSelectionEvidence = await page.locator('body').innerText();
       await page.getByRole('button', { name: '⬅️ Back', exact: true }).click();
@@ -183,7 +183,7 @@ async function run(options = {}) {
     await page.getByRole('button', { name: 'Settings', exact: true }).nth(2).click();
     // Click the current official UI label; do not equate hook's policy DIFF=5
     // with game difficulty. Current Very Hard is native value 4.
-    await page.getByText(new RegExp('^[⚪🟢] ' + difficultyLabel + '$')).click();
+    await page.getByText(new RegExp('^(?:⚪|🟢) ' + difficultyLabel + '$', 'u')).click();
     await page.getByRole('button', { name: '⬅️ Back', exact: true }).click();
     report.scenario = await page.evaluate(() => {
       const g = window.__TIO_GAME__, d = g.aE.data;

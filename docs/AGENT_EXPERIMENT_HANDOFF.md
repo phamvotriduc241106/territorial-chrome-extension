@@ -10,6 +10,8 @@ Mac checkout: `/Users/phamvotriduc/territorial-chrome-extension`.
 
 Continuation update: [Cycle 01](PLANNER_SHADOW_CYCLE_01.md) adds opt-in diagnostic factories, `--shadow`, complete compressed pilot journals and executed-bootstrap source binding. Read its limitations before repeating this snapshot's initial tasks. The candidate remains non-actuating and larger held-out/treatment validation is still pending.
 
+[Cycle 02](BANKING_ALTERNATIVES_CYCLE_02.md) adds `--banking-shadow`, an explicit offline target/action/budget evaluator, an Asia/512 loss and both retained setup errors. It found zero financially feasible proposals on two source-bound development matches. A separate spend defense wall can block a removed density-hold override. Fresh native testing verifies `hc(attacker,target)` direction; the observer's old `exclude` field means target, not an exclusion filter. Prioritize pre-contact capital/geometry experiments, not another unchanged-baseline run or safety-floor reduction. Production remains unchanged; no candidate treatment or promotion has occurred.
+
 Improve real single-player Impossible performance through a repeated engineering loop:
 
 1. Test an explicitly identified baseline or candidate in real Chrome.

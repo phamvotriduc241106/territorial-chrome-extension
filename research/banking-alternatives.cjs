@@ -26,7 +26,7 @@ function evaluateBankingAlternatives(core, snapshot, baseline, expected, control
   if (!core || !['planSpend','humanAttackDebit','al'].every(k => typeof core[k] === 'function'))
     return reject('missing-core-mechanics');
   if (!p || p.balanceKnown !== true || p.balance !== s.balance || p.territory !== s.territory ||
-      !integer(p.territory) || p.territory < 1 || p.gameTick !== s.tick ||
+      !integer(p.territory) || p.territory < 1 || !integer(p.gameTick) || p.gameTick !== s.tick ||
       p.gameTimeSec !== s.gameTimeSec || p.areaTrend !== s.areaTrend || p.shrinkFrames !== s.shrinkFrames ||
       p.activeFronts !== s.activeFronts || p.attackSequence !== s.attackSequence ||
       !integer(p.activeFronts) || !integer(p.attackSequence) || !integer(p.frontCap) ||
@@ -40,7 +40,7 @@ function evaluateBankingAlternatives(core, snapshot, baseline, expected, control
   if (s.hasAdjFree || p.freeLandRatio !== 0)
     return reject('contradictory-density-hold');
   for (const e of s.adjEnemies)
-    if (typeof e.available !== 'boolean' || typeof e.shipOnly !== 'boolean' || !integer(e.terr) || e.terr < 1)
+    if (e.id > 511 || typeof e.available !== 'boolean' || typeof e.shipOnly !== 'boolean' || !integer(e.terr) || e.terr < 1)
       return reject('unknown-target-availability');
   const B = s.balance, largest = Math.max(0, ...s.adjEnemies.map(e => e.effectiveBal));
   const contactReserve = Math.ceil(largest * Math.min(1,

@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "evidenceKind": "real-baseline-with-offline-action-shadow",
+  "policyPromotionAllowed": false,
+  "candidateTreatmentMatches": 0,
+  "attempts": 3,
+  "independentMatches": 1,
+  "sourceBoundMatches": 1,
+  "limitations": "Development pilots only. No fitted parameters, treatment outcomes, transition-error scoring, official wins, or CPU-strength proof.",
+  "runs": [
+    {
+      "id": "2026-10-14T22-51-03-259Z",
+      "artifact": {
+        "file": "2026-10-14T22-51-03-259Z.planner-evidence.json.gz",
+        "sha256": "5169f276d0ac556077ade86ebcd469543103d94273e7377a59f22a663a020571",
+        "bytes": 1350
+      },
+      "originalFileHashes": {
+        "report": "1d3745bb662f577541ab3610ca05396f1abff6b338d7a6252838d82e0fb22e90"
+      },
+      "sourceBindingQualification": "executed-bootstrap-response-verified",
+      "sourceIdentityEligible": true,
+      "productionPolicy": "unchanged-v10.3.8-V2.8.2",
+      "combatExposure": false,
+      "outcome": "error",
+      "elapsedSeconds": null,
+      "replaySummary": {
+        "decisions": 0,
+        "supported": 0,
+        "unsupported": 0,
+        "reasons": {},
+        "changedProposals": 0,
+        "holdProposals": 0,
+        "capProposals": 0,
+        "bankingLossAdvisories": 0,
+        "submissions": 0,
+        "receipts": 0,
+        "nativeCommands": 0,
+        "joinedCommands": 0,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "bankingAlternatives": {
+          "evaluated": 0,
+          "proposals": 0,
+          "blocked": 0,
+          "unsupported": 0,
+          "outOfScope": 0,
+          "reasons": {},
+          "targetBlockers": {},
+          "executable": false
+        },
+        "validCoverage": null,
+        "retainedLookupKeys": 0,
+        "retainedLookupEntries": 0,
+        "maxLookupEntries": 20000,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "admissionDebitChecks": {
+        "cases": 0,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 0
+    },
+    {
+      "id": "2026-10-14T22-51-27-668Z",
+      "artifact": {
+        "file": "2026-10-14T22-51-27-668Z.planner-evidence.json.gz",
+        "sha256": "e9aaa3c894c988354f67d7a39d7dcfca82026fc451b247553e3b9ee0b661727f",
+        "bytes": 2299
+      },
+      "originalFileHashes": {
+        "report": "a7190691de2d8e3b836dddce08ec526aa84ff5e3de26501d1b5ce276fe0ff1cf"
+      },
+      "sourceBindingQualification": "executed-bootstrap-response-verified",
+      "sourceIdentityEligible": true,
+      "productionPolicy": "unchanged-v10.3.8-V2.8.2",
+      "combatExposure": false,
+      "outcome": "error",
+      "elapsedSeconds": null,
+      "replaySummary": {
+        "decisions": 0,
+        "supported": 0,
+        "unsupported": 0,
+        "reasons": {},
+        "changedProposals": 0,
+        "holdProposals": 0,
+        "capProposals": 0,
+        "bankingLossAdvisories": 0,
+        "submissions": 0,
+        "receipts": 0,
+        "nativeCommands": 0,
+        "joinedCommands": 0,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "bankingAlternatives": {
+          "evaluated": 0,
+          "proposals": 0,
+          "blocked": 0,
+          "unsupported": 0,
+          "outOfScope": 0,
+          "reasons": {},
+          "targetBlockers": {},
+          "executable": false
+        },
+        "validCoverage": null,
+        "retainedLookupKeys": 0,
+        "retainedLookupEntries": 0,
+        "maxLookupEntries": 20000,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "admissionDebitChecks": {
+        "cases": 0,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 0
+    },
+    {
+      "id": "2026-10-14T22-52-12-346Z",
+      "artifact": {
+        "file": "2026-10-14T22-52-12-346Z.planner-evidence.json.gz",
+        "sha256": "c0c3e9504e0ae2b3f06887673364a1029127798a23f626a349b2e3c840dcece7",
+        "bytes": 123582
+      },
+      "originalFileHashes": {
+        "report": "ba2672bcb8b956a40891dbfa87536ca1de83c0164a9597ec51d942b44d05db57",
+        "planner-events.ndjson": "b7e834a2a2e6cc62ab479e593c55d75723f626767a5c759d5ace568f3ce27fac",
+        "native-observer-events.ndjson": "f14af4125f2036442312b289582c9deb247278147d1ed68de6436d062307bcc8",
+        "shadow-proposals.ndjson": "b57c691f383435ffc9c5c751bc83af79b1ecfbe18cd5a66a2262db5b5161fc99"
+      },
+      "sourceBindingQualification": "executed-bootstrap-response-verified",
+      "sourceIdentityEligible": true,
+      "productionPolicy": "unchanged-v10.3.8-V2.8.2",
+      "combatExposure": true,
+      "outcome": "loss",
+      "elapsedSeconds": 33.747,
+      "summary": {
+        "samples": 34,
+        "activeSamples": 34,
+        "maxAcknowledgedCommands": 22,
+        "maximumObservedTerritory": 606,
+        "maxObservedFailureStreak": 0,
+        "decisionReasonSamples": {
+          "hard-neutral-first": 22,
+          "hard-build-combat-bank": 11
+        },
+        "statisticalWinRate": null
+      },
+      "shadow": {
+        "decisions": 421,
+        "supported": 421,
+        "unsupported": 0,
+        "reasons": {
+          "baseline-retained": 27,
+          "baseline-blocked": 167,
+          "contact-reserve-hold": 223,
+          "contact-reserve-cap": 4
+        },
+        "changedProposals": 227,
+        "holdProposals": 223,
+        "capProposals": 4,
+        "bankingLossAdvisories": 100,
+        "submissions": 22,
+        "receipts": 22,
+        "nativeCommands": 22,
+        "joinedCommands": 22,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "bankingAlternatives": {
+          "evaluated": 421,
+          "proposals": 0,
+          "blocked": 116,
+          "unsupported": 0,
+          "outOfScope": 305,
+          "reasons": {
+            "not-density-banking": 305,
+            "no-reserve-feasible-alternative": 116
+          },
+          "targetBlockers": {
+            "insufficient-bank-advantage": 812
+          },
+          "executable": false
+        },
+        "validCoverage": 1,
+        "retainedLookupKeys": 294,
+        "retainedLookupEntries": 588,
+        "maxLookupEntries": 20000,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false,
+        "plannerObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 285332,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "decisions": 421,
+          "commands": 22,
+          "overheadSegments": 9770,
+          "retainedTimingSamples": 2048,
+          "recentSegmentP95Ms": 0.19999999925494194,
+          "recentSegmentP99Ms": 0.2999999998137355,
+          "maxSegmentMs": 0.6000000005587935,
+          "timingMeaning": "observer segments, excludes original calls; not browser CPU"
+        },
+        "nativeObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 7799,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "nativeCommands": 22
+        },
+        "candidateActive": false,
+        "mode": "offline-action-shadow-not-transition-or-treatment",
+        "observerSha256": "f6953be26c6a80afc447b82192ed6f2cb5680d5dee18e4ae057c07d2f8c42bc1",
+        "candidateSha256": "24f8c80ffbf8e7544be36c886db294804894c17b45ee24268a34fc6d933ec7da",
+        "missingDecisionRecords": 0,
+        "coverageDenominator": 421
+      },
+      "replaySummary": {
+        "decisions": 421,
+        "supported": 421,
+        "unsupported": 0,
+        "reasons": {
+          "baseline-retained": 27,
+          "baseline-blocked": 167,
+          "contact-reserve-hold": 223,
+          "contact-reserve-cap": 4
+        },
+        "changedProposals": 227,
+        "holdProposals": 223,
+        "capProposals": 4,
+        "bankingLossAdvisories": 100,
+        "submissions": 22,
+        "receipts": 22,
+        "nativeCommands": 22,
+        "joinedCommands": 22,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "bankingAlternatives": {
+          "evaluated": 421,
+          "proposals": 0,
+          "blocked": 116,
+          "unsupported": 0,
+          "outOfScope": 305,
+          "reasons": {
+            "not-density-banking": 305,
+            "no-reserve-feasible-alternative": 116
+          },
+          "targetBlockers": {
+            "insufficient-bank-advantage": 812
+          },
+          "executable": false
+        },
+        "validCoverage": 1,
+        "retainedLookupKeys": 1150,
+        "retainedLookupEntries": 2300,
+        "maxLookupEntries": 20000,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "admissionDebitChecks": {
+        "cases": 22,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 16
+    }
+  ]
+}
