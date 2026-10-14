@@ -45,7 +45,7 @@ const server = http.createServer((request, response) => {
     const context = await browser.newContext();
     // Keep source verification local; never join an online match.
     await context.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
-    for (const test of ['bridge-harness', 'main-hook-harness']) {
+    for (const test of ['bridge-harness', 'main-hook-harness','capital-native-harness']) {
       const page = await context.newPage();
       await page.goto(base + '/tests/' + test + '.html');
       await page.waitForFunction(() => document.body.dataset.status !== 'running', { timeout: 15000 });
@@ -57,13 +57,13 @@ const server = http.createServer((request, response) => {
     if (live) {
       const page = await context.newPage();
       const bootstrap = ['shared/config.js', 'shared/performance.js', 'content/engine-core-v1.js',
-        'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'content/source-adapter.js', 'content/frontier-model.js',
+        'content/engine-core-v2-advanced.js', 'content/engine-adapter.js', 'shared/capital-policy.js', 'content/source-adapter.js', 'content/frontier-model.js',
         'content/frontier-episodes.js',
         'content/frontier-spatial.js', 'content/frontier-dynamic.js',
         'content/preloader.js', 'content/main-hook.js'].map(read);
       // Test-only access to the ORIGINAL native gr/hR/hQ routines. This hook is
       // never packaged. It restores mutable globals/arrays/functions in finally.
-      bootstrap.splice(7, 0, `{
+      bootstrap.splice(8, 0, `{
         const build = TIOSourceAdapter.buildExportSnippet;
         window.TIOSourceAdapter = { ...TIOSourceAdapter, buildExportSnippet: function(version, kind) {
           const result = build(version, kind);

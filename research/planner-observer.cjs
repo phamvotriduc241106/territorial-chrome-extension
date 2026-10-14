@@ -99,8 +99,10 @@ function installPlannerObserver(agent, engine, options = {}) {
       if (active && frame.decisionId) safe(() => {
         frame.finalDecision = copy(agent._decision);
         frame.commitSummary = copy(agent.lastCommitMeta);
-        frame.approvedPlan = { ...frame.rawPlan, ratio: agent.lastCommitMeta?.ratio,
-          canAfford: agent.lastCommitMeta?.canAfford };
+        frame.approvedPlan = agent.experimentalPolicy==='capital-v1' && agent.lastExperimental?.approvedPlan
+          ? copy(agent.lastExperimental.approvedPlan)
+          : { ...frame.rawPlan, ratio: agent.lastCommitMeta?.ratio,canAfford: agent.lastCommitMeta?.canAfford };
+        if(agent.experimentalPolicy==='capital-v1')frame.experiment=copy(agent.lastExperimental);
         frame.sourceHash = options.sourceHash;
         frame.snapshotStage = 'native-state-at-original-decide-call';
         buffer.push(frame);

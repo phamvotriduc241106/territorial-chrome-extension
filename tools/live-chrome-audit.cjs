@@ -50,6 +50,8 @@ function summarize(samples) {
 }
 
 async function run(options = {}) {
+  const policy=options.policy??'baseline';
+  assert.ok(['baseline','capital-v1'].includes(policy));
   const seconds = options.seconds ?? 300;
   assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 900);
   const difficultyLabel = options.difficultyLabel ?? 'Very Hard';
@@ -73,7 +75,10 @@ async function run(options = {}) {
     startedAt: new Date().toISOString(), release: currentRelease(),
     difficultyLabel, players, mapLabel, spawn, samples: [], outcome: 'error',
     terminalConfirmed: false, manualCombatCommands: 0, accelerated: false,
-    policyInfluence: 'existing-production-autoplay-only', performanceMicrobenchmark: false };
+    policyInfluence: policy==='baseline'?'existing-production-autoplay-only':'opt-in-capital-v1-commands',
+    assignedPolicy:policy, performanceMicrobenchmark: false };
+  report.treatment={decisionFrames:0,cappedFrames:0,heldFrames:0,decisionChanges:0,
+    taggedSubmissions:0,validatedReceipts:0,reserveViolations:0,debitCeilingViolations:0};
   const researchFreeze = Object.fromEntries(['planner-observer.cjs','contact-risk-candidate.cjs','planner-shadow-analysis.cjs','banking-alternatives.cjs']
     .map(file => [file,sha256(fs.readFileSync(path.join(root,'research',file)))]));
   report.researchFreeze = researchFreeze;
@@ -120,7 +125,7 @@ async function run(options = {}) {
     assert.ok(isolated, 'Actual extension isolated world was not created');
     const isolatedEval = async expression => {
       const response = await session.send('Runtime.evaluate', {
-        contextId: isolated.id, expression, returnByValue: true });
+        contextId: isolated.id, expression, returnByValue: true,awaitPromise:true });
       assert.ok(!response.exceptionDetails, 'Observer evaluation failed');
       return response.result.value;
     };
@@ -136,9 +141,21 @@ async function run(options = {}) {
         if(events.length)fs.appendFileSync(path.join(output,file),events.map(e=>JSON.stringify(e)).join('\n')+'\n');
       analysis.nativeBatch(native.events, native.stats);
       const rows=analysis.plannerBatch(planner.events);
+      for(const e of planner.events){
+        if(e.kind==='decision' && e.experiment){report.treatment.decisionFrames++;
+          report.treatment.cappedFrames+=Number(e.experiment.reason==='capital-v1-contact-cap');
+          report.treatment.heldFrames+=Number(e.experiment.reason==='capital-v1-reserve-hold');
+          report.treatment.decisionChanges+=Number(e.experiment.decisionChanged===true);}
+        if(e.kind==='submission' && e.payload?.experimental?.mode==='capital-v1')report.treatment.taggedSubmissions++;
+        const issued=e.result?.last||e.result;
+        if(e.kind==='receipt' && issued?.ok && issued.experimental){
+          report.treatment.validatedReceipts++;
+          report.treatment.reserveViolations+=Number(issued.balance<issued.experimental.requiredReserve);
+          report.treatment.debitCeilingViolations+=Number(issued.experimental.observedDebit>issued.experimental.maxDebit);}
+      }
       if(rows.length)fs.appendFileSync(path.join(output,'shadow-proposals.ndjson'),rows.map(e=>JSON.stringify(e)).join('\n')+'\n');
       report.shadow={...analysis.summary(),plannerObserver:planner.stats,nativeObserver:native.stats,
-        candidateActive:false,mode:'offline-action-shadow-not-transition-or-treatment',
+        candidateActive:policy!=='baseline',mode:policy==='baseline'?'offline-action-shadow-not-transition-or-treatment':'live-single-player-capital-treatment-with-observation',
         observerSha256:researchFreeze['planner-observer.cjs'],
         candidateSha256:researchFreeze['contact-risk-candidate.cjs']};
       report.shadow.missingDecisionRecords=Math.max(0,planner.stats.decisions-report.shadow.decisions);
@@ -162,7 +179,7 @@ async function run(options = {}) {
     const preload = await page.evaluate(() => window.__TIO_PRELOAD_RESULT__);
     assert.equal(preload?.status, 'pre-exec-patched', 'Fail closed for unmapped official source');
     report.contract = preload.kind;
-    if (options.shadow === true || options.bankingAlternatives === true) {
+    if (options.shadow === true || options.bankingAlternatives === true || policy!=='baseline') {
       const opts={sourceHash:report.sourceSha256,experimentId:path.basename(output),maxEvents:4096,maxBytes:4194304};
       await page.evaluate(installerExpression('native',opts));
       await isolatedEval(installerExpression('planner',opts));
@@ -196,6 +213,11 @@ async function run(options = {}) {
     await page.getByRole('button', { name: '⚔️ Play', exact: true }).click();
     await page.waitForFunction(() => window.__TIO_HOOK_API__?.state().economy?.mapCells > 0);
     assert.equal(await page.evaluate(() => window.__TIO_GAME__.modern.singlePlayer()), true);
+    if(policy!=='baseline'){
+      report.activation=await isolatedEval(`window.TerritorialEngineV5.setExperimentalPolicy(${JSON.stringify(policy)})`);
+      assert.equal(report.activation.mode,policy);
+      assert.equal((await readNative()).experimentalPolicy,policy);
+    }
     await page.mouse.click(spawn.x, spawn.y);
     await sleep(1000);
     report.beforeSpawnConfirmation = { native: await readNative(), agent: await readAgent() };
@@ -249,13 +271,14 @@ async function run(options = {}) {
 }
 
 if (require.main === module) {
-  const args = process.argv.slice(2).filter(arg => !['--shadow','--banking-shadow'].includes(arg));
+  const args = process.argv.slice(2).filter(arg => !['--shadow','--banking-shadow'].includes(arg) && !arg.startsWith('--policy='));
   const seconds = Number(args[0] ?? 300);
   const difficultyLabel = args[1] ?? 'Very Hard';
   const players = Number(args[2] ?? 64);
   const mapLabel = args[3] ?? null;
   const shadow = process.argv.includes('--shadow');
   const bankingAlternatives = process.argv.includes('--banking-shadow');
-  run({ seconds, difficultyLabel, players, mapLabel, shadow, bankingAlternatives }).catch(error => { console.error(String(error)); process.exitCode = 1; });
+  const policy=process.argv.find(arg=>arg.startsWith('--policy='))?.slice('--policy='.length)??'baseline';
+  run({ seconds, difficultyLabel, players, mapLabel, shadow, bankingAlternatives,policy }).catch(error => { console.error(String(error)); process.exitCode = 1; });
 }
 module.exports = { run, terminal, summarize, mapSelectionPattern };

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Commander",
-  "version": "10.3.8",
-  "description": "Dashboard and engine run only on https://territorial.io/. V2.8.2 policy unchanged. Updated 2026-10-13 12:39:34 EDT.",
+  "version": "10.3.9",
+  "description": "V2.8.2 default unchanged. Opt-in single-player capital experiment. Updated 2026-10-14 19:08:36 EDT.",
   "permissions": [
     "storage"
   ],
@@ -31,6 +31,7 @@
         "content/engine-core-v1.js",
         "content/engine-core-v2-advanced.js",
         "content/engine-adapter.js",
+        "shared/capital-policy.js",
         "content/source-adapter.js",
         "content/frontier-model.js",
         "content/frontier-spatial.js",
@@ -51,6 +52,7 @@
         "content/engine-core-v1.js",
         "content/engine-core-v2-advanced.js",
         "content/engine-adapter.js",
+        "shared/capital-policy.js",
         "shared/presentation.js",
         "content/coords.js",
         "content/vision.js",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 10.3.9 — 2026-10-14 19:08:36 EDT
+
+- Add default-off, per-tab/per-match capital-v1 single-player gameplay candidate. Caps commands after contact and considers reserve-constrained weak-target opportunities before collapse.
+- Explicit activation, source/coverage/freshness checks, no vision fallback, and native revalidation of match, reserve, minimum force and debit ceiling. No frontier commands or search activation.
+- Default V2.8.2 decision/spend fingerprints remain frozen. Candidate gameplay outcomes and limitations are documented separately; no strength claim from code alone.
+
 ## 10.3.8 — 2026-10-13 12:39:34 EDT
 
 - Restrict both content-script worlds, host permissions and public font resources to `https://territorial.io/*`. Production engine V2.8.2 unchanged.

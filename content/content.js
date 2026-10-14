@@ -55,6 +55,9 @@
       this.internalFailStreak = 0;
       this.smoothedCommit = 0.34;
       this.lastCommitMeta = null;
+      this.experimentalPolicy = 'off'; // Per-tab, explicit opt-in; never persisted.
+      this.experimentalMatchId = null;
+      this.lastExperimental = null;
 
       this.isActive = false;
       this.loopId = null;
@@ -445,6 +448,18 @@
       }
     }
 
+    async setExperimentalPolicy(mode='off') {
+      if(!['off','capital-v1'].includes(mode))throw Error('Unknown experimental policy');
+      if(mode!=='off' && (!window.TIOCapitalPolicy || this.settings.engineVersion!==2))
+        throw Error('Candidate requires the V2 native engine');
+      const result=await this.internal.setExperimentalPolicy(mode);
+      if(!result.ok)throw Error(result.err);
+      this.experimentalPolicy=mode;this.experimentalMatchId=result.state.matchId;
+      this.lastExperimental=null;
+      if(this.internalPlanningGate)this.internalPlanningGate.reset();
+      return {mode,matchId:this.experimentalMatchId};
+    }
+
     /** Read-only UI snapshot: timestamps describe observations, never invented game measurements. */
     getStatus() {
       const now = Date.now(), mono = performance.now();
@@ -477,6 +492,7 @@
         internalReady: nativeReady, blockReason, preferencesError: this.uiPreferenceError,
         engineVersion: adapter ? adapter.activeVersion : this.settings.engineVersion,
         engineName: adapter ? adapter.activeEngine : CFG.ENGINE_VERSION, strategy: this.settings.strategy,
+        experimentalPolicy: this.experimentalPolicy,
         path: hasNative ? this._lastPath || 'Native' : fallbackReady ? 'Vision fallback' : null,
         plannedAction: this._decision && this._decision.action || null,
         policy: this._lastPolicy || this._decision && this._decision.reason || null,
@@ -977,6 +993,16 @@
         ? CORE.decide(situation)
         : { action: hasAdjFree ? 'expand' : (enemies.length ? 'fight' : 'hold'), phaseLabel: 'LAND_RUSH', reason: 'fallback' };
 
+      const experimental=this.experimentalPolicy==='capital-v1';
+      const candidate=window.TIOCapitalPolicy;
+      const validity=experimental && candidate ? candidate.inspect(st,now-this.internal.lastStateAt) : null;
+      const experimentValid=experimental && validity?.ok && st.matchId===this.experimentalMatchId && engineVersion===2;
+      let decisionChanged=false;
+      if(experimentValid && this.settings.autoAttack!==false){
+        const selected=candidate.selectDecision(CORE,st,situation,decision);
+        decisionChanged=selected!==decision;decision=selected;
+      }
+
       if (decision.action === 'expand' && this.settings.autoExpand === false) {
         decision = this.settings.autoAttack !== false && enemies.length
           ? Object.assign({}, decision, { action: 'fight', wantEnemy: true, preferNeutral: false, phaseLabel: 'PRESSURE', reason: 'expand-disabled' })
@@ -1021,6 +1047,21 @@
         ratio = safeRatio > 0 ? Math.min(ratio, safeRatio) : 0;
       }
 
+      let experimentTag;
+      if(experimental){
+        const cap=experimentValid && manualRatio===0
+          ? candidate.constrain(CORE,st,decision,budget,ratio,gameTimeSec)
+          : {ok:false,reason:manualRatio>0?'capital-v1-manual-slider':validity?.reason||'capital-v1-match-or-engine-mismatch',ratio:0};
+        ratio=cap.ratio;
+        budget={...budget,canAfford:budget.canAfford && cap.ok,
+          minRemaining:Math.max(budget.minRemaining,cap.requiredReserve||0)};
+        this.lastExperimental={mode:this.experimentalPolicy,decisionChanged,...cap,
+          approvedPlan:{...budget,ratio}};
+        if(cap.ok)experimentTag={mode:this.experimentalPolicy,matchId:st.matchId,stateVersion:st.stateVersion,
+          gameTick:st.gameTick,maxDebit:cap.ledger.debit,ceilingUnits:cap.sliderUnits,
+          requiredReserve:budget.minRemaining,pressure:decisionChanged};
+      }
+
       const canFire = this.settings.botEnabled !== false && !userDriving && !busy && due &&
         budget.canAfford && ratio > 0 && decision.action !== 'hold' &&
         (decision.action !== 'expand' || neutralAvailable);
@@ -1031,6 +1072,7 @@
         minRemaining: budget.minRemaining | 0, maxSpend: budget.maxSpendTotal | 0,
         canAfford: !!budget.canAfford, action: decision.action, scores: decision.scores,
         urgency: budget.urgency
+        ,...(experimental?{experiment:this.lastExperimental.reason}: {})
       };
 
       if (canFire) {
@@ -1050,6 +1092,7 @@
           gameTimeSec,
           areaTrend: this.internalAreaTrend,
           shrinkFrames: this.internalShrinkFrames
+          ,...(experimental?{experimental:experimentTag}: {})
         }).then((result) => {
           if (result && result.ok) {
             this.uiLastCommandAt = Date.now(); // Receipt of a successful native acknowledgement, not an attempted dispatch.
@@ -1094,12 +1137,13 @@
           smoothingLock: block || this._lastPath || 'ready',
           waves: `${activeFronts}/${frontCap} + 1×${Math.round(ratio * 100)}%`,
           pincer: 'INTERNAL · NO VISION',
-          hint: `Native engine · ${decision.reason} · bal=${balance} · hook=${st.hookVer || '—'}`
+          hint: `${experimental?'EXPERIMENT capital-v1 · '+this.lastExperimental.reason:'Native engine'} · ${decision.reason} · bal=${balance} · hook=${st.hookVer || '—'}`
         });
       }
     }
 
     executePipeline(now, dtSec) {
+      if(this.experimentalPolicy!=='off')return; // Candidate never falls back to vision/click commands.
       this.frameCount++;
       this.failReason = '';
       const canvas = document.querySelector('canvas');
