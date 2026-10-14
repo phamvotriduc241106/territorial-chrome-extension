@@ -56,6 +56,7 @@ model-validation phase is required; no frontier model controls autoplay.
 ## Repository
 
 - [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
+- [Cycle 01: exact planner/native observation and action shadow](docs/PLANNER_SHADOW_CYCLE_01.md)
 - [Impossible-mode improvement proposal](docs/IMPOSSIBLE_IMPROVEMENT_PROPOSAL.md)
 - [Architecture and ownership](docs/ARCHITECTURE.md)
 - [Validation and benchmark limits](docs/VALIDATION.md)

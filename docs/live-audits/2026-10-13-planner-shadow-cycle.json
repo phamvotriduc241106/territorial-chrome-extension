@@ -1,0 +1,365 @@
+{
+  "schema": 1,
+  "evidenceKind": "real-baseline-with-offline-action-shadow",
+  "policyPromotionAllowed": false,
+  "candidateTreatmentMatches": 0,
+  "independentMatches": 3,
+  "sourceBoundMatches": 1,
+  "limitations": "Development pilots only. No fitted parameters, treatment outcomes, transition-error scoring, official wins, or CPU-strength proof.",
+  "runs": [
+    {
+      "id": "2026-10-14T00-10-38-111Z",
+      "artifact": {
+        "file": "2026-10-14T00-10-38-111Z.planner-evidence.json.gz",
+        "sha256": "9454820e4fd55631cc75a657dbcfb31e96c25d525671fd72e94ae7241d7f4bf7",
+        "bytes": 213729
+      },
+      "originalFileHashes": {
+        "report": "23bd2d69cc4099286eb66c475a39eaf1216b68f6b5b28cf69dd90ffd045ce38b",
+        "planner-events.ndjson": "b285368da70497d2e59128e5393ddb1923adc2b56979ce2e472de4e3efc10669",
+        "shadow-proposals.ndjson": "235db30d5446697a623cf90008ef725cf9389c1430acd25c016ad3e4ceb1ef87"
+      },
+      "sourceBindingQualification": "navigation-only-not-executed-bootstrap-bound",
+      "sourceIdentityEligible": false,
+      "productionPolicy": "unchanged-v10.3.8-V2.8.2",
+      "outcome": "loss",
+      "elapsedSeconds": 71.281,
+      "summary": {
+        "samples": 71,
+        "activeSamples": 71,
+        "maxAcknowledgedCommands": 30,
+        "maximumObservedTerritory": 1027,
+        "maxObservedFailureStreak": 0,
+        "decisionReasonSamples": {
+          "hard-neutral-first": 29,
+          "hard-build-combat-bank": 41
+        },
+        "statisticalWinRate": null
+      },
+      "shadow": {
+        "decisions": 884,
+        "supported": 64,
+        "unsupported": 820,
+        "reasons": {
+          "baseline-retained": 15,
+          "baseline-blocked": 49,
+          "unverified-incoming-field": 820
+        },
+        "changedProposals": 0,
+        "holdProposals": 0,
+        "capProposals": 0,
+        "bankingLossAdvisories": 0,
+        "submissions": 30,
+        "receipts": 30,
+        "nativeCommands": 0,
+        "joinedCommands": 0,
+        "unjoinedReceipts": 30,
+        "policyInfluence": false,
+        "validCoverage": 0.07239819004524888,
+        "retainedLookupKeys": 0,
+        "unjoinedNative": 0,
+        "plannerObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 289126,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "decisions": 884,
+          "commands": 30,
+          "overheadSegments": 20558,
+          "retainedTimingSamples": 2048,
+          "recentSegmentP95Ms": 0.10000000149011612,
+          "recentSegmentP99Ms": 0.19999999925494194,
+          "maxSegmentMs": 1.5,
+          "timingMeaning": "observer segments, excludes original calls; not browser CPU"
+        },
+        "nativeObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 0,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "nativeCommands": 0
+        },
+        "candidateActive": false,
+        "mode": "offline-action-shadow-not-transition-or-treatment",
+        "observerSha256": "2701d4f31f32c39035b68e2ddaa20c6b3fb63c99ffe5f523432dbe55a67f3f7f",
+        "candidateSha256": "24f8c80ffbf8e7544be36c886db294804894c17b45ee24268a34fc6d933ec7da"
+      },
+      "replaySummary": {
+        "decisions": 884,
+        "supported": 64,
+        "unsupported": 820,
+        "reasons": {
+          "baseline-retained": 15,
+          "baseline-blocked": 49,
+          "unverified-incoming-field": 820
+        },
+        "changedProposals": 0,
+        "holdProposals": 0,
+        "capProposals": 0,
+        "bankingLossAdvisories": 0,
+        "submissions": 30,
+        "receipts": 30,
+        "nativeCommands": 0,
+        "joinedCommands": 0,
+        "unjoinedReceipts": 30,
+        "policyInfluence": false,
+        "validCoverage": 0.07239819004524888,
+        "retainedLookupKeys": 0,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "admissionDebitChecks": {
+        "cases": 0,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 0
+    },
+    {
+      "id": "2026-10-14T00-13-10-923Z",
+      "artifact": {
+        "file": "2026-10-14T00-13-10-923Z.planner-evidence.json.gz",
+        "sha256": "6d39fc849b118f9fd5c7d39dca23cf113f338f0e2e793d70b5bd3c4d3c63f3ee",
+        "bytes": 247289
+      },
+      "originalFileHashes": {
+        "report": "fc4c1a85edeb524b4d5d2eb3a225da8d876964c0d91af8b93560bc6919320411",
+        "planner-events.ndjson": "e2973820dbfaa014bbbc07f05e5da93ad1ebc08e2996a21811bcbcd8d27289d9",
+        "native-observer-events.ndjson": "a92cd1ba361c0ef945e3b9f519f5fae0f1a0625fa209ee0d2944069421295eb6",
+        "shadow-proposals.ndjson": "9c471f71b304c17c4c921a84b08aca3bd5fe47dafd471f407f5a9dca57ab0957"
+      },
+      "sourceBindingQualification": "navigation-only-not-executed-bootstrap-bound",
+      "sourceIdentityEligible": false,
+      "productionPolicy": "unchanged-v10.3.8-V2.8.2",
+      "outcome": "loss",
+      "elapsedSeconds": 76.612,
+      "summary": {
+        "samples": 76,
+        "activeSamples": 76,
+        "maxAcknowledgedCommands": 29,
+        "maximumObservedTerritory": 1025,
+        "maxObservedFailureStreak": 0,
+        "decisionReasonSamples": {
+          "hard-neutral-first": 29,
+          "hard-build-combat-bank": 46
+        },
+        "statisticalWinRate": null
+      },
+      "shadow": {
+        "decisions": 947,
+        "supported": 947,
+        "unsupported": 0,
+        "reasons": {
+          "baseline-retained": 39,
+          "baseline-blocked": 576,
+          "contact-reserve-cap": 9,
+          "contact-reserve-hold": 323
+        },
+        "changedProposals": 332,
+        "holdProposals": 323,
+        "capProposals": 9,
+        "bankingLossAdvisories": 112,
+        "submissions": 29,
+        "receipts": 29,
+        "nativeCommands": 29,
+        "joinedCommands": 29,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "validCoverage": 1,
+        "retainedLookupKeys": 148,
+        "unjoinedNative": 0,
+        "plannerObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 235769,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "decisions": 947,
+          "commands": 29,
+          "overheadSegments": 22126,
+          "retainedTimingSamples": 2048,
+          "recentSegmentP95Ms": 0.10000000149011612,
+          "recentSegmentP99Ms": 0.20000000298023224,
+          "maxSegmentMs": 0.6999999992549419,
+          "timingMeaning": "observer segments, excludes original calls; not browser CPU"
+        },
+        "nativeObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 6914,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "nativeCommands": 29
+        },
+        "candidateActive": false,
+        "mode": "offline-action-shadow-not-transition-or-treatment",
+        "observerSha256": "1b6fbfac9a70b93a21ce6aaa3f716d3e9864230310f70a0f5630ac641f208308",
+        "candidateSha256": "24f8c80ffbf8e7544be36c886db294804894c17b45ee24268a34fc6d933ec7da"
+      },
+      "replaySummary": {
+        "decisions": 947,
+        "supported": 947,
+        "unsupported": 0,
+        "reasons": {
+          "baseline-retained": 39,
+          "baseline-blocked": 576,
+          "contact-reserve-cap": 9,
+          "contact-reserve-hold": 323
+        },
+        "changedProposals": 332,
+        "holdProposals": 323,
+        "capProposals": 9,
+        "bankingLossAdvisories": 112,
+        "submissions": 29,
+        "receipts": 29,
+        "nativeCommands": 29,
+        "joinedCommands": 29,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "validCoverage": 1,
+        "retainedLookupKeys": 2521,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "admissionDebitChecks": {
+        "cases": 29,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 22
+    },
+    {
+      "id": "2026-10-14T00-19-27-970Z",
+      "artifact": {
+        "file": "2026-10-14T00-19-27-970Z.planner-evidence.json.gz",
+        "sha256": "22beec049f9e868d643f9c1b57e4511bd27ae7f7527068dfa4a870e14d586885",
+        "bytes": 225515
+      },
+      "originalFileHashes": {
+        "report": "04abf86b9633c2d209ae1896f813028468a798d6e8d83822517cf2bd86a52061",
+        "planner-events.ndjson": "1dc999a3d28351d3be03bd37845a037c7104817b105525f88cfd8049de460193",
+        "native-observer-events.ndjson": "96ffd7c0f756414dfdf47d5055cb01797f40219f9bbd6f715996cba76ad7a12a",
+        "shadow-proposals.ndjson": "2e73b875dccf4d9836cdb106a1e6325584ca0ac9815f90e9dd202400803b8437"
+      },
+      "sourceBindingQualification": "executed-bootstrap-response-verified",
+      "sourceIdentityEligible": true,
+      "productionPolicy": "unchanged-v10.3.8-V2.8.2",
+      "outcome": "loss",
+      "elapsedSeconds": 66.517,
+      "summary": {
+        "samples": 66,
+        "activeSamples": 66,
+        "maxAcknowledgedCommands": 30,
+        "maximumObservedTerritory": 1037,
+        "maxObservedFailureStreak": 0,
+        "decisionReasonSamples": {
+          "hard-neutral-first": 32,
+          "hard-build-combat-bank": 33
+        },
+        "statisticalWinRate": null
+      },
+      "shadow": {
+        "decisions": 837,
+        "supported": 837,
+        "unsupported": 0,
+        "reasons": {
+          "baseline-retained": 37,
+          "baseline-blocked": 439,
+          "contact-reserve-cap": 9,
+          "contact-reserve-hold": 352
+        },
+        "changedProposals": 361,
+        "holdProposals": 352,
+        "capProposals": 9,
+        "bankingLossAdvisories": 128,
+        "submissions": 30,
+        "receipts": 30,
+        "nativeCommands": 30,
+        "joinedCommands": 30,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "validCoverage": 1,
+        "retainedLookupKeys": 164,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false,
+        "plannerObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 253364,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "decisions": 837,
+          "commands": 30,
+          "overheadSegments": 19254,
+          "retainedTimingSamples": 2048,
+          "recentSegmentP95Ms": 0.10000000149011612,
+          "recentSegmentP99Ms": 0.20000000298023224,
+          "maxSegmentMs": 0.9000000022351742,
+          "timingMeaning": "observer segments, excludes original calls; not browser CPU"
+        },
+        "nativeObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 6796,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "nativeCommands": 30
+        },
+        "candidateActive": false,
+        "mode": "offline-action-shadow-not-transition-or-treatment",
+        "observerSha256": "f6953be26c6a80afc447b82192ed6f2cb5680d5dee18e4ae057c07d2f8c42bc1",
+        "candidateSha256": "24f8c80ffbf8e7544be36c886db294804894c17b45ee24268a34fc6d933ec7da",
+        "missingDecisionRecords": 0,
+        "coverageDenominator": 837
+      },
+      "replaySummary": {
+        "decisions": 837,
+        "supported": 837,
+        "unsupported": 0,
+        "reasons": {
+          "baseline-retained": 37,
+          "baseline-blocked": 439,
+          "contact-reserve-cap": 9,
+          "contact-reserve-hold": 352
+        },
+        "changedProposals": 361,
+        "holdProposals": 352,
+        "capProposals": 9,
+        "bankingLossAdvisories": 128,
+        "submissions": 30,
+        "receipts": 30,
+        "nativeCommands": 30,
+        "joinedCommands": 30,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "validCoverage": 1,
+        "retainedLookupKeys": 2251,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "admissionDebitChecks": {
+        "cases": 30,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 23
+    }
+  ]
+}

@@ -9,6 +9,8 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const { chromium } = require('playwright');
 const { currentRelease } = require('./very-hard-standard.cjs');
+const { installerExpression } = require('../research/planner-observer.cjs');
+const { createAnalysis } = require('../research/planner-shadow-analysis.cjs');
 const root = path.resolve(__dirname, '..');
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -63,6 +65,9 @@ async function run(options = {}) {
     difficultyLabel, players, mapLabel, spawn, samples: [], outcome: 'error',
     terminalConfirmed: false, manualCombatCommands: 0, accelerated: false,
     policyInfluence: 'existing-production-autoplay-only', performanceMicrobenchmark: false };
+  const researchFreeze = Object.fromEntries(['planner-observer.cjs','contact-risk-candidate.cjs','planner-shadow-analysis.cjs']
+    .map(file => [file,sha256(fs.readFileSync(path.join(root,'research',file)))]));
+  report.researchFreeze = researchFreeze;
   let context;
   try {
     context = await chromium.launchPersistentContext(profile, {
@@ -81,15 +86,57 @@ async function run(options = {}) {
     page.on('pageerror', error => {
       if (report.errors.length < 100) report.errors.push(String(error));
     });
-    await page.goto('https://territorial.io/');
-    const source = await (await page.request.get('https://territorial.io/')).text();
-    report.sourceSha256 = sha256(source);
+    const bootstrapResponses = [];
+    page.on('response', response => {
+      if (response.url() === 'https://territorial.io/' && response.request().resourceType() === 'xhr')
+        bootstrapResponses.push(response);
+    });
+    const navigation = await page.goto('https://territorial.io/');
+    assert.ok(navigation, 'No original navigation response');
+    report.navigationSourceSha256 = sha256(await navigation.body());
+    // The preloader executes its synchronous XHR response, not necessarily the
+    // navigation HTML. Capture that exact response; never substitute a later GET.
+    const bootstrap = await page.evaluate(() => window.__TIO_PRELOAD_RESULT__);
+    assert.equal(bootstrap?.status, 'pre-exec-patched');
+    assert.equal(bootstrapResponses.length, 1, 'Ambiguous/missing preloader source response');
+    const actualSource = await bootstrapResponses[0].body();
+    assert.equal(actualSource.toString('utf8').length, bootstrap.bytes, 'Bootstrap body identity mismatch');
+    report.sourceSha256 = sha256(actualSource);
+    report.sourceBinding = 'captured-preloader-synchronous-xhr-response-before-patch';
     const contexts = [];
     const session = await context.newCDPSession(page);
     session.on('Runtime.executionContextCreated', event => contexts.push(event.context));
     await session.send('Runtime.enable');
     const isolated = contexts.find(c => c.origin === 'chrome-extension://' + extension.id);
     assert.ok(isolated, 'Actual extension isolated world was not created');
+    const isolatedEval = async expression => {
+      const response = await session.send('Runtime.evaluate', {
+        contextId: isolated.id, expression, returnByValue: true });
+      assert.ok(!response.exceptionDetails, 'Observer evaluation failed');
+      return response.result.value;
+    };
+    let analysis = null;
+    const drainObservers = async (stop = false) => {
+      if (!analysis) return;
+      const planner = JSON.parse(await isolatedEval(`JSON.stringify((()=>{const o=window.__TIO_PLANNER_OBSERVER__;
+        ${stop ? 'o.stop();' : ''}return {events:o.drain(),stats:o.stats()};})())`));
+      const native = await page.evaluate(stop => {
+        const o=window.__TIO_NATIVE_OBSERVER__;if(stop)o.stop();return {events:o.drain(),stats:o.stats()};
+      }, stop);
+      for(const [file,events] of [['planner-events.ndjson',planner.events],['native-observer-events.ndjson',native.events]])
+        if(events.length)fs.appendFileSync(path.join(output,file),events.map(e=>JSON.stringify(e)).join('\n')+'\n');
+      analysis.nativeBatch(native.events, native.stats);
+      const rows=analysis.plannerBatch(planner.events);
+      if(rows.length)fs.appendFileSync(path.join(output,'shadow-proposals.ndjson'),rows.map(e=>JSON.stringify(e)).join('\n')+'\n');
+      report.shadow={...analysis.summary(),plannerObserver:planner.stats,nativeObserver:native.stats,
+        candidateActive:false,mode:'offline-action-shadow-not-transition-or-treatment',
+        observerSha256:researchFreeze['planner-observer.cjs'],
+        candidateSha256:researchFreeze['contact-risk-candidate.cjs']};
+      report.shadow.missingDecisionRecords=Math.max(0,planner.stats.decisions-report.shadow.decisions);
+      report.shadow.coverageDenominator=Math.max(planner.stats.decisions,report.shadow.decisions);
+      report.shadow.validCoverage=report.shadow.coverageDenominator
+        ?report.shadow.supported/report.shadow.coverageDenominator:null;
+    };
     const readAgent = async () => {
       const response = await session.send('Runtime.evaluate', {
         contextId: isolated.id, returnByValue: true,
@@ -106,6 +153,13 @@ async function run(options = {}) {
     const preload = await page.evaluate(() => window.__TIO_PRELOAD_RESULT__);
     assert.equal(preload?.status, 'pre-exec-patched', 'Fail closed for unmapped official source');
     report.contract = preload.kind;
+    if (options.shadow === true) {
+      const opts={sourceHash:report.sourceSha256,experimentId:path.basename(output),maxEvents:4096,maxBytes:4194304};
+      await page.evaluate(installerExpression('native',opts));
+      await isolatedEval(installerExpression('planner',opts));
+      const { kernel }=require('./cpu-benchmark.cjs');
+      analysis=createAnalysis(kernel().TIOEngineCore,report.sourceSha256);
+    }
     report.extensionWorkers = context.serviceWorkers().map(w => w.url());
     await page.getByText('Custom Scenario', { exact: false }).click();
     await page.locator('#input1').fill(String(players));
@@ -145,6 +199,7 @@ async function run(options = {}) {
     while (Date.now() < deadline) {
       const sample = { at: new Date().toISOString(), native: await readNative(), agent: await readAgent() };
       report.samples.push(sample);
+      await drainObservers();
       fs.appendFileSync(path.join(output, 'live-progress.ndjson'), JSON.stringify(sample) + '\n');
       if (report.samples.length === 1 || report.samples.length % 30 === 0)
         console.log(JSON.stringify({ progress: true, mapLabel, difficultyLabel,
@@ -166,6 +221,7 @@ async function run(options = {}) {
     }
     if (!report.milestoneConfirmed) report.outcome = 'censored-time-limit';
     report.finalNative = await readNative();
+    await drainObservers(true);
     await page.screenshot({ path: path.join(output, 'finish.png') });
     report.summary = summarize(report.samples);
   } catch (error) {
@@ -183,10 +239,12 @@ async function run(options = {}) {
 }
 
 if (require.main === module) {
-  const seconds = Number(process.argv[2] ?? 300);
-  const difficultyLabel = process.argv[3] ?? 'Very Hard';
-  const players = Number(process.argv[4] ?? 64);
-  const mapLabel = process.argv[5] ?? null;
-  run({ seconds, difficultyLabel, players, mapLabel }).catch(error => { console.error(String(error)); process.exitCode = 1; });
+  const args = process.argv.slice(2).filter(arg => arg !== '--shadow');
+  const seconds = Number(args[0] ?? 300);
+  const difficultyLabel = args[1] ?? 'Very Hard';
+  const players = Number(args[2] ?? 64);
+  const mapLabel = args[3] ?? null;
+  const shadow = process.argv.includes('--shadow');
+  run({ seconds, difficultyLabel, players, mapLabel, shadow }).catch(error => { console.error(String(error)); process.exitCode = 1; });
 }
 module.exports = { run, terminal, summarize };

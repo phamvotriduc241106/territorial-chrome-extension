@@ -8,6 +8,8 @@ Mac checkout: `/Users/phamvotriduc/territorial-chrome-extension`.
 
 ## 1. Mission and working loop
 
+Continuation update: [Cycle 01](PLANNER_SHADOW_CYCLE_01.md) adds opt-in diagnostic factories, `--shadow`, complete compressed pilot journals and executed-bootstrap source binding. Read its limitations before repeating this snapshot's initial tasks. The candidate remains non-actuating and larger held-out/treatment validation is still pending.
+
 Improve real single-player Impossible performance through a repeated engineering loop:
 
 1. Test an explicitly identified baseline or candidate in real Chrome.
@@ -67,7 +69,7 @@ Baseline kernel SHA-256: `8331d51ebfbc55bbf91efe4ca0d543231a01be75d3844cdee2d9ab
 
 These identify prior observations. Verify fresh source/signatures; do not simply whitelist an old hash or bypass a changed contract.
 
-Identity gap to close: the current live recorder hashes a **follow-up HTTP GET** after navigation, not the navigation response body itself. Capture/hash the actual loaded original source before rewriting/patching where supported, and distinguish it from any later fetch. If the two identities cannot be reconciled, mark that source binding unsupported; do not assume separate requests were identical.
+Historical identity gap: the old recorder hashed a follow-up HTTP GET; a preliminary observer then hashed navigation HTML. Neither proves the preloader's executed source. Cycle 01 now captures the actual synchronous bootstrap-XHR response and verifies its text length against preloader metadata. Keep navigation/bootstrap identities separate; fail closed for ambiguous/missing capture and never reinterpret historical records as source-bound.
 
 Evidence-backed concern: early expansion produced multiple contacts while neighboring banks exceeded ours; the final density-hold override persisted during territory decline. It uses `combatBankTarget=0.55` without an explicit shrink/trend exception in that final block. This identifies a candidate mechanism, **not proof that an alternative attack would win**.
 
