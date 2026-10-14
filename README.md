@@ -60,6 +60,7 @@ model-validation phase is required; no frontier model controls autoplay.
 - [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
 - [Cycle 01: exact planner/native observation and action shadow](docs/PLANNER_SHADOW_CYCLE_01.md)
 - [Cycle 02: banking alternatives, Asia loss and negative findings](docs/BANKING_ALTERNATIVES_CYCLE_02.md)
+- [Capital-v1: opt-in live gameplay candidate and pilot](docs/CAPITAL_POLICY_PILOT.md)
 - [Impossible-mode improvement proposal](docs/IMPOSSIBLE_IMPROVEMENT_PROPOSAL.md)
 - [Architecture and ownership](docs/ARCHITECTURE.md)
 - [Validation and benchmark limits](docs/VALIDATION.md)

@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "kind": "four-match-development-safety-screen",
+  "plan": "2026-10-14-capital-pilot-plan.json",
+  "runtimeCheckpoint": "f6b0071",
+  "evidence": "2026-10-14-capital-pilot-evidence.json",
+  "rows": [
+    {
+      "id": 1,
+      "map": "Asia",
+      "policy": "baseline",
+      "outcome": "loss",
+      "elapsedSeconds": 33.781,
+      "peakTerritory": 596,
+      "commands": 22,
+      "maxFailureStreak": 0,
+      "treatment": {
+        "decisionFrames": 0,
+        "cappedFrames": 0,
+        "heldFrames": 0,
+        "decisionChanges": 0,
+        "taggedSubmissions": 0,
+        "validatedReceipts": 0,
+        "reserveViolations": 0,
+        "debitCeilingViolations": 0
+      },
+      "changedAdmissions": 0,
+      "nativeCommands": 22,
+      "sourceBound": true,
+      "coverage": 1,
+      "shadowUnsupported": {
+        "baseline-retained": 28,
+        "baseline-blocked": 169,
+        "contact-reserve-hold": 228,
+        "contact-reserve-cap": 8
+      },
+      "firstSampledContact": {
+        "tick": 92,
+        "balance": 393,
+        "territory": 144,
+        "contacts": 1
+      },
+      "lastObserved": {
+        "tick": 604,
+        "balance": 0,
+        "territory": 0
+      }
+    },
+    {
+      "id": 2,
+      "map": "Asia",
+      "policy": "capital-v1",
+      "outcome": "loss",
+      "elapsedSeconds": 89.09,
+      "peakTerritory": 535,
+      "commands": 21,
+      "maxFailureStreak": 0,
+      "treatment": {
+        "decisionFrames": 1058,
+        "cappedFrames": 64,
+        "heldFrames": 618,
+        "decisionChanges": 153,
+        "taggedSubmissions": 23,
+        "validatedReceipts": 21,
+        "reserveViolations": 0,
+        "debitCeilingViolations": 0
+      },
+      "changedAdmissions": 11,
+      "nativeCommands": 21,
+      "sourceBound": true,
+      "coverage": 0.8790170132325141,
+      "shadowUnsupported": {
+        "baseline-retained": 11,
+        "baseline-blocked": 919,
+        "invalid-baseline-budget": 128
+      },
+      "firstSampledContact": {
+        "tick": 87,
+        "balance": 369,
+        "territory": 144,
+        "contacts": 1
+      },
+      "lastObserved": {
+        "tick": 1587,
+        "balance": 0,
+        "territory": 0
+      }
+    },
+    {
+      "id": 3,
+      "map": "Europe",
+      "policy": "capital-v1",
+      "outcome": "loss",
+      "elapsedSeconds": 172.905,
+      "peakTerritory": 1160,
+      "commands": 27,
+      "maxFailureStreak": 0,
+      "treatment": {
+        "decisionFrames": 2030,
+        "cappedFrames": 75,
+        "heldFrames": 1395,
+        "decisionChanges": 126,
+        "taggedSubmissions": 27,
+        "validatedReceipts": 27,
+        "reserveViolations": 0,
+        "debitCeilingViolations": 0
+      },
+      "changedAdmissions": 13,
+      "nativeCommands": 27,
+      "sourceBound": true,
+      "coverage": 0.9275862068965517,
+      "shadowUnsupported": {
+        "baseline-retained": 13,
+        "baseline-blocked": 1870,
+        "invalid-baseline-budget": 147
+      },
+      "firstSampledContact": {
+        "tick": 110,
+        "balance": 515,
+        "territory": 212,
+        "contacts": 1
+      },
+      "lastObserved": {
+        "tick": 3088,
+        "balance": 0,
+        "territory": 0
+      }
+    },
+    {
+      "id": 4,
+      "map": "Europe",
+      "policy": "baseline",
+      "outcome": "loss",
+      "elapsedSeconds": 61.453,
+      "peakTerritory": 1034,
+      "commands": 30,
+      "maxFailureStreak": 0,
+      "treatment": {
+        "decisionFrames": 0,
+        "cappedFrames": 0,
+        "heldFrames": 0,
+        "decisionChanges": 0,
+        "taggedSubmissions": 0,
+        "validatedReceipts": 0,
+        "reserveViolations": 0,
+        "debitCeilingViolations": 0
+      },
+      "changedAdmissions": 0,
+      "nativeCommands": 30,
+      "sourceBound": true,
+      "coverage": 1,
+      "shadowUnsupported": {
+        "baseline-retained": 38,
+        "baseline-blocked": 372,
+        "contact-reserve-cap": 10,
+        "contact-reserve-hold": 364
+      },
+      "firstSampledContact": {
+        "tick": 109,
+        "balance": 483,
+        "territory": 212,
+        "contacts": 1
+      },
+      "lastObserved": {
+        "tick": 1098,
+        "balance": 0,
+        "territory": 0
+      }
+    }
+  ],
+  "policyPromotionAllowed": false,
+  "prospectiveWinRate": null,
+  "heldOutMatches": 0,
+  "uncertainty": "Two matches per arm, one per map; nonrandom preassigned order, placements not frozen. No strength inference or independent-tick statistics."
+}

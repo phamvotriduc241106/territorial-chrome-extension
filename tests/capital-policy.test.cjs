@@ -61,6 +61,8 @@ test('actual orchestrator sends capped candidate metadata, respects controls and
   // Native baseline neutral ratio is already small, but every treatment command is tagged and revalidated.
   assert.equal(on.commands.length,1);const p=on.commands[0];assert.equal(p.experimental.mode,'capital-v1');
   assert.ok(p.minRemaining>=6000);assert.ok(p.experimental.maxDebit>0);
+  assert.ok(on.a.lastExperimental.approvedPlan.maxSpendTotal<=10000-p.minRemaining,
+    'reported final budget must shrink with the stronger reserve');
   for(const kind of ['manual','pointer','off','stale','match','incomplete']){
     const {a,commands}=orchestrator();await a.setExperimentalPolicy('capital-v1');
     if(kind==='manual')a.settings.sliderPercentage=20;if(kind==='pointer')a.controller.userPointerDown=true;
@@ -89,4 +91,37 @@ test('4000 seeded final caps cannot exceed original debit, reserves or meaningfu
     assert.equal(r.ledger.before-r.ledger.debit,r.ledger.after);
   }
   assert.ok(accepted>500);
+});
+test('frozen live pilot preserves all four losses and proves 48 real candidate admissions without budget violations',()=>{
+  const zlib=require('node:zlib'),crypto=require('node:crypto');
+  const m=require('../docs/live-audits/2026-10-14-capital-pilot-evidence.json');
+  const plan=require('../docs/live-audits/2026-10-14-capital-pilot-plan.json');
+  const {createAnalysis}=require('../research/planner-shadow-analysis.cjs');
+  assert.equal(m.attempts,4);assert.equal(m.independentMatches,4);assert.equal(m.candidateTreatmentMatches,2);
+  assert.equal(m.policyPromotionAllowed,false);let treatment=0,baseline=0,total=0;
+  for(const [i,run] of m.runs.entries()){
+    const bytes=fs.readFileSync(path.join(__dirname,'../docs/live-audits',run.artifact.file));
+    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),run.artifact.sha256);
+    const b=JSON.parse(zlib.gunzipSync(bytes)),candidate=plan.schedule[i].policy==='capital-v1';
+    assert.equal(b.report.outcome,'loss');assert.equal(b.report.assignedPolicy,plan.schedule[i].policy);
+    assert.equal(b.report.release.releaseSha256,plan.release.releaseSha256);
+    assert.equal(b.report.sourceSha256,plan.expectedSourceSha256);assert.equal(b.report.mapLabel,plan.schedule[i].mapLabel);
+    assert.equal(b.report.shadow.candidateActive,candidate);
+    assert.equal(b.report.shadow.plannerObserver.dropped,0);assert.equal(b.report.shadow.nativeObserver.dropped,0);
+    const admissions=b.native.filter(e=>e.kind==='native-command');
+    for(const n of admissions){assert.equal(n.observedDebit,kernel().TIOEngineCore.humanAttackDebit(n.before,
+      Math.floor(n.before*(n.il+1)/1024)).debit);total++;}
+    for(const e of b.planner.filter(e=>e.kind==='receipt'&&e.result?.ok)){
+      if(candidate){const x=e.result.experimental;assert.equal(x.mode,'capital-v1');
+        assert.ok(e.result.balance>=x.requiredReserve);assert.ok(x.observedDebit<=x.maxDebit);treatment++;}
+      else {assert.equal(e.result.experimental,undefined);baseline++;}
+    }
+    const replay=createAnalysis(environment().TIOEngineCore,b.report.sourceSha256,{keepAllLookups:true,maxLookupEntries:250000});
+    replay.nativeBatch(b.native,b.report.shadow.nativeObserver);replay.plannerBatch(b.planner);
+    for(const key of ['decisions','supported','unsupported','joinedCommands'])
+      assert.equal(replay.summary()[key],b.report.shadow[key]);
+    // The old shadow's budget-summary rejection is retained, not repaired in frozen observations.
+    if(candidate)assert.ok(b.report.shadow.unsupported>0);
+  }
+  assert.equal(treatment,48);assert.equal(baseline,52);assert.equal(total,100);
 });

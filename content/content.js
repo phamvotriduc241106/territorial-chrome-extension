@@ -1053,8 +1053,10 @@
           ? candidate.constrain(CORE,st,decision,budget,ratio,gameTimeSec)
           : {ok:false,reason:manualRatio>0?'capital-v1-manual-slider':validity?.reason||'capital-v1-match-or-engine-mismatch',ratio:0};
         ratio=cap.ratio;
+        const requiredReserve=Math.max(budget.minRemaining,cap.requiredReserve||0);
         budget={...budget,canAfford:budget.canAfford && cap.ok,
-          minRemaining:Math.max(budget.minRemaining,cap.requiredReserve||0)};
+          minRemaining:requiredReserve,
+          maxSpendTotal:Math.min(budget.maxSpendTotal,Math.max(0,balance-requiredReserve))};
         this.lastExperimental={mode:this.experimentalPolicy,decisionChanged,...cap,
           approvedPlan:{...budget,ratio}};
         if(cap.ok)experimentTag={mode:this.experimentalPolicy,matchId:st.matchId,stateVersion:st.stateVersion,

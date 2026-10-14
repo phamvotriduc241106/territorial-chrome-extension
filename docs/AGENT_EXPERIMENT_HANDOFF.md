@@ -12,6 +12,8 @@ Continuation update: [Cycle 01](PLANNER_SHADOW_CYCLE_01.md) adds opt-in diagnost
 
 [Cycle 02](BANKING_ALTERNATIVES_CYCLE_02.md) adds `--banking-shadow`, an explicit offline target/action/budget evaluator, an Asia/512 loss and both retained setup errors. It found zero financially feasible proposals on two source-bound development matches. A separate spend defense wall can block a removed density-hold override. Fresh native testing verifies `hc(attacker,target)` direction; the observer's old `exclude` field means target, not an exclusion filter. Prioritize pre-contact capital/geometry experiments, not another unchanged-baseline run or safety-floor reduction. Production remains unchanged; no candidate treatment or promotion has occurred.
 
+Latest continuation: [capital-v1 live pilot](CAPITAL_POLICY_PILOT.md), release 10.3.9, implements an actual per-match opt-in single-player controller. Four preassigned development games (two per arm, Asia/Europe 512 Impossible) all lost; 48 candidate native admissions were verified, with observed loss times 89.090/172.905 seconds versus baseline 33.781/61.453 seconds. This is not randomized/paired/held-out strength evidence. Default policy remains unchanged. Read the recorded budget-summary bug/coverage limitation and post-pilot fix before using the final runtime as the frozen pilot. User explicitly authorized this live treatment after the earlier shadow-only stage; do not turn it into default/multiplayer activation or claim the larger validation phase is complete.
+
 Improve real single-player Impossible performance through a repeated engineering loop:
 
 1. Test an explicitly identified baseline or candidate in real Chrome.
