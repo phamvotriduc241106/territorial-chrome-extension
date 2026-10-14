@@ -1,5 +1,6 @@
 'use strict';
 const {evaluateOpeningBudget,reviewBanking}=require('./contact-risk-candidate.cjs');
+const {evaluateBankingAlternatives}=require('./banking-alternatives.cjs');
 function createAnalysis(core, sourceHash, options = {}) {
   const lookups=new Map(),pendingNative=[],submissions=new Map();
   let nativeIncomplete=false,lookupEntries=0;
@@ -8,6 +9,8 @@ function createAnalysis(core, sourceHash, options = {}) {
   const summary={decisions:0,supported:0,unsupported:0,reasons:{},changedProposals:0,
     holdProposals:0,capProposals:0,bankingLossAdvisories:0,submissions:0,receipts:0,
     nativeCommands:0,joinedCommands:0,unjoinedReceipts:0,policyInfluence:false};
+  if(options.bankingAlternatives)summary.bankingAlternatives={evaluated:0,proposals:0,blocked:0,
+    unsupported:0,outOfScope:0,reasons:{},targetBlockers:{},executable:false};
   function reason(r){summary.reasons[r]=(summary.reasons[r]||0)+1;}
   function nativeBatch(events, quality = {}){
     if(quality.dropped>0||quality.errors>0){nativeIncomplete=true;lookups.clear();lookupEntries=0;}
@@ -56,9 +59,18 @@ function createAnalysis(core, sourceHash, options = {}) {
     if(proposal.status==='candidate'){summary.changedProposals++;
       if(proposal.canAfford)summary.capProposals++;else summary.holdProposals++;}
     if(advisory.needsReview)summary.bankingLossAdvisories++;
+    let banking;
+    if(options.bankingAlternatives){
+      banking=evaluateBankingAlternatives(core,snapshot,baseline,expected,event.settings,event.spendContext);
+      const counts=summary.bankingAlternatives;counts.evaluated++;
+      const key={proposal:'proposals',blocked:'blocked',unsupported:'unsupported','out-of-scope':'outOfScope'}[banking.status];
+      counts[key]++;counts.reasons[banking.reason]=(counts.reasons[banking.reason]||0)+1;
+      for(const a of banking.alternatives){const label=a.reason==='production-spend-block'?a.budgetReason:a.reason;
+        if(a.status==='blocked')counts.targetBlockers[label]=(counts.targetBlockers[label]||0)+1;}
+    }
     return{decisionId:event.decisionId,tick:n.gameTick,stateVersion:n.stateVersion,
       baselineSubmitted:event.submittedCommands.length>0,riskView:'native-all-retained-physical-actors',
-      proposal,advisory};
+      proposal,advisory,...(banking?{banking}: {})};
   }
   function plannerBatch(events){
     const out=[];
