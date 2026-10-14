@@ -2,25 +2,29 @@
 const {evaluateOpeningBudget,reviewBanking}=require('./contact-risk-candidate.cjs');
 function createAnalysis(core, sourceHash, options = {}) {
   const lookups=new Map(),pendingNative=[],submissions=new Map();
-  let nativeIncomplete=false;
+  let nativeIncomplete=false,lookupEntries=0;
+  const maxLookupEntries=options.maxLookupEntries??20000;
+  if(!Number.isSafeInteger(maxLookupEntries)||maxLookupEntries<1)throw Error('Invalid lookup bound');
   const summary={decisions:0,supported:0,unsupported:0,reasons:{},changedProposals:0,
     holdProposals:0,capProposals:0,bankingLossAdvisories:0,submissions:0,receipts:0,
     nativeCommands:0,joinedCommands:0,unjoinedReceipts:0,policyInfluence:false};
   function reason(r){summary.reasons[r]=(summary.reasons[r]||0)+1;}
   function nativeBatch(events, quality = {}){
-    if(quality.dropped>0||quality.errors>0)nativeIncomplete=true;
+    if(quality.dropped>0||quality.errors>0){nativeIncomplete=true;lookups.clear();lookupEntries=0;}
     for(const e of events){
       if(e.kind==='incoming-lookup'){
+        if(nativeIncomplete)continue;
         const key=`${e.tick}:${e.actor}:${e.exclude}`;
-        let item=lookups.get(key);if(!item){item={valid:new Set(),error:false};lookups.set(key,item);}
-        if(e.valid)item.valid.add(e.value);else item.error=true;
+        let item=lookups.get(key);if(!item){item={valid:new Set(),error:false};lookups.set(key,item);lookupEntries++;}
+        if(e.valid&&!item.valid.has(e.value)){item.valid.add(e.value);lookupEntries++;}else if(!e.valid)item.error=true;
+        if(lookupEntries>maxLookupEntries){nativeIncomplete=true;lookups.clear();lookupEntries=0;}
       }else if(e.kind==='native-command'){summary.nativeCommands++;pendingNative.push(e);}
     }
     // Rolling join window; full raw events remain in the external journal.
     const ticks=events.filter(e=>Number.isFinite(e.tick)).map(e=>e.tick);
     if(ticks.length && !options.keepAllLookups){const minimum=Math.max(...ticks)-90;
-      for(const key of lookups.keys())if(Number(key.split(':')[0])<minimum)lookups.delete(key);}
-    if(lookups.size>(options.maxLookupKeys??20000)){nativeIncomplete=true;lookups.clear();}
+      for(const [key,item] of lookups)if(Number(key.split(':')[0])<minimum){
+        lookupEntries-=1+item.valid.size;lookups.delete(key);}}
     if(pendingNative.length>512)pendingNative.splice(0,pendingNative.length-512);
   }
   function decision(event){
@@ -82,6 +86,7 @@ function createAnalysis(core, sourceHash, options = {}) {
   }
   return{nativeBatch,plannerBatch,summary:()=>({...summary,validCoverage:summary.decisions?
     summary.supported/summary.decisions:null,retainedLookupKeys:lookups.size,
+    retainedLookupEntries:lookupEntries,maxLookupEntries,
     unjoinedNative:pendingNative.length,nativeIncomplete})};
 }
 module.exports={createAnalysis};

@@ -92,6 +92,10 @@ test('native loss of recording and >32 missing actors cannot authorize complete 
   e.native.physicalNeighbors=Array.from({length:35},(_,i)=>i+1);
   e.native.enemies=Array.from({length:32},(_,i)=>({id:i+1,bal:100,incoming:0,effectiveBal:100,adjacent:true}));
   assert.equal(b.plannerBatch([e])[0].reason,'incomplete-physical-coverage');
+  const capped=createAnalysis(core,'a'.repeat(64),{maxLookupEntries:3});
+  capped.nativeBatch([0,1,2,3,4].map(value=>({kind:'incoming-lookup',tick:8,actor:1,exclude:0,value,valid:true})));
+  assert.equal(capped.summary().retainedLookupEntries,0);
+  assert.equal(capped.plannerBatch([event()])[0].reason,'native-observer-incomplete');
 });
 test('original exceptions and unknown delegation signatures are preserved/rejected before mutation',()=>{
   const fault=Error('original-fault');let calls=0;

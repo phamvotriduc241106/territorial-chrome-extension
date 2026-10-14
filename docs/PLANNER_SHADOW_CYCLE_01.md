@@ -89,6 +89,8 @@ Native event coverage here is the human land sender and selected incoming lookup
 
 This proposal improves observability and validation quality. **Live candidate policy promotion is not recommended yet.** No candidate-controlled match has been run.
 
+Post-pilot implementation hardening: the lookup index now bounds both keys and distinct values (20,000 total entries), not merely key count. An actor reporting many different values within a stalled tick can no longer grow an unbounded Set. Overflow clears the index and makes further source-dependent proposals unsupported; tests cover this without suppressing known native command records. The pilot collector/analyzer source checkpoint is Git commit `fbee5259fdf005d610c15dadd66a4c8d16a9c57f`; its frozen hashes remain in the manifest. The additional guard reproduces all recorded supported-cohort counts but was not a new live treatment.
+
 ## Published evidence and reproduction
 
 [Manifest and complete compressed journals](live-audits/2026-10-13-planner-shadow-cycle.json) retain all three pilots, original-file SHA-256 identities, raw reports, every planner/native/shadow event, source-identity eligibility and debit checks. The bundles contain game telemetry from fresh owned profiles, not profiles, tokens, official game HTML or screenshots of private apps. Raw local directories are the UTC IDs listed in that manifest. A/B are explicitly navigation-only, not executed-source eligible.
