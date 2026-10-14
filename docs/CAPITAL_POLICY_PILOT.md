@@ -91,6 +91,10 @@ The final-plan summary now reduces `maxSpendTotal` to at most `balance − requi
 
 The published pilot is reproducible at checkpoint `f6b0071`; final repository code includes the post-pilot summary correction and a fail-closed guard for unknown opponent bank lookups. The latter adds an explicit observation-validity flag and cannot increase spending or create opportunities from missing data. Final native tests include that missing-bank case; this is not misrepresented as another live treatment. No further strategic coefficients were selected from the four games. The default-off controller remains a development candidate, not a policy promotion.
 
+A separate [final-runtime smoke record](live-audits/2026-10-14-capital-final-smoke.json), after hardening checkpoint `df84fed`, ran Asia/512 Impossible with a **10-second cutoff**. It produced **8** native-validated candidate admissions and zero recorded reserve/debit violations; actual adjacent banks were explicitly known. Its outcome is **time-censored**, not a win or a fifth completed comparison game.
+
+That smoke also exposed a second reporting assumption: the old shadow analyzer required final `maxSpendTotal` to equal the raw planner limit, even when the candidate legitimately lowered it. The original **59 supported / 69 rejected** frames are preserved. The corrected read-only analyzer checks the captured full final plan against the raw upper budget and reserve, rather than inventing missing values; [separately identified corrected replay](live-audits/2026-10-14-capital-final-smoke-analysis.json) supports **128/128** frames and joins all eight commands. This is a telemetry fix, not another gameplay intervention or a retrospective repair of the original records. Earlier pilot budget-summary rejections remain unchanged. Tests reproduce both original and corrected results.
+
 ### Next proposal and decision gate
 
 1. Keep capital-v1 **off by default**. Longer observed survival with two losses per arm does not establish winning strength.

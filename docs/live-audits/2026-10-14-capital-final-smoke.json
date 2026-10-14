@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "evidenceKind": "live-official-policy-pilot",
+  "policyPromotionAllowed": false,
+  "candidateTreatmentMatches": 1,
+  "attempts": 1,
+  "independentMatches": 1,
+  "sourceBoundMatches": 1,
+  "limitations": "Development pilots only. No fitted parameters, treatment outcomes, transition-error scoring, official wins, or CPU-strength proof.",
+  "runs": [
+    {
+      "id": "2026-10-14T23-24-58-324Z",
+      "artifact": {
+        "file": "2026-10-14T23-24-58-324Z.planner-evidence.json.gz",
+        "sha256": "9a623428418727146843c3d4e0cf64e275b220190ed8a2c630bc74b947fb4b4b",
+        "bytes": 33003
+      },
+      "originalFileHashes": {
+        "report": "cd1b6d62be54a99d1ed8334e7a08fd72b4c12af56d48937fe178da9e25db1a41",
+        "planner-events.ndjson": "ef51e4edc0d630cde2a6adcfd25cb7287af4d9f346e03a3abaa896aa13c48124",
+        "native-observer-events.ndjson": "bbc9b527fab83edc0d4a48edc5f0d9e2c7ea76169eaff2bf53507a8d00c2a19b",
+        "shadow-proposals.ndjson": "53287574b968354167a65f7dbd93d61b66428ef118c13bd04c619af87ae49114"
+      },
+      "sourceBindingQualification": "executed-bootstrap-response-verified",
+      "sourceIdentityEligible": true,
+      "assignedPolicy": "capital-v1",
+      "productionPolicy": "10.3.9-V2.8.2-capital-v1",
+      "combatExposure": true,
+      "outcome": "censored-time-limit",
+      "elapsedSeconds": 9.142,
+      "summary": {
+        "samples": 10,
+        "activeSamples": 10,
+        "maxAcknowledgedCommands": 8,
+        "maximumObservedTerritory": 254,
+        "maxObservedFailureStreak": 0,
+        "decisionReasonSamples": {
+          "hard-neutral-first": 9
+        },
+        "statisticalWinRate": null
+      },
+      "shadow": {
+        "decisions": 128,
+        "supported": 59,
+        "unsupported": 69,
+        "reasons": {
+          "baseline-retained": 6,
+          "baseline-blocked": 53,
+          "incomplete-approved-plan": 69
+        },
+        "changedProposals": 0,
+        "holdProposals": 0,
+        "capProposals": 0,
+        "bankingLossAdvisories": 0,
+        "submissions": 8,
+        "receipts": 8,
+        "nativeCommands": 8,
+        "joinedCommands": 8,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "validCoverage": 0.4609375,
+        "retainedLookupKeys": 77,
+        "retainedLookupEntries": 154,
+        "maxLookupEntries": 20000,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false,
+        "plannerObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 151342,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "decisions": 128,
+          "commands": 8,
+          "overheadSegments": 2932,
+          "retainedTimingSamples": 2048,
+          "recentSegmentP95Ms": 0.09999999962747097,
+          "recentSegmentP99Ms": 0.2000000011175871,
+          "maxSegmentMs": 0.30000000074505806,
+          "timingMeaning": "observer segments, excludes original calls; not browser CPU"
+        },
+        "nativeObserver": {
+          "retainedEvents": 0,
+          "retainedBytes": 0,
+          "peakRetainedBytes": 2649,
+          "dropped": 0,
+          "errors": 0,
+          "maxEvents": 4096,
+          "maxBytes": 4194304,
+          "active": false,
+          "nativeCommands": 8
+        },
+        "candidateActive": true,
+        "mode": "live-single-player-capital-treatment-with-observation",
+        "observerSha256": "e64f41f6500fe71094e7a1cb1409d35c82fb96fef37a3c7a43813228afa29426",
+        "candidateSha256": "24f8c80ffbf8e7544be36c886db294804894c17b45ee24268a34fc6d933ec7da",
+        "missingDecisionRecords": 0,
+        "coverageDenominator": 128
+      },
+      "replaySummary": {
+        "decisions": 128,
+        "supported": 59,
+        "unsupported": 69,
+        "reasons": {
+          "baseline-retained": 6,
+          "baseline-blocked": 53,
+          "incomplete-approved-plan": 69
+        },
+        "changedProposals": 0,
+        "holdProposals": 0,
+        "capProposals": 0,
+        "bankingLossAdvisories": 0,
+        "submissions": 8,
+        "receipts": 8,
+        "nativeCommands": 8,
+        "joinedCommands": 8,
+        "unjoinedReceipts": 0,
+        "policyInfluence": false,
+        "validCoverage": 0.4609375,
+        "retainedLookupKeys": 85,
+        "retainedLookupEntries": 170,
+        "maxLookupEntries": 250000,
+        "unjoinedNative": 0,
+        "nativeIncomplete": false
+      },
+      "treatment": {
+        "decisionFrames": 128,
+        "cappedFrames": 7,
+        "heldFrames": 40,
+        "decisionChanges": 0,
+        "taggedSubmissions": 8,
+        "validatedReceipts": 8,
+        "reserveViolations": 0,
+        "debitCeilingViolations": 0
+      },
+      "admissionDebitChecks": {
+        "cases": 8,
+        "mismatches": 0
+      },
+      "changedAtActualSubmission": 0
+    }
+  ]
+}

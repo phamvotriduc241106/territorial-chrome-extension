@@ -125,4 +125,16 @@ test('frozen live pilot preserves all four losses and proves 48 real candidate a
     if(candidate)assert.ok(b.report.shadow.unsupported>0);
   }
   assert.equal(treatment,48);assert.equal(baseline,52);assert.equal(total,100);
+  const smoke=require('../docs/live-audits/2026-10-14-capital-final-smoke.json').runs[0];
+  const smokeBytes=fs.readFileSync(path.join(__dirname,'../docs/live-audits',smoke.artifact.file));
+  assert.equal(crypto.createHash('sha256').update(smokeBytes).digest('hex'),smoke.artifact.sha256);
+  const b=JSON.parse(zlib.gunzipSync(smokeBytes));
+  assert.equal(b.report.outcome,'censored-time-limit');assert.equal(b.report.treatment.validatedReceipts,8);
+  assert.equal(b.report.treatment.reserveViolations,0);assert.equal(b.report.treatment.debitCeilingViolations,0);
+  const a=createAnalysis(environment().TIOEngineCore,b.report.sourceSha256,{keepAllLookups:true,maxLookupEntries:250000});
+  a.nativeBatch(b.native,b.report.shadow.nativeObserver);a.plannerBatch(b.planner);
+  assert.equal(b.report.shadow.supported,59);assert.equal(b.report.shadow.unsupported,69);
+  assert.equal(a.summary().supported,128);assert.equal(a.summary().unsupported,0);
+  const analysis=require('../docs/live-audits/2026-10-14-capital-final-smoke-analysis.json');
+  assert.deepEqual(a.summary(),analysis.correctedSummary);
 });

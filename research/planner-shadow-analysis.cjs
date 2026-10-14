@@ -43,7 +43,12 @@ function createAnalysis(core, sourceHash, options = {}) {
       actors.some(e=>!ids.includes(e.id))))reject='incomplete-physical-coverage';
     if(!reject)for(const e of actors){const v=lookups.get(`${n.gameTick}:${e.id}:${n.player}`);
       if(!v||v.error||!v.valid.has(e.incoming)){reject='unverified-incoming-field';break;}}
-    if(!reject && (!event.rawPlan||event.commitSummary?.maxSpend!==event.rawPlan.maxSpendTotal))
+    // An actuating candidate legitimately tightens the post-planner budget.
+    // Require the captured full final plan, not equality with the old raw limit.
+    const approved=event.experiment?.mode==='capital-v1'?event.approvedPlan:event.rawPlan;
+    if(!reject && (!event.rawPlan||!approved||event.commitSummary?.maxSpend!==approved.maxSpendTotal||
+      (event.experiment?.mode==='capital-v1' && (approved.balance!==event.rawPlan.balance ||
+        approved.maxSpendTotal>event.rawPlan.maxSpendTotal || approved.minRemaining<event.rawPlan.minRemaining))))
       reject='incomplete-approved-plan';
     if(reject){summary.unsupported++;reason(reject);return{decisionId:event.decisionId,status:'unsupported',reason:reject};}
     const snapshot={matchId:n.matchId,stateVersion:n.stateVersion,sourceHash,
