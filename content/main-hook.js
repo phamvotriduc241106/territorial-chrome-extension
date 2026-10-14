@@ -1803,7 +1803,8 @@
       if (t <= 0) continue;
       alivePlayers++;
       totalEnemyTerritory += t;
-      var enemyBalance = getBalance(p) | 0;
+      var enemyBalanceInfo = getBalanceInfo(p);
+      var enemyBalance = enemyBalanceInfo.value | 0;
       totalEnemyBalance += Math.max(0, enemyBalance);
       if (t > terr) globalRank++;
       if (t > leaderTerritory) {
@@ -1823,6 +1824,7 @@
       enemies.push({
         id: p | 0,
         bal: enemyBalance,
+        balanceKnown: enemyBalanceInfo.known,
         effectiveBal: enemyBalance + incoming,
         incoming: incoming,
         incomingKnown: incomingKnown,

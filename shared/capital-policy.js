@@ -20,7 +20,7 @@
     let largest=0,incoming=0;
     for(const e of st.enemies){
       if(!e||!integer(e.id)||e.id>511||seen.has(e.id)||!ids.includes(e.id)||e.adjacent!==true||
-          typeof e.available!=='boolean'||e.shipOnly!==false||e.incomingKnown!==true||
+          typeof e.available!=='boolean'||e.shipOnly!==false||e.incomingKnown!==true||e.balanceKnown!==true||
           !integer(e.bal)||!integer(e.incoming)||!integer(e.effectiveBal)||
           e.effectiveBal!==e.bal+e.incoming||!integer(e.terr)||e.terr<1)
         return {ok:false,reason:'unsupported-opponent'};

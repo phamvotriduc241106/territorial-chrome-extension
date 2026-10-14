@@ -6,7 +6,7 @@ function environment(){const b=kernel();b.performance={now:()=>1000};vm.runInCon
 function state(B=10000){return {contract:'live-modern-v3',singlePlayer:true,ready:true,alive:true,
   balance:B,balanceKnown:true,territory:100,softCap:10000,gameTick:100,stateVersion:2,matchId:'m',
   player:0,neutralId:512,physicalNeighbors:[512,2],neighbors:[512,2],activeFronts:0,humanFrontCap:4,
-  enemies:[{id:2,bal:12000,incoming:0,incomingKnown:true,effectiveBal:12000,terr:100,
+  enemies:[{id:2,bal:12000,balanceKnown:true,incoming:0,incomingKnown:true,effectiveBal:12000,terr:100,
     available:true,adjacent:true,shipOnly:false}]};}
 function freeze(v){if(v&&typeof v==='object'){Object.freeze(v);Object.values(v).forEach(freeze);}return v;}
 test('capital caps final normalized units, preserves immutable state and exact production reserve',()=>{
@@ -29,7 +29,8 @@ test('unsafe contact deficit holds without tax, while no-contact state preserves
 test('stale, online, missing incoming, duplicate/truncated risk and unknown availability reject',()=>{
   const c=environment().TIOCapitalPolicy;
   for(const change of [s=>s.singlePlayer=false,s=>s.contract='unknown',s=>s.balanceKnown=false,
-    s=>s.enemies[0].incomingKnown=false,s=>s.physicalNeighbors.push(3),s=>s.physicalNeighbors.push(2),
+    s=>s.enemies[0].incomingKnown=false,s=>s.enemies[0].balanceKnown=false,
+    s=>s.physicalNeighbors.push(3),s=>s.physicalNeighbors.push(2),
     s=>delete s.enemies[0].available,s=>s.balance=2147483648]){
     const s=state();change(s);assert.equal(c.inspect(s,0).ok,false);}
   assert.equal(c.inspect(state(),701).ok,false);assert.equal(c.inspect(state(),-1).ok,false);
