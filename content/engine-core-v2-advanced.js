@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.3.9
+ * Territorial.io deterministic policy kernel v10.3.10
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -180,8 +180,11 @@
     if (B <= leave + 8) return 0;
     // Search the exact 10-bit values the game consumes; float rounding must not
     // turn a safe result into the next, unsafe troop-bar code.
-    var cap = Math.max(0.01, Math.min(0.72, ceiling != null ? ceiling : 0.72));
-    var lo = ratioToIl(0.01), hi = ratioToIl(cap), bestIl = -1;
+    var cap = ceiling != null ? Number(ceiling) : 0.72;
+    if (!Number.isFinite(cap) || cap <= 0) return 0;
+    cap = Math.min(0.72, cap);
+    // A ceiling is an inequality, not a request to round to the nearest code.
+    var lo = ratioToIl(0.01), hi = Math.floor(cap * 1024) - 1, bestIl = -1;
     while (lo <= hi) {
       var mid = (lo + hi) >> 1;
       var ratio = ilToRatio(mid);
@@ -2495,19 +2498,28 @@
     if (capSum <= remaining) {
       for (let i = 0; i < extra.length; i++) extra[i] = caps[i];
     } else if (remaining > 0 && configs.length) {
-      let low = 0, high = Math.max(...configs.map(c => c.weight / c.saturation));
+      // Select the largest discrete marginal gains, not rounded continuous
+      // allocations. log(delta_i(k)) = log(w_i*(1-exp(-1/s_i))) - k/s_i.
+      // Log space also avoids underflow when a large bank saturates utility.
+      const firstGains = configs.map(c => Math.log(c.weight) + Math.log(-Math.expm1(-1 / c.saturation)));
+      let low = Infinity, high = -Infinity;
+      for (let i = 0; i < configs.length; i++) if (caps[i] > 0) {
+        low = Math.min(low, firstGains[i] - caps[i] / configs[i].saturation);
+        high = Math.max(high, firstGains[i]);
+      }
       function demand(lambda, save) {
         let total = 0;
         for (let i = 0; i < configs.length; i++) {
-          const c = configs[i], ratio = lambda * c.saturation / c.weight;
-          const amount = Math.min(caps[i], Math.max(0, -c.saturation * Math.log(ratio)));
+          const amount = Math.min(caps[i], Math.max(0,
+            Math.ceil((firstGains[i] - lambda) * configs[i].saturation)));
           if (save) extra[i] = amount;
           total += amount;
         }
         return total;
       }
-      for (let i = 0; i < 48; i++) {
+      for (let i = 0; i < 80; i++) {
         const mid = (low + high) / 2;
+        if (mid === low || mid === high) break;
         if (demand(mid, false) > remaining) low = mid;
         else high = mid;
       }
@@ -2519,13 +2531,13 @@
       const amount = Math.min(Math.floor(extra[i]), budget - spent);
       allocations[i] += amount; spent += amount;
     }
-    // Integer correction uses exact one-troop utility differences, not a
-    // continuous derivative (which misorders unequal saturation scales).
+    // Resolve threshold ties by exact one-troop gains. The bisection already
+    // assigned the bulk budget; this does not enumerate a saturated bank.
     while (spent < budget) {
-      let best = -1, gain = -1;
+      let best = -1, gain = -Infinity;
       for (let i = 0; i < configs.length; i++) if (allocations[i] < configs[i].max) {
         const c = configs[i], y = allocations[i] - c.min;
-        const marginal = c.weight * Math.exp(-y / c.saturation) * -Math.expm1(-1 / c.saturation);
+        const marginal = Math.log(c.weight) + Math.log(-Math.expm1(-1 / c.saturation)) - y / c.saturation;
         if (marginal > gain) { gain = marginal; best = i; }
       }
       if (best < 0) break;
@@ -3536,7 +3548,7 @@
   }
 
   const EngineCore = {
-    version: '10.3.9',
+    version: '10.3.10',
     DIFF,
     DUMP,
     LIVE,
@@ -3608,7 +3620,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-14 19:08:36 EDT',
+    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-10-21 20:09:46 EDT',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {

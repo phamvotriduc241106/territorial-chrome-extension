@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-22T00:11:26.777Z",
+  "localDate": "2026-10-21",
+  "timeZone": "America/New_York",
+  "baseCommit": "1d74d961352ff86bb1010fee458beb255ebbdc6e",
+  "candidate": {
+    "extensionVersion": "10.3.10",
+    "engineVersion": "V2.8.2",
+    "updatedAt": "2026-10-21 20:09:46 EDT",
+    "releaseSha256": "2a1f70207e7d10aef0b125dc131610508e3288d2c38f7cd405c9a8c8d49ce06e",
+    "engineSha256": "2f0a06342f51f96e1bb4eb4c9e03be60b6e05d4595dd72f3da0d64260377aafe",
+    "settings": {
+      "botEnabled": true,
+      "engineVersion": 2,
+      "autoExpand": true,
+      "autoAttack": true,
+      "clickSpeed": 4,
+      "sliderPercentage": 0,
+      "hotkeysEnabled": true,
+      "strategy": "aggressive",
+      "allowVisionFallback": true,
+      "visionFps": 12,
+      "allowCameraAccess": false,
+      "hudMode": "compact",
+      "advancedExpanded": false,
+      "settingsSchema": 2
+    }
+  },
+  "releaseGateResults": [
+    {
+      "command": "test",
+      "code": 0,
+      "seconds": 2.475
+    },
+    {
+      "command": "test:browser",
+      "code": 0,
+      "seconds": 5.118
+    },
+    {
+      "command": "test:ui-state",
+      "code": 0,
+      "seconds": 0.173
+    },
+    {
+      "command": "test:ui",
+      "code": 0,
+      "seconds": 12.059
+    },
+    {
+      "command": "test:a11y",
+      "code": 0,
+      "seconds": 9.413
+    },
+    {
+      "command": "test:math-native",
+      "code": 0,
+      "seconds": 0.335
+    },
+    {
+      "command": "test:live",
+      "code": 1,
+      "seconds": 0.385
+    },
+    {
+      "command": "test:spatial",
+      "code": 1,
+      "seconds": 0.381
+    },
+    {
+      "command": "package",
+      "code": 0,
+      "seconds": 0.254
+    },
+    {
+      "command": "benchmark:cpu",
+      "code": 0,
+      "seconds": 0.933
+    }
+  ],
+  "nativeArithmetic": {
+    "sourceSha256": "0c117ef77ac132103a8ab9db78e8027c0ce1a93e4dc8c73811a09d04d421e9b6",
+    "nativeFamily": "2026-10-21-renamed-bundle",
+    "incomeCases": 1512,
+    "humanCommandCases": 6144,
+    "botCommandCases": 6144,
+    "integrationVerified": false,
+    "status": "passed"
+  },
+  "allocationStress": {
+    "seed": 71,
+    "cases": 20000,
+    "feasible": 20000,
+    "maxBudget": 1500000000,
+    "maxPositiveLogExchange": 0,
+    "seconds": 1.3220547919999999
+  },
+  "allocationTiming": {
+    "budget": 1500000000,
+    "warmup": 100,
+    "samples": 1000,
+    "medianMs": 0.017874999999996533,
+    "p95Ms": 0.03379199999999827,
+    "node": "v26.8.2",
+    "baseline": "VM timeout after 1000ms"
+  },
+  "frozenPolicyCases": 80,
+  "frozenPolicySha256": "d49794e32d3cc195e357b4edc5d14f0731b24a408c25ab03633a019cf015b0c6",
+  "installedChrome": {
+    "startedAt": "2026-10-22T00:11:24.928Z",
+    "endedAt": "2026-10-22T00:11:26.777Z",
+    "chromeVersion": "155.0.8059.85",
+    "navigationSourceSha256": "b4db59b83acac6d371d55edb4997a443a5eab7b8204fa0feb07a1233cd8ea548",
+    "executedBootstrapSha256": null,
+    "bootstrapStatus": "contract-unmapped",
+    "outcome": "setup-error",
+    "activeSamples": 0,
+    "commands": 0,
+    "terminalConfirmed": false,
+    "reportSha256": "4a25e1ddb7a5bce01ec6e10c6112161a2241e7fda349de13c3ce9fd473848345"
+  },
+  "exploratoryScripts": {
+    "adversarial": {
+      "pass": 3,
+      "fail": 4,
+      "exitCode": 0
+    },
+    "singularArc": {
+      "pass": 2,
+      "fail": 3,
+      "exitCode": 0
+    }
+  },
+  "gameplayImprovementMeasured": false
+}

@@ -17,7 +17,7 @@ MPC and the UCB endgame action bandit share planning-state normalization, comman
 
 Coalition containment uses supplied global territory and verifies leader identity. A 150-cell border rival among 10,250 globally occupied cells owns 1.46%, not 60%. Unknown partial-lobby totals suppress global containment; legacy callers without any global metadata retain a local heuristic fallback.
 
-Both KKT entrypoints share feasible-endpoint bisection and integer correction. Concave utility is on extra troops above minimum floors. `allocateKKTMultiFrontDetailed` explicitly reports infeasible minimums and uses a bounded priority fallback, not a KKT optimum. Native one-command attacks do not consume these allocations.
+Both KKT entrypoints share feasible-endpoint bisection over discrete marginal gains in log space, with exact marginal correction for threshold ties. Continuous floors plus greedy leftovers are insufficient for integer optimality. Concave utility is on extra troops above minimum floors. `allocateKKTMultiFrontDetailed` explicitly reports infeasible minimums and uses a bounded priority fallback, not a KKT optimum. Native one-command attacks do not consume these allocations. See the [October 21 math audit](MATH_AUDIT_2026_10_21.md), including the current source-contract blocker.
 
 Particle P05/P95 use weighted cumulative mass. The log-space observer exposes `estimatedMedian` and `expectedBalance`; existing `estimatedBalance` remains the median to avoid silently changing the fog-policy statistic. This is scalar Kalman filtering, not EKF. Adaptive control is rule-based, not a solved PMP boundary-value problem; coalition containment is not Shapley computation. Legacy names remain for API compatibility.
 

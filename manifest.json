@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Commander",
-  "version": "10.3.9",
-  "description": "V2.8.2 default unchanged. Opt-in single-player capital experiment. Updated 2026-10-14 19:08:36 EDT.",
+  "version": "10.3.10",
+  "description": "V2.8.2 policy; exact integer allocations and slider ceilings. Updated 2026-10-21 20:09:46 EDT.",
   "permissions": [
     "storage"
   ],
