@@ -6,6 +6,9 @@ Repository: https://github.com/phamvotriduc241106/territorial-chrome-extension
 
 Mac checkout: `/Users/phamvotriduc/territorial-chrome-extension`.
 
+For mathematical work, follow the [official mathematics test protocol](MATH_TEST_PROTOCOL.md).
+The [October 21 audit](MATH_AUDIT_2026_10_21.md) supersedes this snapshot's live-readiness claims: arithmetic passes, but the newly renamed official bundle is rejected by the native adapter.
+
 ## 1. Mission and working loop
 
 Continuation update: [Cycle 01](PLANNER_SHADOW_CYCLE_01.md) adds opt-in diagnostic factories, `--shadow`, complete compressed pilot journals and executed-bootstrap source binding. Read its limitations before repeating this snapshot's initial tasks. The candidate remains non-actuating and larger held-out/treatment validation is still pending.

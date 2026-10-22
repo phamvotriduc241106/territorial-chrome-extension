@@ -63,6 +63,7 @@ model-validation phase is required; no frontier model controls autoplay.
 
 ## Repository
 
+- [Official mathematics test protocol](docs/MATH_TEST_PROTOCOL.md)
 - [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
 - [Cycle 01: exact planner/native observation and action shadow](docs/PLANNER_SHADOW_CYCLE_01.md)
 - [Cycle 02: banking alternatives, Asia loss and negative findings](docs/BANKING_ALTERNATIVES_CYCLE_02.md)

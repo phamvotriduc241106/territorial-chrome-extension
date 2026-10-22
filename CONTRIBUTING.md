@@ -10,7 +10,9 @@ npm run test:live
 npm run package
 ```
 
-`npm test` is offline and requires no browser. Browser tests use isolated profiles, block external requests, and never join an online match. Only `test:live` downloads the official page for local verification. `TIO_CHROME` selects a browser executable; `TIO_PLAYWRIGHT` selects an existing Playwright installation.
+`npm test` is offline and requires no browser. Fixture browser tests use isolated profiles, block external requests, and never join an online match. `test:math-native`, `test:live` and `test:spatial` fetch the public official source for separate arithmetic/integration checks. `TIO_CHROME` selects a browser executable; `TIO_PLAYWRIGHT` selects an existing Playwright installation.
+
+For mathematical changes, follow the [official mathematics test protocol](docs/MATH_TEST_PROTOCOL.md): independent oracles, exact integer/debit checks, preserved regressions and separate arithmetic/integration/gameplay conclusions. The [October 21 audit](docs/MATH_AUDIT_2026_10_21.md) records the current live source-contract blocker.
 
 Production code belongs in `content/`, `shared/`, `background/` or `popup/`. Keep candidate kernels, simulations and tuning under `experiments/`. Historical manuscripts belong in `docs/archive/`, not the release README.
 
