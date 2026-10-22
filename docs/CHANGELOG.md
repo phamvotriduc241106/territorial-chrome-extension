@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.3.10 — 2026-10-21 20:09:46 EDT
+
+- Fix integer front allocation by selecting discrete marginal gains in log space. Continuous rounding could leave an improving one-troop exchange; underflow could force troop-by-troop iteration through enormous budgets.
+- Treat explicit slider ceilings as inequalities: round down, and return zero for zero/nonfinite ceilings. Native reserve and debit constraints still apply.
+- Add regression/oracle tests and a separate fresh-source arithmetic audit, `npm run test:math-native`. All 80 frozen production decision/spend fixtures remain unchanged.
+- Disclose the October 21 native source-contract break. Fresh live/bootstrap/spatial checks fail closed; the arithmetic audit is not a gameplay or integration pass. See `docs/MATH_AUDIT_2026_10_21.md`. No strength improvement is claimed.
+
 ## 10.3.9 — 2026-10-14 19:08:36 EDT
 
 - Add default-off, per-tab/per-match capital-v1 single-player gameplay candidate. Caps commands after contact and considers reserve-constrained weak-target opportunities before collapse.

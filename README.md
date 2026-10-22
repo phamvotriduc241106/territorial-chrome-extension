@@ -2,7 +2,13 @@
 
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
 
-**Release:** v10.3.9 · **Production engine:** V2.8.2 · **Updated:** 2026-10-14 19:08:36 EDT
+**Release:** v10.3.10 · **Production engine:** V2.8.2 · **Updated:** 2026-10-21 20:09:46 EDT
+
+Fixes integer allocation optimality, large-budget allocation stalls and slider ceilings.
+**Current native integration is blocked:** the October 21 official bundle renamed
+the interface and is rejected by the source adapter. Offline checks and the
+independent native arithmetic audit pass; current live/bootstrap/spatial checks
+do not. See [math audit and remaining integration blocker](docs/MATH_AUDIT_2026_10_21.md).
 
 Adds a default-off, per-match **capital-v1** single-player experiment: contact-aware command caps and early weak-target opportunities. Native safety remains authoritative. This is an experimental controller, not a validated strength upgrade.
 

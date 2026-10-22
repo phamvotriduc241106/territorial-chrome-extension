@@ -1,11 +1,16 @@
 'use strict';
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), crypto = require('node:crypto');
+const vm = require('node:vm');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
 async function gate() {
   const response = await fetch('https://territorial.io/', { signal: AbortSignal.timeout(30000) });
   if (!response.ok) throw Error('Official HTTP ' + response.status);
   const html = await response.text(), hash = crypto.createHash('sha256').update(html).digest('hex');
+  const sourceBox = {};
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'content/source-adapter.js'), 'utf8'), sourceBox);
+  const contract = sourceBox.TIOSourceAdapter.detectContract(html);
+  if (contract !== 'live-modern-v3') throw Error('Unsupported native spatial source: ' + contract + ' (' + hash + ')');
   const server = http.createServer((req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(html); });
   await new Promise(r => server.listen(0, '127.0.0.1', r)); let browser;
   try {
