@@ -664,7 +664,7 @@ The fixture runner is explicitly synthetic. Its Europe-inspired example is not a
 
 ### 7.3 Live treatment revalidation
 
-Capital-v1 currently requires the mapped v3 contract, native single-player mode,
+Capital-v1 currently accepts the mapped v3 and v4 contracts, native single-player mode,
 complete physical-neighbor records, known bank/incoming values, matching match
 and version tags, observation age 0–700 ms and native tick lag at most 12. Read
 the current implementation before reusing these bounds for another contract.
@@ -798,7 +798,7 @@ git diff --check
 `test:spatial` checks native spatial attribution/replay. None is the live MCP
 Impossible match. CI currently runs npm test, browser/UI/UI-state/a11y and
 packaging; it does not run these three fresh-source gates. Report their actual
-results separately, including the current source-contract failures.
+results separately, including any source-contract failures.
 
 October 22 validation checkpoint: **151 Node test cases**, existing assertion
 suites and **80/80 frozen production decision/spend outputs**. These are dated
@@ -874,8 +874,8 @@ instrumentation or comparison question; report that question and its result.
 > Read this runbook, the current math protocol, capital-v1 pilot, relevant
 > evidence and actual source/tests first. Verify current main, tool capabilities,
 > owned Chrome profile, installed extension and fresh native source support.
-> The last checkpoint's renamed bundle was rejected; repair and validate that
-> integration before claiming a supported match. Reuse the implemented original-
+> Release 10.3.11 repaired the renamed bundle as v4; verify it still matches,
+> and read the October 22 MCP report before repeating old diagnosis. Reuse original-
 > call observers and controller rather than rebuilding historical next tasks.
 > Use MCP to select the real official single-player Impossible scenario, verify
 > native spawn and observe the actual engine. Preserve state, decisions, full
@@ -1020,7 +1020,7 @@ coverage or policy exposure actually occurred.
 | Last survivor with inaccessible neutral land | Native/UI completion evidence, components/fronts/boat capability | Record the milestone/capability gap; do not invent an official win |
 | CI fails or reports an old head | Exact PR SHA, job conclusions and failure logs | Fix the relevant failure and wait for new-head checks; no bypass/false green status |
 
-For the currently unknown source family, integration repair should establish:
+When a future source family is unknown, integration repair should establish:
 
 1. Structural source recognition and a valid patch location; matching short
    obfuscated names alone is insufficient.
