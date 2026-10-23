@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Commander",
-  "version": "10.3.10",
-  "description": "V2.8.2 policy; exact integer allocations and slider ceilings. Updated 2026-10-21 20:09:46 EDT.",
+  "version": "10.3.11",
+  "description": "V2.8.2 policy; verified October 22 native bindings and command safety. Updated 2026-10-22 22:10:30 EDT.",
   "permissions": [
     "storage"
   ],

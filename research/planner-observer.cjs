@@ -141,13 +141,16 @@ function installNativeObserver(game, options = {}) {
   // modern is a fresh facade on every getter access. Wrap the stable native
   // namespaces it delegates to, and reject a changed delegation signature.
   const text = fn => Function.prototype.toString.call(fn).replace(/\s+/g,'');
-  if (game.contract !== 'live-modern-v3' ||
-      text(modern.incoming) !== 'function(p,t){returnae.hc(p,t)}' ||
-      text(modern.attack) !== 'function(code,t){returnbB.hz.i6(code,t)}' ||
-      typeof game.ae?.hc !== 'function' || typeof game.bB?.hz?.i6 !== 'function')
+  const v4 = game.contract === 'live-modern-v4';
+  const incomingName = v4 ? 'pv' : 'hc', attackName = v4 ? 'xn' : 'i6';
+  const incomingOwner = game.ae, attackOwner = v4 ? game.bB?.a1M : game.bB?.hz;
+  if (!['live-modern-v3', 'live-modern-v4'].includes(game.contract) ||
+      text(modern.incoming) !== (v4 ? 'function(p,t){returna0n.pv(p,t)}' : 'function(p,t){returnae.hc(p,t)}') ||
+      text(modern.attack) !== (v4 ? 'function(code,t){returnss.a1M.xn(code,t)}' : 'function(code,t){returnbB.hz.i6(code,t)}') ||
+      typeof incomingOwner?.[incomingName] !== 'function' || typeof attackOwner?.[attackName] !== 'function')
     throw Error('Unsupported stable native delegation signature');
-  const incomingOwner=game.ae, attackOwner=game.bB.hz;
-  const buffer = createBuffer(options), originals = { incoming: incomingOwner.hc, attack: attackOwner.i6 };
+  const buffer = createBuffer(options), originals = {
+    incoming: incomingOwner[incomingName], attack: attackOwner[attackName] };
   let active = true, seq = 0;
   const safe = fn => { try { fn(); } catch (_) { buffer.fault(); } };
   function incoming(...args) {
@@ -171,10 +174,10 @@ function installNativeObserver(game, options = {}) {
         sourceHash:options.sourceHash,frontId:null,error:error?String(error):null});
     }); }
   }
-  incomingOwner.hc=incoming;attackOwner.i6=attack;
+  incomingOwner[incomingName]=incoming;attackOwner[attackName]=attack;
   return {drain:()=>buffer.drain(),stats:()=>({...buffer.stats(),active,nativeCommands:seq}),
-    stop(){active=false;if(incomingOwner.hc===incoming)incomingOwner.hc=originals.incoming;
-      if(attackOwner.i6===attack)attackOwner.i6=originals.attack;return this.stats();}};
+    stop(){active=false;if(incomingOwner[incomingName]===incoming)incomingOwner[incomingName]=originals.incoming;
+      if(attackOwner[attackName]===attack)attackOwner[attackName]=originals.attack;return this.stats();}};
 }
 
 function installerExpression(kind, options) {

@@ -10,7 +10,7 @@ async function gate() {
   const sourceBox = {};
   vm.runInNewContext(fs.readFileSync(path.join(root, 'content/source-adapter.js'), 'utf8'), sourceBox);
   const contract = sourceBox.TIOSourceAdapter.detectContract(html);
-  if (contract !== 'live-modern-v3') throw Error('Unsupported native spatial source: ' + contract + ' (' + hash + ')');
+  if (!['live-modern-v3','live-modern-v4'].includes(contract)) throw Error('Unsupported native spatial source: ' + contract + ' (' + hash + ')');
   const server = http.createServer((req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(html); });
   await new Promise(r => server.listen(0, '127.0.0.1', r)); let browser;
   try {
@@ -22,7 +22,17 @@ async function gate() {
       'content/frontier-model.js', 'content/frontier-spatial.js', 'content/frontier-dynamic.js', 'content/frontier-episodes.js'];
     const scripts = files.map(f => fs.readFileSync(path.join(root, f), 'utf8'));
     scripts.push(`{const build=TIOSourceAdapter.buildExportSnippet; window.TIOSourceAdapter={...TIOSourceAdapter,
-      buildExportSnippet(v,k){return build(v,k).replace('window.__TIO_GAME__={',\`window.__TIO_GAME__={testStep:function(){return n8();},
+      buildExportSnippet(v,k){if(k==='live-modern-v4')return build(v,k).replace('window.__TIO_GAME__={',\`window.__TIO_GAME__={testStep:function(){return sf();},
+      researchBatch:function(x){var saved=[a0o,a0c,a0q,a0r,a16,a14],actor=c.t,target=(actor+1)%c.c2;
+        var banks=y.ax.slice(),lands=y.aO.slice(),debts=y.xa.slice(),incoming=a0n.pv,setCounter=a0n.pw,credit=pz.q0,counter=x.counter||0;
+        try{a0o=actor;a0c=x.neutral?c.c2:target;a0q=x.force;a0r=x.cells;a16=!!x.reinforced;
+          y.ax[actor]=x.actorBank||0;y.xa[actor]=x.debt||0;y.ax[target]=x.bank;y.aO[target]=x.territory;
+          a0n.pv=function(){return counter};a0n.pw=function(p,t,n){counter=n};pz.q0=function(){};
+          var captured=a0r&&abU()&&a0a()?a0r:0;
+          return {force:a0q,bank:y.ax[target],counter:counter,actorBank:y.ax[actor],debt:y.xa[actor],captured:captured};
+        }finally{a0o=saved[0];a0c=saved[1];a0q=saved[2];a0r=saved[3];a16=saved[4];a14=saved[5];
+          y.ax.set(banks);y.aO.set(lands);y.xa.set(debts);a0n.pv=incoming;a0n.pw=setCounter;pz.q0=credit;}},\`);
+      return build(v,k).replace('window.__TIO_GAME__={',\`window.__TIO_GAME__={testStep:function(){return n8();},
       researchBatch:function(x){var saved=[gQ,gU,gR,gV,gS,gT],actor=aE.fJ,target=(actor+1)%aE.fW;
         var hb=ah.hb.slice(),hN=ah.hN.slice(),debt=ah.a5j.slice(),hc=ae.hc,ha=ae.ha,gz=bg.gz,counter=x.counter||0;
         try{gQ=actor;gU=x.neutral?aE.fW:target;gR=x.force;gV=x.cells;gS=!!x.reinforced;
@@ -38,9 +48,11 @@ async function gate() {
     await page.addInitScript({ content: scripts.join('\n') }); await page.goto(base);
     await page.waitForFunction(() => window.__TIO_GAME__?.modern);
     await page.evaluate(() => {
-      const g = __TIO_GAME__; if (g.contract !== 'live-modern-v3') throw Error('Unsupported source');
+      const g = __TIO_GAME__; if (!['live-modern-v3','live-modern-v4'].includes(g.contract)) throw Error('Unsupported source');
       g.aE.data.botDifficultyValue = 5; g.aE.data.playerCount = 64; g.aE.data.selectableSpawn = 0;
-      g.aE.data.mapSeed = 240071; g.aE.a6i.a7A(); g.aE.a6i.a77(); g.aE.a6m();
+      g.aE.data.mapSeed = 240071;
+      if(g.contract==='live-modern-v4'){g.aE.qr.acY();g.aE.qr.qs();g.aE.qu();}
+      else{g.aE.a6i.a7A();g.aE.a6i.a77();g.aE.a6m();}
       let kernelCases = 0;
       for (const reinforced of [false,true]) for (const neutral of [false,true])
         for (const force of [0,1,20,30,100,1000,100000]) for (const counter of [0,10,1000])
@@ -51,7 +63,8 @@ async function gate() {
               throw Error('Native support arithmetic mismatch '+k+' '+JSON.stringify({x,native,predicted}));
             kernelCases++;
           }
-      const originals = ['h4','zu','k6','a0G','aJi'].map(k => g.ad[k]);
+      const ownershipKeys=g.contract==='live-modern-v4'?['a19','aT5','aU1','aTJ','aVI']:['h4','zu','k6','a0G','aJi'];
+      const originals = ownershipKeys.map(k => g.ad[k]);
       const stats = { deltas: 0, captures: 0, hostileBatches: 0, neutralBatches: 0, cellWrites: 0,
         reconciliations: 0, fullAudits: 0, changedOwnerAttribution: true, candidateSelection: true, nativeSupportKernelCases: kernelCases };
       let snapshot, pending = [], previous;
@@ -62,7 +75,7 @@ async function gate() {
           stats.deltas++; stats.cellWrites += e.changes.length; stats.reconciliations++;
           if (e.cause === 'combat') {
             for (const [i, from, to] of e.changes) {
-              if (from !== (e.target === 'neutral' ? g.aE.fW : e.target) || to !== e.actor ||
+              if (from !== (e.target === 'neutral' ? g.modern.neutral() : e.target) || to !== e.actor ||
                   TIOSpatial.at(previous, i) !== from || TIOSpatial.at(snapshot, i) !== to)
                 throw Error('Capture attribution failure');
             }
@@ -70,7 +83,7 @@ async function gate() {
           }
         } else if (e.event === 'native_batch' && e.selectedFrontier) {
           const before = e.changedCells?.length ? previous : snapshot, seen = new Set(), expected = [];
-          const offsets = Array.from(g.ad.fb, x => x / 4), target = e.target === 'neutral' ? g.aE.fW : e.target;
+          const offsets = Array.from(g.contract==='live-modern-v4'?g.ad.a1g:g.ad.fb, x => x / 4), target = e.target === 'neutral' ? g.modern.neutral() : e.target;
           for (let k = 3; k >= 0; k--) for (let j = e.selectedFrontier.length - 1; j >= 0; j--) {
             const i = e.selectedFrontier[j] + offsets[k];
             if (i >= 0 && i < before.cells && !seen.has(i) && TIOSpatial.at(before, i) === target) { seen.add(i); expected.push(i); }
@@ -86,7 +99,7 @@ async function gate() {
       const b = g.shadow.spatialBegin(); if (!b) throw Error('Baseline unavailable');
       snapshot = TIOSpatial.baseline(b, { matchId: 'gate', spatialVersion: 0,
         sourceStateVersion: b.sourceStateVersion, gameTick: b.gameTick });
-      window.__gate = { stats, originals, snapshot: () => snapshot, audit() {
+      window.__gate = { stats, originals, ownershipKeys, snapshot: () => snapshot, audit() {
         const r = g.shadow.spatialState(); if (!r) throw Error('Native ownership reconciliation failed');
         for (let i = 0; i < r.owners.length; i++) if (TIOSpatial.at(snapshot, i) !== r.owners[i]) throw Error('Full reconstruction mismatch at ' + i);
         stats.fullAudits++;
@@ -104,18 +117,18 @@ async function gate() {
           }
         }
         __gate.audit(); if (g.shadow.fault()) throw Error(g.shadow.fault());
-        return { ...__gate.stats, tick: g.bi.kr() };
+        return { ...__gate.stats, tick: g.modern.gameTick() };
       });
       if (t % 1000 === 900) console.log('Spatial gate', progress);
       if (progress.hostileBatches >= 200 && progress.captures >= 10000) break;
     }
     const result = await page.evaluate(() => {
-      const g = __TIO_GAME__, result = { ...__gate.stats, tick: g.bi.kr() }; g.shadow.stop();
-      if (!['h4','zu','k6','a0G','aJi'].every((k,i)=>g.ad[k]===__gate.originals[i])) throw Error('Ownership wrappers not restored');
+      const g = __TIO_GAME__, result = { ...__gate.stats, tick: g.modern.gameTick() }; g.shadow.stop();
+      if (!__gate.ownershipKeys.every((k,i)=>g.ad[k]===__gate.originals[i])) throw Error('Ownership wrappers not restored');
       if (result.hostileBatches < 100 || result.captures < 1000 || result.fullAudits < 1) throw Error('Insufficient hostile gate coverage');
       return { ...result, restoredOwnershipFunctions: 5, status: 'passed' };
     });
-    const out = { ...result, officialSourceSha256: hash, recordedAt: new Date().toISOString(), policyInfluence: false };
+    const out = { ...result, officialSourceSha256: hash, contract, recordedAt: new Date().toISOString(), policyInfluence: false };
     fs.mkdirSync(path.join(root, 'scratch/dynamic-frontier-research'), { recursive: true });
     fs.writeFileSync(path.join(root, 'scratch/dynamic-frontier-research/spatial-gate.json'), JSON.stringify(out, null, 2));
     console.log(JSON.stringify(out, null, 2)); return out;

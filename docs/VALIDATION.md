@@ -6,6 +6,14 @@ Production gates: `npm test` runs core contracts, version/timestamp checks, mani
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `experiments/`; they are not silently treated as release gates. For example, `tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
+## v10.3.11 current source repair, 2026-10-22 EDT
+
+The [MCP Impossible loop](MCP_IMPOSSIBLE_LOOP_2026_10_22.md) separates 13,800
+native arithmetic comparisons, 292 combat and 54 income integration cases,
+spatial replay, and actual installed-extension gameplay. Four comparison games
+all lost; capital-v1 remains default off. Local downloaded-source harnesses
+never establish an official game outcome.
+
 ## v10.3.4 UI/UX, updated 2026-10-08 10:53:25 EDT
 
 Production remains V2.8.2. The UI changes do not enable the frontier candidate,

@@ -155,3 +155,18 @@ test('published journals reproduce the source-bound cohort without invented plan
     }
   }
 });
+test('v4 native observer wraps the renamed delegation and restores native identity',()=>{
+  let B=1000,calls=0;
+  const a0n={pv(){return 17;}},ss={a1M:{xn(){calls++;B-=108;}}};
+  const originalIncoming=a0n.pv,originalAttack=ss.a1M.xn;
+  const game={contract:'live-modern-v4',ae:a0n,bB:ss,get modern(){return {
+    me:()=>0,balance:()=>B,gameTick:()=>8,
+    incoming:function(p,t){return a0n.pv(p,t)},attack:function(code,t){return ss.a1M.xn(code,t)}};}};
+  const o=installNativeObserver(game,{sourceHash:'b'.repeat(64)});
+  assert.equal(game.modern.incoming(1,0),17);assert.equal(game.modern.attack(100,1),undefined);
+  const e=o.drain();assert.equal(calls,1);assert.equal(e[1].observedDebit,108);
+  o.stop();assert.equal(a0n.pv,originalIncoming);assert.equal(ss.a1M.xn,originalAttack);
+  const spoof={...game,get modern(){return {...game.modern,attack(){return 1;}};}};
+  assert.throws(()=>installNativeObserver(spoof),/Unsupported stable native delegation signature/);
+  assert.equal(ss.a1M.xn,originalAttack);
+});

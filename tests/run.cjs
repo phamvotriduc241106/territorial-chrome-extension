@@ -11,7 +11,7 @@ let live = process.env.TIO_LIVE_SOURCE && fs.readFileSync(process.env.TIO_LIVE_S
 let liveKind = null;
 if (live) {
   liveKind = TIOSourceAdapter.detectContract(live);
-  if (!['live-modern', 'live-modern-v2', 'live-modern-v3'].includes(liveKind)) throw Error('Unsupported live source: ' + liveKind);
+  if (!['live-modern', 'live-modern-v2', 'live-modern-v3', 'live-modern-v4'].includes(liveKind)) throw Error('Unsupported live source: ' + liveKind);
   console.log('Live source:', liveKind);
 }
 const server = http.createServer((request, response) => {
@@ -33,7 +33,7 @@ const server = http.createServer((request, response) => {
       if (!response.ok) throw Error('Official source fetch: HTTP ' + response.status);
       live = await response.text();
       liveKind = TIOSourceAdapter.detectContract(live);
-      if (!['live-modern', 'live-modern-v2', 'live-modern-v3'].includes(liveKind))
+      if (!['live-modern', 'live-modern-v2', 'live-modern-v3', 'live-modern-v4'].includes(liveKind))
         throw Error('Unsupported live source: ' + liveKind);
       console.log('Fresh official source:', liveKind, require('node:crypto').createHash('sha256').update(live).digest('hex'));
     }
@@ -67,6 +67,20 @@ const server = http.createServer((request, response) => {
         const build = TIOSourceAdapter.buildExportSnippet;
         window.TIOSourceAdapter = { ...TIOSourceAdapter, buildExportSnippet: function(version, kind) {
           const result = build(version, kind);
+          if (kind === 'live-modern-v4') return result.replace('window.__TIO_GAME__={', \`window.__TIO_GAME__={
+            testCombatBatch:function(input){
+              var saved=[a0o,a0c,a0q,a0r,a16,a14],me=c.t,foe=(me+1)%c.c2;
+              var bank=y.ax[foe],land=y.aO[foe],counter=input.counter;
+              var originalCredit=pz.q0,originalIncoming=a0n.pv,originalCounter=a0n.pw;
+              try{a0o=me;a0c=input.neutral?c.c2:foe;a0q=input.troops;a0r=input.cells;a16=false;
+                y.ax[foe]=input.bank;y.aO[foe]=input.territory;
+                pz.q0=function(){};a0n.pv=function(){return counter};a0n.pw=function(p,t,n){counter=n};
+                var captured=0,resolved=true;
+                if(a0r>0&&abU()){captured=a0a()?a0r:0;resolved=!captured;}
+                return {remaining:a0q,bank:y.ax[foe],counter:counter,captured:captured,resolved:resolved};
+              }finally{a0o=saved[0];a0c=saved[1];a0q=saved[2];a0r=saved[3];a16=saved[4];a14=saved[5];
+                y.ax[foe]=bank;y.aO[foe]=land;pz.q0=originalCredit;a0n.pv=originalIncoming;a0n.pw=originalCounter;}
+            },\`);
           if (kind !== 'live-modern-v3') return result;
           return result.replace('window.__TIO_GAME__={', \`window.__TIO_GAME__={
             testCombatBatch:function(input){
@@ -99,7 +113,11 @@ const server = http.createServer((request, response) => {
         game.aE.data.botDifficultyValue = 5;
         game.aE.data.playerCount = 64;
         game.aE.data.selectableSpawn = 0;
-        if (contract === 'live-modern-v3') {
+        if (contract === 'live-modern-v4') {
+          game.aE.qr.acY();
+          game.aE.qr.qs();
+          game.aE.qu();
+        } else if (contract === 'live-modern-v3') {
           game.aE.a6i.a7A();
           game.aE.a6i.a77();
           game.aE.a6m();
@@ -137,6 +155,10 @@ const server = http.createServer((request, response) => {
           directedForce: { attacker:before.player,target,added:directedAfter-directedBefore,sent } };
       });
       console.log('Official single-player attack: PASS ' + JSON.stringify(smoke));
+      if (expectedContract === 'live-modern-v4') {
+        const result = await require('./native-v4-integration.cjs').verify(page);
+        console.log('Official v4 ownership/combat/economics/observer restoration: PASS ' + JSON.stringify(result));
+      }
       if (expectedContract === 'live-modern-v3') {
         const frontier = await page.evaluate(async () => {
           const game = window.__TIO_GAME__, f = window.TIOFrontier, api = window.__TIO_HOOK_API__;

@@ -53,6 +53,18 @@
       'this.gg=function(player){returnsize[player]'
     ];
     if (modernV3.every((token) => code.indexOf(token) >= 0)) return 'live-modern-v3';
+    const modernV4 = [
+      'varaU0=q.aN(12*y.ax[player],1024)',
+      'ss.a1M.xn(nl.a1R(),c.c2)',
+      'this.q5=function(player,pt)',
+      'this.aTe=function(player){varpo=ij.zr[0];y.ax[player]-=po+ij.zr[1]',
+      'this.a1R=function(){returnq.a0(Math.floor(a3c*1024+0.5)-1,0,1023)',
+      'this.az=function(player){returnMath.min(100*y.aO[player],c.aXJ)',
+      'this.q7=function(player){returnsize[player]',
+      'a0c=a0n.q8(a0o,a0p);a0q=a0n.q9(a0o,a0p);a16=a0n.qD(a0o,a0p)',
+      'this.bZ=function(player){returny.an[player]!==0&&y.xR[player]!==2'
+    ];
+    if (modernV4.every((token) => code.includes(token))) return 'live-modern-v4';
     return 'unknown';
   }
 
@@ -355,8 +367,295 @@
     };
   }
 
+  // Verified renamed family, 2026-10-22. Explicit bindings keep native method
+  // identity and mutable combat globals intact; no aliases are written to game.
+  function modernV4Export() {
+    return `get modern(){
+      if(typeof y==='undefined'||!y||!y.ax||!y.aO||!y.an||
+        typeof c==='undefined'||!c||typeof c.t!=='number'||
+        typeof a0f==='undefined'||!a0f||typeof a0f.a1T!=='function'||
+        typeof a0f.a1X!=='function'||typeof a0f.a1W!=='function'||
+        typeof a0n==='undefined'||!a0n||typeof a0n.q5!=='function')return null;
+      return {
+        matchToken:function(){return y.bW},
+        me:function(){return c.t}, neutral:function(){return c.c2},
+        balance:function(p){return y.ax[p]}, territory:function(p){return y.aO[p]},
+        alive:function(p){return !!y.an[p]},
+        active:function(p,t){return !!a0n.q5(p,t)},
+        incoming:function(p,t){return a0n.pv(p,t)},
+        activeCount:function(p){return a0n.q7(p)},
+        frontCap:function(p){return p<c.aI?(c.aI<16?12:8):4},
+        softCap:function(p){return ay.az(p)}, gameTick:function(){return bc.ql()},
+
+        economy:function(p){if(!ay||typeof ay.bb!=='function'||!c.data)return null;
+          var d=c.data;return {contract:'live-modern-v4',mapCells:c.aP,playerSlots:c.c2,
+            interestRateBps:ay.bb(p),interestType:d.iIncomeType,
+            interestValue:d.iIncomeType===2?d.iIncomeData[p]:d.iIncomeValue,
+            interestDisabled:!!(aa.bY.o2(p)&&p<c.aI),
+            territoryIncomeValue:d.tIncomeType===0?32:d.tIncomeType===1?d.tIncomeValue:d.tIncomeData[p],
+            additionalIncomeType:d.aIncomeType,
+            additionalIncomeValue:d.aIncomeType===2?d.aIncomeData[p]:d.aIncomeValue,
+            softCapMaximum:c.aXJ,hardCapPerCell:c.aXL,hardCapMaximum:c.qI,
+            debt:y.xa?y.xa[p]:0}},
+        ownership:function(maxCells){
+          if(!j1||!gW||typeof j1.zY!=='function'||typeof j1.zZ!=='function'||typeof j1.zb!=='function')return null;
+          maxCells=Math.min(4194304,Number.isSafeInteger(maxCells)?Math.max(0,maxCells):4194304);
+          var w=gW.gX,h=gW.gY,n=w*h;
+          if(!Number.isInteger(w)||!Number.isInteger(h)||!Number.isSafeInteger(n)||w<1||h<1||n>maxCells||c.c2>=65535)return null;
+          var owners=new Uint16Array(n),counts=new Uint32Array(c.c2),free=0;
+          for(var i=0;i<n;i++){var f=4*i,o=65535;
+            if(j1.zY(f)){o=j1.zZ(f);if(!Number.isInteger(o)||o<0||o>=c.c2)return null;counts[o]++;}
+            else if(j1.zb(f)){o=c.c2;free++;}owners[i]=o;}
+          for(var p=0;p<c.c2;p++)if(counts[p]!==y.aO[p])return null;
+          return {width:w,height:h,owners:owners,counts:counts,neutralId:c.c2,
+            freeLandCells:free,cellCost:c.a0x,mapId:gW.kY,mapSeed:gW.mapSeed,
+            difficulty:c.data.botDifficultyValue};},
+        outgoing:function(p){var a=[];for(var i=0;i<a0n.q7(p);i++)a.push({
+          targetId:a0n.q8(p,i)===c.c2?'neutral':a0n.q8(p,i),troops:a0n.q9(p,i),reinforced:!!a0n.qD(p,i)});return a},
+        singlePlayer:function(){return !!c.aH},
+        canAttack:function(p){return !!aa.bY.a1D(1)&&!!aa.bY.bZ(p)},
+        attack:function(code,t){return ss.a1M.xn(code,t)},
+        readRatio:function(){return (nl.a1R()+1)/1024},
+        setRatio:function(code){ep.eq.er(182,code);nl.b()},
+        neighbors:function(p,x){var a=[],n=c.c2;
+          if(a0f.a1T(p)&&(!x||!a0n.q5(p,n)))a.push(n);
+          for(var t=0;t<n;t++)if(t!==p&&y.an[t]&&a0f.a1W(p,t)&&
+            a0f.a1X(p,t)&&(!x||!a0n.q5(p,t)))a.push(t);return a},
+        contains:function(p,t){return t===c.c2?!!a0f.a1T(p):
+          t>=0&&t<c.c2&&!!y.an[t]&&!!a0f.a1W(p,t)&&!!a0f.a1X(p,t)},
+        available:function(p,t){return !a0n.q5(p,t)&&this.contains(p,t)},
+        select:function(p,unusedStrategy,l){var a=this.neighbors(p,true),n=c.c2,b=-1,s=Infinity;
+          if(l&&a.indexOf(n)>=0)return {target:n,empty:true};
+          for(var i=0;i<a.length;i++){var t=a[i];if(t===n)continue;
+            var q=y.ax[t]+a0n.pv(t,p);if(q<s){s=q;b=t}}
+          return b>=0?{target:b,empty:false}:a.indexOf(n)>=0?{target:n,empty:true}:null}
+      }
+    },`;
+  }
+
+  function nativeShadowTelemetryV4() {
+    var sink = null, undos = [], ids = new Map(), sequence = 0, version = 0, token = null, context = null, stepping = false, fault = null;
+    var spatialEnabled = false, spatialVersion = 0, outsideChanges = [], spatialReady = false, incomePhase = false, observationReady = false;
+    function owner(offset) { return j1.zY(offset) ? j1.zZ(offset) : j1.zb(offset) ? c.c2 : 65535; }
+    function spatialFlush(changes, attribution) {
+      if (!spatialReady || !changes.length) return;
+      if (changes.length > 32768) { fault = 'spatial-delta-cap'; spatialReady = false; return; }
+      emit(Object.assign({ event: 'native_spatial_delta', baseVersion: spatialVersion,
+        spatialVersion: ++spatialVersion, changes: changes,
+        territories: Array.from(y.aO) }, attribution));
+    }
+    function refresh() { if (token !== y.bW) { token = y.bW; ids.clear(); } }
+    function key(p, t) { return p + ':' + t; }
+    function id(p, t) { refresh(); var k = key(p, t); if (!ids.has(k)) ids.set(k, ++sequence); return ids.get(k); }
+    function player(p) { return p < c.c2 ? { balance: y.ax[p], territory: y.aO[p],
+      debt: y.xa[p], alive: !!y.an[p] } : null; }
+    function emit(event) {
+      version++;
+      try { if (sink) sink(Object.assign({ gameTick: bc.ql(), sourceStateVersion: version,
+        observationTick: stepping ? bc.ql() + 1 : bc.ql(),
+        phase: stepping ? 'during-tick' : 'between-ticks' }, event)); } catch (error) { fault = String(error); }
+    }
+    function wrap(object, name, factory) {
+      var original = object[name], wrapped = factory(original); object[name] = wrapped;
+      undos.push(function () { if (object[name] === wrapped) object[name] = original; });
+    }
+    function fronts(p) {
+      var result = []; if (!sink || !y.bW || !y.ax || !y.an || !y.xa) return result;
+      for (var actor = 0; actor < c.c2; actor++) for (var i = 0; i < a0n.q7(actor); i++) {
+        var t = a0n.q8(actor, i);
+        result.push({ nativeFrontId: id(actor, t), actor: actor, target: t === c.c2 ? 'neutral' : t,
+          troops: a0n.q9(actor, i), reinforced: !!a0n.qD(actor, i),
+          counterforce: t < c.c2 ? a0n.pv(t, actor) : 0, actorState: player(actor), targetState: player(t) });
+      } return result;
+    }
+    return {
+      version: function () { return version; }, active: function () { return !!sink; }, fronts: fronts,
+      fault: function () { return fault; },
+      playerState: player,
+      spatialState: function () {
+        if (!sink || !spatialEnabled || (stepping && !observationReady) || !y.aO || !y.bW) return null;
+        var n = gW.gX * gW.gY;
+        if (!Number.isSafeInteger(n) || n < 1 || n > 4194304) return null;
+        var owners = new Uint16Array(n), counts = new Uint32Array(c.c2);
+        for (var i = 0; i < n; i++) { var o = owner(i * 4); owners[i] = o; if (o < c.c2) counts[o]++; }
+        for (var p = 0; p < c.c2; p++) if (counts[p] !== y.aO[p]) return null;
+        return { width: gW.gX, height: gW.gY, neutralId: c.c2, owners: owners, counts: counts,
+          spatialVersion: spatialVersion, sourceStateVersion: version, gameTick: bc.ql(),
+          frontierQueues: y.bW.map(function (q) { return q ? Array.from(q, function (f) { return f / 4; }) : []; }),
+          offsets: Array.from(j1.a1g, function (f) { return f / 4; }) };
+      },
+      spatialBegin: function () {
+        refresh();
+        var s = this.spatialState(); if (!s) return null;
+        spatialVersion = 0; outsideChanges = []; spatialReady = true; s.spatialVersion = 0; return s;
+      },
+      stop: function () { sink = null; spatialReady = false; spatialEnabled = false; outsideChanges = [];
+        for (var i = undos.length - 1; i >= 0; i--) undos[i](); undos = []; ids.clear(); },
+      install: function (callback, options) {
+        if (sink) return { ok: false, err: 'shadow-already-installed' };
+        if (typeof sf !== 'function' || typeof abQ !== 'function' || typeof a0e !== 'function' || typeof bc === 'undefined' ||
+          !bc || typeof bc.b8 !== 'function' || typeof a0n.iu !== 'function' ||
+          typeof a0n.q4 !== 'function' || typeof a0n.clear !== 'function' ||
+          typeof aa.bY.zw !== 'function' || typeof aa.bY.aTe !== 'function' || typeof ay.a5f !== 'function')
+          return { ok: false, err: 'native-event-hooks-unavailable' };
+        // Contract family alone is insufficient for private routine hooks.
+        // Reject changed symbols/bodies before installing ANY wrappers.
+        var batchSource = Function.prototype.toString.call(abQ).replace(/\s+/g, '');
+        var returnSource = Function.prototype.toString.call(a0e).replace(/\s+/g, '');
+        var tickSource = Function.prototype.toString.call(sf).replace(/\s+/g, '');
+        if (!['a0c=a0n.q8(a0o,a0p)', 'a0q=a0n.q9(a0o,a0p)', 'a16=a0n.qD(a0o,a0p)', 'a0r===0'].every(function (s) { return batchSource.includes(s); }) ||
+          !returnSource.includes('aa.bY.py(a0o,a0q)') || !returnSource.includes('a0n.q4(a0o,a0p)') ||
+          !tickSource.includes('aAZ.b8()') || !tickSource.includes('bc.b8()'))
+          return { ok: false, err: 'native-event-signature-unverified' };
+        spatialEnabled = !!(options && options.spatial);
+        if (spatialEnabled && (!j1 || !['a19', 'aT5', 'aU1', 'aTJ', 'aVI'].every(function (k) { return typeof j1[k] === 'function'; }) ||
+          !Function.prototype.toString.call(j1.a19).includes('aUr') ||
+          !Function.prototype.toString.call(j1.aT5).includes('aUn') ||
+          !Function.prototype.toString.call(j1.aU1).includes('aUu') ||
+          !Function.prototype.toString.call(j1.aTJ).includes('aVH') ||
+          !Function.prototype.toString.call(j1.aVI).includes('aVH')))
+          return { ok: false, err: 'native-spatial-signature-unverified' };
+        if (spatialEnabled && (typeof ay.b8 !== 'function' || typeof aa.bY.aED !== 'function' || typeof aa.bY.py !== 'function' ||
+          !o9.aGr || typeof o9.aGr.aHD !== 'function' || !Function.prototype.toString.call(aa.bY.aED).includes('aYb') ||
+          !Function.prototype.toString.call(aa.bY.py).includes('aYY') || !Function.prototype.toString.call(o9.aGr.aHD).includes('12*y.ax[player]')))
+          return { ok: false, err: 'native-command-signature-unverified' };
+        sink = callback; token = y.bW; version = 0; context = null; fault = null;
+        spatialReady = false; spatialVersion = 0; outsideChanges = [];
+        try {
+          if (spatialEnabled) {
+            wrap(ay, 'b8', function (original) { return function () { var previous = incomePhase; incomePhase = true;
+              try { return original.apply(this, arguments); } finally { incomePhase = previous; } }; });
+            wrap(aa.bY, 'aED', function (original) { return function (actor, code) {
+              var before = player(actor), sent = original.apply(this, arguments);
+              emit({ event: 'native_command', kind: 'naval-or-cell-command-debit', actor: actor,
+                ratioCode: code, sent: sent, tax: ij.zr[1], actorBefore: before, actorAfter: player(actor) }); return sent;
+            }; });
+            wrap(o9.aGr, 'aHD', function (original) { return function (actor, target) {
+              var before = player(actor), result = original.apply(this, arguments);
+              emit({ event: 'native_command', kind: 'bot-bank-debit', actor: actor,
+                target: target === c.c2 ? 'neutral' : target, actorBefore: before, actorAfter: player(actor),
+                debit: before.balance - player(actor).balance }); return result;
+            }; });
+            wrap(aa.bY, 'py', function (original) { return function (actor, requested) {
+              var before = player(actor), accepted = original.apply(this, arguments);
+              if (!incomePhase && !(context && context.returning)) emit({ event: 'native_external_credit',
+                actor: actor, requested: requested, accepted: accepted, actorBefore: before, actorAfter: player(actor),
+                cause: 'outside-land-return-and-income' }); return accepted;
+            }; });
+          }
+          if (spatialEnabled) ['a19', 'aT5', 'aU1', 'aTJ', 'aVI'].forEach(function (name) {
+            wrap(j1, name, function (original) { return function (offset) {
+              var valid = spatialReady && Number.isInteger(offset) && offset >= 0 && offset % 4 === 0 && offset / 4 < gW.gX * gW.gY;
+              var before = valid ? owner(offset) : null, result = original.apply(this, arguments);
+              if (valid) { var after = owner(offset); if (before !== after) {
+                var list = context ? context.changes : outsideChanges;
+                if (list.length >= 32768) { fault = 'spatial-delta-cap'; spatialReady = false; }
+                else list.push([offset / 4, before, after]);
+              } } return result;
+            }; });
+          });
+          wrap(a0n, 'iu', function (original) { return function (actor, force, target) {
+            var existed = a0n.q5(actor, target), before = player(actor);
+            var result = original.apply(this, arguments);
+            var flag = null; for (var i = 0; i < a0n.q7(actor); i++) if (a0n.q8(actor, i) === target) flag = !!a0n.qD(actor, i);
+            emit({ event: 'native_command', kind: existed ? 'front-topup' : 'front-admission',
+              nativeFrontId: flag == null ? null : id(actor, target), actor: actor, target: target === c.c2 ? 'neutral' : target,
+              sent: force, actorBefore: before, actorAfter: player(actor), targetAfter: player(target),
+              forceAfter: flag == null ? 0 : a0n.pv(actor, target),
+              counterforce: target < c.c2 ? a0n.pv(target, actor) : 0, reinforced: flag }); return result;
+          }; });
+          wrap(aa.bY, 'aTe', function (original) { return function (actor) {
+            var before = player(actor), result = original.apply(this, arguments);
+            emit({ event: 'native_command', kind: 'bank-debit', actor: actor,
+              sent: ij.zr[0], tax: ij.zr[1], actorBefore: before, actorAfter: player(actor) }); return result;
+          }; });
+          wrap(aa.bY, 'zw', function (original) { return function (actor, requested) {
+            var before = player(actor), delivered = original.apply(this, arguments);
+            emit({ event: 'native_reinforcement', nativeFrontId: context && context.nativeFrontId,
+              actor: actor, target: context && context.target, requested: requested, delivered: delivered,
+              actorBefore: before, actorAfter: player(actor) }); return delivered;
+          }; });
+          wrap(ay, 'a5f', function (original) { return function (actor, target) {
+            var before = player(actor), targetBefore = player(target), result = original.apply(this, arguments);
+            emit({ event: 'native_command', kind: 'transfer', actor: actor, target: target,
+              actorBefore: before, actorAfter: player(actor), targetBefore: targetBefore, targetAfter: player(target) }); return result;
+          }; });
+          wrap(a0n, 'q4', function (original) { return function (actor, index) {
+            var target = a0n.q8(actor, index), force = context && context.returning ? a0q : a0n.q9(actor, index), front = id(actor, target);
+            var result = original.apply(this, arguments);
+            emit({ event: 'native_termination', nativeFrontId: front, actor: actor,
+              target: target === c.c2 ? 'neutral' : target, remainingForce: force,
+              reason: context && context.returning ? 'native-return' : 'native-front-removal',
+              actorAfter: player(actor), targetAfter: player(target),
+              refund: context && context.returning ? player(actor).balance - context.returnBalance : null });
+            ids.delete(key(actor, target)); return result;
+          }; });
+          wrap(a0n, 'clear', function (original) { return function (actor) {
+            var active = []; for (var i = 0; i < a0n.q7(actor); i++) active.push({ target: a0n.q8(actor, i), front: id(actor, a0n.q8(actor, i)) });
+            var result = original.apply(this, arguments);
+            for (var i = 0; i < active.length; i++) { var a = active[i];
+              emit({ event: 'native_termination', nativeFrontId: a.front, actor: actor,
+                target: a.target === c.c2 ? 'neutral' : a.target, reason: 'native-clear',
+                actorAfter: player(actor), targetAfter: player(a.target), refund: null }); ids.delete(key(actor, a.target)); }
+            return result;
+          }; });
+          var oldGP = a0e;
+          var newGP = function () { if (context) { context.returning = true; context.returnBalance = y.ax[a0o]; }
+            return oldGP.apply(this, arguments); };
+          a0e = newGP; undos.push(function () { if (a0e === newGP) a0e = oldGP; });
+          var oldGH = abQ;
+          var newGH = function () {
+            var actor = a0o, target = a0n.q8(a0o, a0p), previous = context;
+            var before = { actor: player(actor), target: player(target), force: a0n.q9(actor, a0p),
+              reinforced: !!a0n.qD(actor, a0p), counterforce: target < c.c2 ? a0n.pv(target, actor) : 0 };
+            var front = id(actor, target);
+            if (spatialReady && outsideChanges.length) { spatialFlush(outsideChanges, { cause: 'outside-combat' }); outsideChanges = []; }
+            context = { nativeFrontId: front, target: target === c.c2 ? 'neutral' : target, changes: [] };
+            var selected = spatialReady ? Array.from(abM.subarray(0, abL), function (f) { return f / 4; }) : null;
+            try { return oldGH.apply(this, arguments); }
+            finally {
+              var after = { actor: player(actor), target: player(target), force: a0n.pv(actor, target),
+                counterforce: target < c.c2 ? a0n.pv(target, actor) : 0 };
+              if (spatialReady) spatialFlush(context.changes, { cause: 'combat', actor: actor,
+                target: target === c.c2 ? 'neutral' : target, nativeFrontId: front });
+              emit({ event: 'native_batch', nativeFrontId: front, actor: actor,
+                target: target === c.c2 ? 'neutral' : target, candidateCells: a0r, cellCost: c.a0x,
+                returned: !!context.returning,
+                before: before, after: after, reinforced: before.reinforced,
+                territoryDelta: after.actor.territory - before.actor.territory,
+                spatialVersion: spatialReady ? spatialVersion : null,
+                selectedFrontier: selected,
+                candidateIndices: spatialReady ? Array.from(a18.subarray(0, a0r), function (f) { return f / 4; }) : null,
+                changedCells: spatialReady ? context.changes : null }); context = previous;
+            }
+          }; abQ = newGH; undos.push(function () { if (abQ === newGH) abQ = oldGH; });
+          var oldTick = sf, newTick = function () { var previous = stepping;
+            if (token !== y.bW) { refresh(); spatialReady = false; outsideChanges = [];
+              emit({ event: 'native_match_start', phase: 'before-tick', observationTick: bc.ql() }); }
+            stepping = true;
+            try { return oldTick.apply(this, arguments); } finally { stepping = previous; } };
+          sf = newTick; undos.push(function () { if (sf === newTick) sf = oldTick; });
+          wrap(bc, 'b8', function (original) { return function () { var result = original.apply(this, arguments);
+            if (spatialReady && outsideChanges.length) { spatialFlush(outsideChanges, { cause: 'outside-combat' }); outsideChanges = []; }
+            observationReady = true;
+            try { emit({ event: 'native_tick', phase: 'after-tick', observationTick: bc.ql() }); }
+            finally { observationReady = false; } return result; }; });
+        } catch (error) { this.stop(); return { ok: false, err: String(error) }; }
+        return { ok: true, coverage: 'native land admissions, debits, batches, reinforcements, returns, clears, exact end ticks' };
+      }
+    };
+  }
+
+  function buildV4ExportSnippet(version) {
+    return ';try{window.__TIO_GAME__={contract:"live-modern-v4",shadow:(' +
+      nativeShadowTelemetryV4.toString() + ')(),get ah(){return typeof y!=="undefined"?y:null},get aE(){return typeof c!=="undefined"?c:null},get aS(){return typeof nl!=="undefined"?nl:null},get bm(){return typeof ep!=="undefined"?ep:null},get bB(){return typeof ss!=="undefined"?ss:null},get bD(){return typeof aa!=="undefined"?aa:null},get bO(){return typeof q!=="undefined"?q:null},get bV(){return typeof gW!=="undefined"?gW:null},get bR(){return typeof ij!=="undefined"?ij:null},get bv(){return typeof a0f!=="undefined"?a0f:null},get ae(){return typeof a0n!=="undefined"?a0n:null},get ap(){return typeof o9!=="undefined"?o9:null},get ad(){return typeof j1!=="undefined"?j1:null},get af(){return typeof ay!=="undefined"?ay:null},get bi(){return typeof bc!=="undefined"?bc:null},get aG(){return typeof aAZ!=="undefined"?aAZ:null},' +
+      modernV4Export() + '};window.__TIO_GAME_READY__=true;window.__TIO_HOOK_VER__=' +
+      JSON.stringify(version) + ';}catch(e){window.__TIO_GAME_ERR__=String(e&&e.message||e);}';
+  }
+
   /** Build the only code injected into a recognized game closure. */
   function buildExportSnippet(hookVersion, sourceKind) {
+    if (sourceKind === 'live-modern-v4') return buildV4ExportSnippet(String(hookVersion || 'unknown'));
     const version = JSON.stringify(String(hookVersion || 'unknown'));
     const contract = JSON.stringify(
       sourceKind === 'readable-legacy' ? 'legacy-v1'
@@ -441,7 +740,7 @@
     if (typeof text !== 'string' || text.length < 80000) return 'not-game';
     const contract = detectContract(text);
     if (contract === 'readable-legacy' || contract === 'live-modern' ||
-        contract === 'live-modern-v2' || contract === 'live-modern-v3') return contract;
+        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4') return contract;
     if (text.indexOf('canvasA') >= 0 ||
         (text.indexOf('territorial.io') >= 0 && text.length > 100000) ||
         (text.indexOf('Uint32Array') >= 0 && text.indexOf('fillText') >= 0 && text.length > 200000)) {
