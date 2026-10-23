@@ -6,7 +6,7 @@
     minimumAdvantage:1.5,maxAgeMs:700,maxTickLag:12});
   const integer=n=>Number.isSafeInteger(n)&&n>=0;
   function inspect(st,ageMs){
-    if(!st||st.contract!=='live-modern-v3'||st.singlePlayer!==true||st.ready!==true||
+    if(!st||!['live-modern-v3','live-modern-v4'].includes(st.contract)||st.singlePlayer!==true||st.ready!==true||
         st.alive!==true||!integer(st.balance)||st.balance>2147483647||st.balanceKnown!==true||
         !integer(st.territory)||st.territory<1||!integer(st.gameTick)||
         !integer(st.stateVersion)||typeof st.matchId!=='string'||!st.matchId||

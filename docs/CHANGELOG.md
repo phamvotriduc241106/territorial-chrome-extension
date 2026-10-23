@@ -1,5 +1,10 @@
 # Changelog
 
+## 10.3.11 — 2026-10-22 22:10:30 EDT
+
+- Restore verified native bindings for the renamed October 22 official game source (`live-modern-v4`), including ownership, income, native command observers and match identity. Unknown source families still fail closed.
+- Keep the default V2.8.2 policy and existing command safety checks. Four MCP Impossible/512 comparison games all lost; capital-v1 remains default off. Retain the captured journals, exact ledger checks and tail-coverage limitation in `docs/MCP_IMPOSSIBLE_LOOP_2026_10_22.md`.
+
 ## 10.3.10 — 2026-10-21 20:09:46 EDT
 
 - Fix integer front allocation by selecting discrete marginal gains in log space. Continuous rounding could leave an improving one-troop exchange; underflow could force troop-by-troop iteration through enormous budgets.

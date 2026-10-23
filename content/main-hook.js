@@ -269,7 +269,7 @@
   function trustedContract(g) {
     var contract = g && g.contract;
     return contract === 'legacy-v1' || contract === 'live-modern-v1' ||
-      contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'test-fixture';
+      contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'test-fixture';
   }
 
   /**
@@ -1610,7 +1610,8 @@
   var _shadowGeometryIntervalMs = 500;
   var _spatialEnabled = false, _spatialSnapshot = null;
   function syncMatchIdentity(g) {
-    var token = g && g.ah && g.ah.h1 || g;
+    var token = g && g.modern && typeof g.modern.matchToken === 'function'
+      ? g.modern.matchToken() : g && g.ah && g.ah.h1 || g;
     if (token !== _matchToken || !_matchId) {
       _experimentalPolicy='off';_experimentalMatchId=null;
       _matchToken = token;
@@ -1625,7 +1626,7 @@
   }
   function captureFrontier(state) {
     var g = G(), model = window.TIOFrontier;
-    if (!model || !g || g.contract !== 'live-modern-v3' || !g.modern ||
+    if (!model || !g || !['live-modern-v3', 'live-modern-v4'].includes(g.contract) || !g.modern ||
         typeof g.modern.ownership !== 'function') throw Error('frontier-source-unavailable');
     var start = performance.now();
     try {
@@ -1696,7 +1697,7 @@
         // Initialize match provenance before hooks, but do not create pair-only
         // aliases for fronts that will receive native IDs in the first sample.
         _frontierRecorder.match(initial, { engineVersion: CFG.ENGINE_VERSION, updatedAt: CFG.ENGINE_UPDATED_AT });
-        if (game && game.contract === 'live-modern-v3' && game.shadow) {
+        if (game && ['live-modern-v3', 'live-modern-v4'].includes(game.contract) && game.shadow) {
           _shadowNative = game.shadow;
           var installed = _shadowNative.install(function (event) {
             if (!_frontierStatus.enabled) return;
@@ -1977,7 +1978,7 @@
       } else if(data.type==='set-experiment'){
         var expState=getState();
         if(data.mode==='off' || data.mode==='capital-v1' && expState.singlePlayer &&
-            expState.contract==='live-modern-v3' && window.TIOCapitalPolicy){
+            ['live-modern-v3','live-modern-v4'].includes(expState.contract) && window.TIOCapitalPolicy){
           _experimentalPolicy=data.mode;_experimentalMatchId=data.mode==='off'?null:expState.matchId;
           result={ok:true,mode:_experimentalPolicy,state:getState()};
         }else result={ok:false,err:'experimental-single-player-only'};

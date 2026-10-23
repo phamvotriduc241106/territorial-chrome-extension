@@ -32,7 +32,7 @@ test('published experiment retains complete split, frozen pipeline hashes and al
     assert.equal(m.split,m.index<=16?'development':'held-out');assert.equal(m.sourceSha256,s.candidateFreeze.sourceSha256);}
   assert.equal(s.candidateFreeze.tunedCandidateParameters,0);
   const check=require('../tools/frontier-study-freeze.cjs').check;
-  assert.throws(()=>check(s.candidateFreeze),/Frozen pipeline changed: content\/main-hook.js/);
+  assert.throws(()=>check(s.candidateFreeze),/Frozen pipeline changed: content\/(?:source-adapter|main-hook)\.js/);
   check(s.candidateFreeze,{archive:path.join(root,'docs/live-audits/frontier-study-original-pipeline.json.gz')});
   const bytes=fs.readFileSync(path.join(root,'docs/frontier',s.episodeReport.file));
   assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),s.episodeReport.sha256);

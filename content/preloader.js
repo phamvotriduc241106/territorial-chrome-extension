@@ -35,7 +35,7 @@
     result.kind = kind;
     result.bytes = html.length;
     if (kind !== 'readable-legacy' && kind !== 'live-modern' &&
-        kind !== 'live-modern-v2' && kind !== 'live-modern-v3') {
+        kind !== 'live-modern-v2' && kind !== 'live-modern-v3' && kind !== 'live-modern-v4') {
       result.status = 'contract-unmapped';
       return;
     }

@@ -3,7 +3,7 @@
 Version 1 — 2026-10-21 EDT. Applies to production kernels, spending rules,
 planning transitions, observers and experimental mathematical helpers.
 This is the repeatable procedure. The [October 21 audit](MATH_AUDIT_2026_10_21.md)
-is a dated result, not a substitute for a fresh run.
+is a dated result, not a substitute for a fresh run. The [October 22 MCP loop](MCP_IMPOSSIBLE_LOOP_2026_10_22.md) records the subsequent source-contract repair and separate negative gameplay results.
 
 ## 1. Establish the tested identity
 

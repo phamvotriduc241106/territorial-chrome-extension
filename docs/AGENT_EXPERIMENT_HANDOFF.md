@@ -1,7 +1,7 @@
 # Agent runbook: live MCP Impossible-mode improvement loop
 
 Updated **2026-10-22, America/New_York (EDT)**. Repository checkpoint inspected:
-`a168086ef02f0ed59ff631afea897bb23e2a0d42` (merged PR #14). The original
+`2594ab24f4fd6529ccf9386900b0deb36ac8b57c` (merged PR #15). The original
 October 13 handoff is retained below as dated evidence, not current readiness.
 Fetch and verify the repository and official game again before each experiment.
 
@@ -16,10 +16,11 @@ Unit tests, VM arithmetic, simulations and CI support each iteration. They do
 not replace the live match or demonstrate that a changed policy played it.
 
 For mathematical work, follow the [official mathematics test protocol](MATH_TEST_PROTOCOL.md).
-The [October 21 audit](MATH_AUDIT_2026_10_21.md) records the latest installed-run
-failure. On October 22, fresh `test:math-native` still passed 13,800 arithmetic
-cases while `test:live` and `test:spatial` rejected the renamed official bundle.
-**Restore and verify the native contract before resuming supported gameplay.**
+The [October 21 audit](MATH_AUDIT_2026_10_21.md) records the historical source
+failure. Release 10.3.11 restores the verified `live-modern-v4` contract. The
+[October 22 MCP loop](MCP_IMPOSSIBLE_LOOP_2026_10_22.md) includes fresh native
+math/bootstrap/spatial passes and four Impossible/512 comparison losses.
+Capital-v1 remains default off. Recheck source support before each new cohort.
 
 Navigation: [next action](#0-start-here-select-the-correct-next-action) ·
 [MCP match procedure](#5-operate-the-live-match-through-mcp) ·
@@ -88,10 +89,10 @@ Improve real single-player Impossible performance through a repeated engineering
 
 The user authorized autonomous routine implementation decisions, pushing and merging. That does **not** authorize skipping failing checks, unsupported native commands, speculative production promotion, personal-profile access or unrelated changes. Ask only when materially new authority, an external dependency or a meaningful scope expansion is required. Preserve negative results instead of tuning the narrative.
 
-**Current first gate:** diagnose the renamed live source and restore verified
-native integration. Exact planner observation and capital-v1 already exist.
-After integration works, use the recorded capital/geometry/attack-outcome
-weaknesses to select the next development experiment. Do not silently promote
+**Current first gate:** verify the current contract still matches the repaired
+`live-modern-v4` family, then use the retained early-contact and territory-loss
+evidence to select the next development experiment. Exact planner observation
+and capital-v1 already exist. Do not silently promote
 the four-game pilot or replay its hard-coded historical cohort as a new test.
 
 ## 2. Read these files first
@@ -118,7 +119,7 @@ Also inspect applicable `AGENTS.md` instructions in the checkout and parent dire
 
 ## 3. Verified checkpoint and historical evidence
 
-### October 22 repository/source check
+### October 22 repository/source check before the v4 repair
 
 | Item | Inspected value or result |
 | --- | --- |
