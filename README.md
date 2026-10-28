@@ -4,9 +4,12 @@ Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using
 
 **Release:** v10.3.11 · **Production engine:** V2.8.2 · **Updated:** 2026-10-22 22:10:30 EDT
 
-Restores the renamed October 22 native game interface, including exact command,
-income, ownership and observer paths. Fresh native math, bootstrap and spatial
-checks pass. Four MCP-controlled Impossible/512 development games all lost;
+Restored the renamed October 22 native game interface, including command,
+income, ownership and observer paths; native math, bootstrap and spatial checks
+passed on that dated bundle. **October 28 recheck:** the current public source is
+unknown to the adapter, and the native arithmetic audit fails closed. See the
+[checked mathematical corrections and current-source limit](docs/MATHEMATICAL_CORRECTIONS.md).
+Four MCP-controlled Impossible/512 development games all lost;
 no strength improvement or policy promotion is claimed. See the
 [live MCP loop report](docs/MCP_IMPOSSIBLE_LOOP_2026_10_22.md).
 
@@ -64,6 +67,7 @@ model-validation phase is required; no frontier model controls autoplay.
 ## Repository
 
 - [Official mathematics test protocol](docs/MATH_TEST_PROTOCOL.md)
+- [Checked mathematical corrections and implementation claim register](docs/MATHEMATICAL_CORRECTIONS.md)
 - [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
 - [Cycle 01: exact planner/native observation and action shadow](docs/PLANNER_SHADOW_CYCLE_01.md)
 - [Cycle 02: banking alternatives, Asia loss and negative findings](docs/BANKING_ALTERNATIVES_CYCLE_02.md)

@@ -1,4 +1,4 @@
-> Historical audit, preserved for reference. Paths and measurements describe the older checkout, not the current release. See ../VALIDATION.md for current evidence.
+> Historical audit, preserved for reference. Paths and measurements describe the older checkout, not the current release. Its table label "CBF VERIFIED" records an implemented reserve check, not a proved invariant safe set. See the [corrected proof and claim register](../MATHEMATICAL_CORRECTIONS.md) and ../VALIDATION.md for dated evidence.
 
 # Comprehensive Read-Only Audit Report: Territorial.io Autonomous Engine
 

@@ -4,7 +4,10 @@ These files are preserved research/audit artifacts, not current product document
 
 - `AUDIT_REPORT.md`: audit of an older layout, including disputed performance claims.
 - `PRODUCT_REPORT.md`: historical product narrative; headline claims do not establish current shipped performance.
-- `DOCTORAL_THESIS_REPORT.md`: research manuscript, not proof that every named algorithm is active in production.
-- The original PDF is preserved at `report/Territorial_IO_Project_Report.pdf`.
+- `DOCTORAL_THESIS_REPORT.md`: historical manuscript with explicit October 28 corrections to the reserve proof, soft-cap algebra, allocation scope, spectral claim and unsupported performance results. The filename does not establish a doctoral qualification or peer review.
+- The original PDF is preserved at `report/Territorial_IO_Project_Report.pdf`; it is an unchanged historical artifact, superseded by the corrections and not a validated result.
 
-See [current architecture](../ARCHITECTURE.md) and [measured validation](../VALIDATION.md). Historical paths and line numbers intentionally remain unchanged inside these reports.
+Read the [checked mathematical corrections](../MATHEMATICAL_CORRECTIONS.md),
+[current architecture](../ARCHITECTURE.md) and [measured validation](../VALIDATION.md).
+Retained historical paths describe old layouts. Original pre-correction text is
+available in Git history; editorial corrections do not create new experiments.
