@@ -22,6 +22,12 @@ failure. Release 10.3.11 restores the verified `live-modern-v4` contract. The
 math/bootstrap/spatial passes and four Impossible/512 comparison losses.
 Capital-v1 remains default off. Recheck source support before each new cohort.
 
+**October 28 recheck:** the fresh public bundle is `contract=unknown`, and the
+native arithmetic audit fails its economy signature check. Read the
+[mathematical corrections and current-source limit](MATHEMATICAL_CORRECTIONS.md).
+The October 22 passes remain dated evidence; repair/verify new source support
+before resuming native gameplay. No new match was played in the document review.
+
 Navigation: [next action](#0-start-here-select-the-correct-next-action) ·
 [MCP match procedure](#5-operate-the-live-match-through-mcp) ·
 [recording and diagnosis](#6-exact-observation-and-integrity-contract) ·

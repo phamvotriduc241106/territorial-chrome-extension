@@ -2,11 +2,26 @@
 
 For real-match consistency, use the [prospective 20-match Very Hard standard](VERY_HARD_TEST.md). It freezes conditions, retains failures and separates human-recorded game results from simulator/unit fixtures.
 
-Production gates: `npm test` runs core contracts, version/timestamp checks, manifest/import checks, V2 compatibility, Hard-mode safety, numerical stability, adapter switching and policy regressions. `npm run test:browser` verifies bridge serialization and native command behavior with fixtures. `npm run test:live` additionally downloads the official page, initializes a local 64-player Very Hard match, and checks one exact native debit/front transition. This is not a full-match win-rate test.
+Production gates: `npm test` runs core contracts, version/timestamp checks, manifest/import checks, V2 compatibility, Hard-mode safety, numerical stability, adapter switching, policy regressions and the documented mathematical counterexamples. `npm run test:browser` verifies bridge serialization and native command behavior with fixtures. `npm run test:live` additionally downloads the official page, initializes a local 64-player source fixture when supported, and checks native arithmetic/integration. This is not an official full-match win-rate test.
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `experiments/`; they are not silently treated as release gates. For example, `tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
-## v10.3.11 current source repair, 2026-10-22 EDT
+## Documentation/math review, 2026-10-28
+
+The [checked corrections](MATHEMATICAL_CORRECTIONS.md) replace the archived
+reserve-invariance proof, correct boundary tangency under explicit toy-model
+assumptions, and withdraw the spectral exact-cut and unsupported performance
+claims. `npm run test:math-docs` checks the numerical counterexamples and exact
+rational sample; existing allocation oracles remain intact. No runtime policy
+change or new gameplay result follows from this documentation patch.
+
+The fresh native arithmetic audit fails closed on an unverified economy routine;
+the October 28 source hash is
+`4d1c844982518d113cb18d4ded518f13438b3e53a43c83a97300b22930b54067`,
+classified `contract=unknown`. The following October 22 integration results are
+historical; present native support requires a separate repair and verification.
+
+## v10.3.11 dated source repair, 2026-10-22 EDT
 
 The [MCP Impossible loop](MCP_IMPOSSIBLE_LOOP_2026_10_22.md) separates 13,800
 native arithmetic comparisons, 292 combat and 54 income integration cases,

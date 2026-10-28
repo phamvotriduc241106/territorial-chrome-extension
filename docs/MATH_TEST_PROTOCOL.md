@@ -50,6 +50,13 @@ the fresh-source arithmetic, live-bootstrap or spatial gates.
 
 ## 3. Check the mathematical contracts
 
+For theoretical documentation, run `npm run test:math-docs` before adopting a
+claim, and verify assumptions/call paths as well as algebra. A command reserve
+inequality is not a forward-invariance proof; boundary tangency is not PMP
+optimality; spectral relaxation is not an exact discrete partition certificate.
+The [October 28 corrections](MATHEMATICAL_CORRECTIONS.md) retain counterexamples,
+the corrected rate and the current fresh-source failure separately.
+
 | Area | Invariant or oracle |
 | --- | --- |
 | Slider | Encoded code is an integer in `[0,1023]`; units are `code+1`; requested troops are `floor(B*units/1024)`. An explicit upper bound must never be rounded upward. Zero/nonfinite safety ceilings must block spending. |

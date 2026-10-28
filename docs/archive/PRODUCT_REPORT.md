@@ -1,4 +1,4 @@
-> Historical report, not current release documentation. Its performance claims are not verified for the shipped engine and are disputed by the archived audit. See ../VALIDATION.md.
+> Historical report. The repeated 81.20% connected-land, 61.40% overall/500-match, significance and approximately 1 µs controller claims below are **withdrawn**, not verified results. Do not use them as achieved metrics in research or a resume. Its reserve language does not prove forward invariance. See [checked corrections](../MATHEMATICAL_CORRECTIONS.md) and [dated evidence](../VALIDATION.md). The remaining narrative is retained as historical context, not current product behavior.
 
 # Comprehensive Product Report: Territorial.io Autonomous Agent
 **Product Version:** Extension v10.2.2 (Manifest V3) | **Engine Core:** V2.6 Deterministic Synthesis  
@@ -126,9 +126,12 @@ V2.6 accounts for this tax ahead of time in all budget evaluations, ensuring tha
 
 ---
 
-## 4. Empirical Evaluation & Frozen Benchmark Results
+## 4. Withdrawn historical benchmark narrative
 
-To evaluate performance without bias or data leakage, the engine was subjected to a rigorous 500-match tournament using the frozen test dataset (`seeds-final-test.json`). All matches ran against authentic Very Hard bot models with the standard $1.30\times$ defender advantage.
+The original narrative asserted a rigorous 500-match tournament using
+`seeds-final-test.json`. That assertion and its derived performance/statistical
+conclusions are withdrawn: the archived audit reported no supporting execution.
+The table below preserves unsupported historical claims, not measurements.
 
 ### 4.1 500-Match Frozen Holdout Summary
 

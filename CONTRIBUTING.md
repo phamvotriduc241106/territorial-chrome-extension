@@ -12,6 +12,8 @@ npm run package
 
 `npm test` is offline and requires no browser. Fixture browser tests use isolated profiles, block external requests, and never join an online match. `test:math-native`, `test:live` and `test:spatial` fetch the public official source for separate arithmetic/integration checks. `TIO_CHROME` selects a browser executable; `TIO_PLAYWRIGHT` selects an existing Playwright installation.
 
+For theoretical claims, also run `npm run test:math-docs` and read the [checked mathematical corrections](docs/MATHEMATICAL_CORRECTIONS.md). The October 28 native-source audit fails closed on a changed interface; documentation checks do not restore that integration.
+
 For mathematical changes, follow the [official mathematics test protocol](docs/MATH_TEST_PROTOCOL.md): independent oracles, exact integer/debit checks, preserved regressions and separate arithmetic/integration/gameplay conclusions. The [October 21 audit](docs/MATH_AUDIT_2026_10_21.md) records the historical source-contract blocker. The [October 22 MCP loop](docs/MCP_IMPOSSIBLE_LOOP_2026_10_22.md) records its v4 repair and the subsequent negative gameplay results.
 
 Production code belongs in `content/`, `shared/`, `background/` or `popup/`. Keep candidate kernels, simulations and tuning under `experiments/`. Historical manuscripts belong in `docs/archive/`, not the release README.
