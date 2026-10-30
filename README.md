@@ -1,104 +1,118 @@
 # Territorial.io Auto Commander
 
-Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), using native in-game commands rather than synthetic mouse input.
+Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), with a
+native command bridge, deterministic policy and separate research/test tooling.
 
 **Release:** v10.3.11 · **Production engine:** V2.8.2 · **Updated:** 2026-10-22 22:10:30 EDT
 
-Restored the renamed October 22 native game interface, including command,
-income, ownership and observer paths; native math, bootstrap and spatial checks
-passed on that dated bundle. **October 28 recheck:** the current public source is
-unknown to the adapter, and the native arithmetic audit fails closed. See the
-[checked mathematical corrections and current-source limit](docs/MATHEMATICAL_CORRECTIONS.md).
-Four MCP-controlled Impossible/512 development games all lost;
-no strength improvement or policy promotion is claimed. See the
-[live MCP loop report](docs/MCP_IMPOSSIBLE_LOOP_2026_10_22.md).
-
-Adds a default-off, per-match **capital-v1** single-player experiment: contact-aware command caps and early weak-target opportunities. Native safety remains authoritative. This is an experimental controller, not a validated strength upgrade.
-
-The in-page dashboard and engine run only on `https://territorial.io/`.
-Localhost, loopback and subdomains are excluded. The toolbar popup remains
-available on explicit click. Reload the extension and existing tabs.
-
-The preceding runtime update fixed false spawn confirmation: native ownership now
-overrules terrain-color guesses. Adds opt-in installed-extension Chrome gameplay
-diagnostics without changing combat policy. See [live audit](docs/LIVE_CHROME_AUDIT.md).
-
-v10.3.6 fixes status freshness, delayed polling and cross-tab observation races
-without changing production policy. See [bug scan and verification](docs/DEBUG_STATUS.md).
+**Native integration:** the fresh-source checks on October 29
+returned an unknown contract and failed closed. October 22 native integration
+passes and four Impossible/512 comparison losses remain dated evidence. See the
+[mathematical corrections](docs/math/MATHEMATICAL_CORRECTIONS.md),
+[current-source checks](docs/architecture/REPOSITORY_LAYOUT.md#verification)
+and [live MCP report](docs/research/MCP_IMPOSSIBLE_LOOP_2026_10_22.md).
+Capital-v1 remains an explicit, default-off, per-match single-player experiment.
 
 ## Install
 
-1. Open `chrome://extensions/`, enable Developer mode, and select **Load unpacked** → this repository.
-2. Open a fresh Territorial.io tab, select a single-player game, and choose your spawn.
-3. Autopilot is enabled by default, but starts only after your spawn is verified. Use Z to pause/resume. Reload the extension and open a fresh tab after updates.
+1. In `chrome://extensions/`, enable Developer mode and choose **Load unpacked**.
+2. Select this repository root, which contains `manifest.json`, or the clean
+   directory printed by `npm run package`.
+3. Open a fresh `https://territorial.io/` tab. Autopilot starts after native spawn
+   confirmation when the game source is supported. Reload the extension and tab
+   after updating.
 
-For a clean runtime-only folder, run `npm run package` and load the printed `dist/territorial-v…` directory. No bundler or npm installation is needed to load the repository directly.
+The in-page engine is scoped to the exact official HTTPS host. The toolbar popup
+is available on explicit click. Unsupported source contracts remain closed to
+native commands; testing success must be interpreted within the source/version
+shown in its report.
 
-## Development
+## Repository map
 
-Requires Node.js 20+; npm dependencies are development-only.
+```text
+manifest.json                 Chrome entry point; load-unpacked root
+background/ content/          Packaged browser worker and controller modules
+icons/ popup/ shared/         Packaged assets, UI, settings and shared code
+docs/                         Guides by topic, dated evidence and archive
+research/                     Unshipped models, simulations, benchmarks, replays
+tests/                        Contracts, unit, compatibility, browser, UI, manual
+tools/                        Release, validation, live, research and report CLIs
+```
+
+Start with the [documentation index](docs/README.md),
+[research index](research/README.md), [test guide](tests/README.md), or
+[tool index](tools/README.md). The
+[layout guide and migration map](docs/architecture/REPOSITORY_LAYOUT.md) explain
+the October 29 reorganization and old filenames. Manifest-listed runtime files
+keep their original paths and bytes; npm command names remain stable.
+
+## Develop and verify
+
+Requires Node.js 20+; npm dependencies are development-only. Run from the root:
 
 ```sh
 npm ci
 npm test
 npx playwright install chromium
 npm run test:browser
+npm run test:ui-state
 npm run test:ui
 npm run test:a11y
-npm run test:live
 npm run package
 ```
 
-`test:live` fetches the official page and tests it locally; no online match is joined. CI uses deterministic fixtures, not the changing live website. See [contributing](CONTRIBUTING.md) for browser overrides and release rules.
+| Task | Command or guide |
+| --- | --- |
+| Layout, local links and runtime import closure | `npm run check` or `npm run check:layout` |
+| Mathematical worked examples | `npm run test:math-docs` |
+| Fresh native arithmetic | `npm run test:math-native` |
+| Downloaded-source local integration/spatial replay | `npm run test:live`, `npm run test:spatial` |
+| Installed official-game diagnostics | [MCP runbook](docs/testing/AGENT_EXPERIMENT_HANDOFF.md), `npm run audit:live` |
+| Approximate policy/CPU benchmarks | `npm run benchmark`, `npm run benchmark:cpu` |
+| Prospective official outcomes | [Very Hard standard](docs/testing/VERY_HARD_TEST.md) |
+
+Offline fixtures do not join an official online match. Fresh-source commands
+fetch the changing public bundle and may fail its signatures. CI verifies the
+curated offline, browser/UI and package gates; current native compatibility and
+real-game effectiveness are separate checks. See [contributing](CONTRIBUTING.md).
 
 ## Engine and evidence
 
-The shipped kernel is [`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js), loaded in both browser worlds. V2.8 adds a shared tick-based planning model, source-mapped income/outgoing fronts, global coalition sizing, budget-safe allocation and weighted belief intervals. It retains neutral-first expansion, lobby-wide duel detection, a 55%-capacity combat-bank target, incoming-aware targeting, timed opening recovery and native-boundary reserve protection. Experimental tree search remains disabled. See [planning mathematics and limitations](docs/PLANNING_MODEL.md).
+[`content/engine-core-v2-advanced.js`](content/engine-core-v2-advanced.js) is loaded
+in both browser worlds through the adapter. It combines neutral-first expansion,
+incoming-aware targeting, rule-based spending, exact command accounting,
+conditional aggregate planning and bank observation. Native admission rechecks
+match, target, fronts, reserve and debit. Experimental tree search is disabled.
 
-V2.8.2 adds action-conditioned combat episodes, native command/settlement events, multi-horizon forecasts, disturbance censoring and offline parameter estimates to the opt-in frontier shadow. Production policy remains unchanged; the shadow model cannot control native attacks. See [recording instructions](docs/FRONTIER_MODEL.md) and [controlled-match calibration evidence](docs/FRONTIER_CALIBRATION.md). **Real Hard/Very Hard win-rate improvement remains unmeasured.** See [validation and reproduction](docs/VALIDATION.md); archived performance claims are not release claims.
+The integer allocator optimizes a specified separable utility; native single
+commands do not execute its allocation vector. Frontier models and numerical
+helpers have explicit research/coverage limits. **Reliable competitive strength
+and a win-rate improvement are unestablished.** Unsupported historical 81.20%
+win-rate and approximately 1 µs controller claims are withdrawn.
 
-Release 10.3.3 adds immutable spatial replay and native capture-cell attribution,
-plus a separate, un-packaged dynamic candidate. Its research cohort has 24 complete
-Very Hard native-source matches, 16 development and 8 frozen final evaluations.
-See [dynamic validation and limitations](docs/FRONTIER_DYNAMIC_VALIDATION.md).
-All 80 production decision/spend fingerprints remain unchanged. Another
-model-validation phase is required; no frontier model controls autoplay.
-
-## Repository
-
-- [Official mathematics test protocol](docs/MATH_TEST_PROTOCOL.md)
-- [Checked mathematical corrections and implementation claim register](docs/MATHEMATICAL_CORRECTIONS.md)
-- [Agent experiment instructions and handoff](docs/AGENT_EXPERIMENT_HANDOFF.md)
-- [Cycle 01: exact planner/native observation and action shadow](docs/PLANNER_SHADOW_CYCLE_01.md)
-- [Cycle 02: banking alternatives, Asia loss and negative findings](docs/BANKING_ALTERNATIVES_CYCLE_02.md)
-- [Capital-v1: opt-in live gameplay candidate and pilot](docs/CAPITAL_POLICY_PILOT.md)
-- [Impossible-mode improvement proposal](docs/IMPOSSIBLE_IMPROVEMENT_PROPOSAL.md)
-- [Architecture and ownership](docs/ARCHITECTURE.md)
-- [Validation and benchmark limits](docs/VALIDATION.md)
-- [20-match Very Hard test standard](docs/VERY_HARD_TEST.md)
-- [Measured CPU optimization and profiler](docs/CPU_OPTIMIZATION.md)
-- [Frontier shadow model and telemetry](docs/FRONTIER_MODEL.md)
-- [Changelog](docs/CHANGELOG.md)
-- [Historical source map](docs/SOURCE_MAP.md)
-- [Historical reports](docs/archive/)
-
-Runtime: `content/`, `shared/`, `background/`, `popup/`, `icons/`. Research: `experiments/`. Verification: `tests/`. Release tooling: `tools/`. Generated artifacts: ignored `dist/`.
+- [Architecture](docs/architecture/ARCHITECTURE.md)
+- [Planning model](docs/math/PLANNING_MODEL.md) and [math protocol](docs/math/MATH_TEST_PROTOCOL.md)
+- [Validation and limits](docs/testing/VALIDATION.md)
+- [Dynamic-frontier model study](docs/research/frontier/FRONTIER_DYNAMIC_VALIDATION.md)
+- [Capital-v1 pilot](docs/research/CAPITAL_POLICY_PILOT.md)
+- [Measured CPU work](docs/performance/CPU_OPTIMIZATION.md)
+- [Release history](docs/CHANGELOG.md) and [historical archive](docs/archive/README.md)
 
 ## Controls and diagnostics
 
-`Z`: pause/resume · `H`: compact/detailed/hidden HUD · `X`: toggle expansion · `C`: 25% allocation · `V`: 40% allocation · `B`: adaptive allocation. Shortcuts ignore editable controls and modifier keys.
+`Z`: pause/resume · `H`: HUD mode · `X`: expansion · `C`: 25% allocation ·
+`V`: 40% allocation · `B`: adaptive allocation. Shortcuts ignore editable controls
+and modifier keys. The toolbar ON badge reports the saved preference; live
+connection, arming and freshness are separate dashboard states.
 
-The popup reports live connection, spawn confirmation and telemetry freshness separately from the saved enable preference. The toolbar ON badge means only preference enabled. Advanced settings and diagnostics are collapsed by default. HUD is passive/click-through and compact mode hides during initial spawn. See [UI validation and remaining usability gate](docs/UI_UX_VALIDATION.md). No 9/10 rating is claimed without five-user task testing.
-
-v10.3.5 adds the supplied neon synthwave theme, with local pixel/monospace fonts,
-static scanlines and cyan/magenta frames. [Theme details and local validation](docs/NEON_THEME.md).
-
-In the game tab's DevTools console:
+In the game tab's MAIN DevTools context:
 
 ```js
 window.__TIO_HOOK_API__?.state()
 window.TIOGetEngineStatus?.()
-document.documentElement.getAttribute('data-tio-internal') // "1" when ready
+document.documentElement.getAttribute('data-tio-internal')
 ```
 
-If the hook is not ready, reload the extension and open a fresh game tab. Do not post access tokens, credential-helper output or downloaded game source in issues.
+See [UI behavior and verification](docs/ui/UI_UX_VALIDATION.md) and
+[theme assets](docs/ui/NEON_THEME.md). Do not publish credentials, browser
+profiles or downloaded game source in issues or commits.

@@ -1,4 +1,4 @@
-> Historical manuscript, corrected 2026-10-28. The original forward-invariance proof and soft-cap control formula are withdrawn; spectral rounding has no general exact-cut guarantee. The 81.20% / 500-match / 1 µs performance claims are withdrawn. See [checked corrections](../MATHEMATICAL_CORRECTIONS.md). Unreviewed theoretical sections are not validated descriptions of the shipped engine. The [pre-correction original](https://github.com/phamvotriduc241106/territorial-chrome-extension/blob/082eff4250ee910819d01994ec535eebcf395a56/docs/archive/DOCTORAL_THESIS_REPORT.md) remains in Git history.
+> Historical manuscript, corrected 2026-10-28. The original forward-invariance proof and soft-cap control formula are withdrawn; spectral rounding has no general exact-cut guarantee. The 81.20% / 500-match / 1 µs performance claims are withdrawn. See [checked corrections](../math/MATHEMATICAL_CORRECTIONS.md). Unreviewed theoretical sections are not validated descriptions of the shipped engine. The [pre-correction original](https://github.com/phamvotriduc241106/territorial-chrome-extension/blob/082eff4250ee910819d01994ec535eebcf395a56/docs/archive/DOCTORAL_THESIS_REPORT.md) remains in Git history.
 
 # Territorial.io Engineering Models — Corrected Historical Manuscript
 ## Historical Territorial.io engineering manuscript — corrected mathematical claims
@@ -29,7 +29,7 @@ integer constraints; native single-command attacks do not execute its allocation
 vector. No super-human performance, sub-microsecond controller latency, formal
 multi-front immunity or completed 500-match evaluation is established here.
 
-The [current claim register](../MATHEMATICAL_CORRECTIONS.md) provides source
+The [current claim register](../math/MATHEMATICAL_CORRECTIONS.md) provides source
 entry points, checked examples, dated evidence and outstanding validation work.
 
 ---
@@ -237,7 +237,7 @@ singular arc. In this toy model $u$ is a rate, not a slider fraction per native
 command. The proportional-cost assumption itself differs from the verified
 human fee based on the whole bank per command. The shipped
 `solvePontryaginOptimalControl` uses rules and clamps; it solves no adjoint or
-Hamiltonian boundary-value system. See the [full derivation and tax mismatch](../MATHEMATICAL_CORRECTIONS.md#2-correct-boundary-tangency-no-native-pmp-optimality-claim).
+Hamiltonian boundary-value system. See the [full derivation and tax mismatch](../math/MATHEMATICAL_CORRECTIONS.md#2-correct-boundary-tangency-no-native-pmp-optimality-claim).
 
 ### 2.4 Integer allocation for a specific separable utility
 
@@ -263,7 +263,7 @@ endpoints/ties. Exhaustive and DP oracles test its numerical output. Infeasible
 minimums produce a labelled priority fallback, not a KKT optimum. `planSpend`
 can compute allocation metadata, but the native single-command actuator does
 not execute the resulting vector. This objective is not a proved combat or
-victory model; see the [October 21 allocation audit](../MATH_AUDIT_2026_10_21.md).
+victory model; see the [October 21 allocation audit](../math/MATH_AUDIT_2026_10_21.md).
 
 ---
 
@@ -321,7 +321,7 @@ future opponent growth, arriving attacks or changing adjacency.
 A maximum-bank floor or weighted sum of neighboring banks is a risk heuristic
 unless verified transition/disturbance bounds and feasible controls establish
 invariance. No theorem here certifies coordinated-attack immunity or survival.
-See [checked assumptions and source references](../MATHEMATICAL_CORRECTIONS.md#1-a-reserve-inequality-is-not-a-forward-invariance-proof).
+See [checked assumptions and source references](../math/MATHEMATICAL_CORRECTIONS.md#1-a-reserve-inequality-is-not-a-forward-invariance-proof).
 
 ---
 
@@ -419,7 +419,7 @@ is a rounding heuristic for the real-vector relaxation. It does not generally
 solve exact minimum-cut or balanced-partition problems. The objective,
 normalization, balance constraints and threshold rule must be specified. See
 [Cornell's relaxation derivation](https://www.cs.cornell.edu/courses/cs5220/2020fa/lec/2020-11-10-part.html)
-and the [checked spectral counterexample](../MATHEMATICAL_CORRECTIONS.md#3-spectral-relaxation-does-not-certify-a-minimum-border-partition).
+and the [checked spectral counterexample](../math/MATHEMATICAL_CORRECTIONS.md#3-spectral-relaxation-does-not-certify-a-minimum-border-partition).
 
 ---
 
@@ -649,17 +649,17 @@ McNemar conclusions do not establish superiority or an acceptance milestone.
 
 The approximately 1 µs median and other sub-microsecond controller claims are
 not established for the shipped end-to-end controller. Use reproducible
-[CPU measurements](../CPU_OPTIMIZATION.md) with their exact benchmark scope,
+[CPU measurements](../performance/CPU_OPTIMIZATION.md) with their exact benchmark scope,
 hardware/runtime, warmups and distributions. A helper microbenchmark, historical
 audit timing or approximate simulator is not a current whole-browser result.
 
 ### 8.3 Actual official-game and model evidence
 
-The [October 22 live MCP comparison](../MCP_IMPOSSIBLE_LOOP_2026_10_22.md) records
+The [October 22 live MCP comparison](../research/MCP_IMPOSSIBLE_LOOP_2026_10_22.md) records
 four Impossible/512 losses, with separate random placements and a missing final
 observer tail. It establishes neither reliable competitive strength nor a
 causal treatment advantage. Short-horizon
-[dynamic-frontier validation](../FRONTIER_DYNAMIC_VALIDATION.md) is a controlled,
+[dynamic-frontier validation](../research/frontier/FRONTIER_DYNAMIC_VALIDATION.md) is a controlled,
 research-only transition study with coverage/censoring limitations; it does not
 show an improvement in official victories. The October 28 fresh public source
 is unknown to the adapter, so new native gameplay claims require a separate
@@ -694,7 +694,7 @@ figures must not be presented as verified results in a resume or application.
 
 ```sh
 npm run test:math-docs
-node --test tests/planning-math.test.cjs
+node --test tests/unit/planning-math.test.cjs
 npm test
 # Separate fresh-source audit; retain failures when signatures have changed:
 npm run test:math-native
@@ -702,5 +702,5 @@ npm run test:math-native
 
 This manuscript is an engineering artifact, not a certified doctoral thesis or
 an independent peer-review result. Unreviewed historical theoretical sections
-remain proposals; the [claim register](../MATHEMATICAL_CORRECTIONS.md) controls
+remain proposals; the [claim register](../math/MATHEMATICAL_CORRECTIONS.md) controls
 interpretation of current implementation and evidence.

@@ -1,4 +1,4 @@
-> Historical audit, preserved for reference. Paths and measurements describe the older checkout, not the current release. Its table label "CBF VERIFIED" records an implemented reserve check, not a proved invariant safe set. See the [corrected proof and claim register](../MATHEMATICAL_CORRECTIONS.md) and ../VALIDATION.md for dated evidence.
+> Historical audit, preserved for reference. Paths and measurements describe the older checkout, not the current release. Its table label "CBF VERIFIED" records an implemented reserve check, not a proved invariant safe set. See the [corrected proof and claim register](../math/MATHEMATICAL_CORRECTIONS.md) and ../VALIDATION.md for dated evidence.
 
 # Comprehensive Read-Only Audit Report: Territorial.io Autonomous Engine
 
@@ -137,7 +137,7 @@ Tracing the complete execution flow from game memory to actuation:
 | **Eikonal Geodesic PDE** | **NO (Internal Mode)** | **NOT VERIFIED** | `computeEikonalGeodesicField` is only invoked inside `rankTargets` (line 3537). In the shipped internal actuation path, `rankTargets` is never called. |
 | **Poisson Harmonic Field** | **NO (Internal Mode)** | **NOT VERIFIED** | `computePoissonPotentialField` is only invoked inside `rankTargets` (line 3505). Bypassed in internal mode. |
 | **Multi-Step MCTS** | **NO** | **FALSE** | `runMultiStepMCTS` is defined at line 1649 of `engine-core-v2-advanced.js`, but is **never called anywhere** in `decide()`. Completely dead code. |
-| **Counterfactual Kingmaker** | **NO** | **FALSE** | No counterfactual value delta operator $\Delta \text{Win}(j)$ exists in `engine-core-v2-advanced.js` or `content/engine-core.js`. It exists only in `experiments/test-counterfactual-kingmaker.cjs`. |
+| **Counterfactual Kingmaker** | **NO** | **FALSE** | No counterfactual value delta operator $\Delta \text{Win}(j)$ exists in `engine-core-v2-advanced.js` or `content/engine-core.js`. It exists only in `research/benchmarks/test-counterfactual-kingmaker.cjs`. |
 | **Bellman Naval Policy** | **NO** | **FALSE** | `computeNavalBridgeheadPolicy` is never called by `decide()`. Furthermore, `content/main-hook.js:1078` hardcodes `shipsEnabled() { return false; }`. |
 | **Zero Mouse Displacement** | **YES** | **VERIFIED** | Internal actuator uses direct memory dispatches (`bB.hZ.hg`). Zero synthetic DOM `MouseEvent` displacement. |
 | **Zero Camera Pan Drift** | **YES** | **VERIFIED** | Vision fallback in `content/controller.js:287–315` dispatches atomic taps with $\Delta x = 0, \Delta y = 0, \Delta t = 0\text{ ms}$ and zero `mousemove` events. Viewport remains stationary. |
@@ -149,7 +149,7 @@ Tracing the complete execution flow from game memory to actuation:
 
 ### 4.1 Win Rate Verification on `seeds-final-test.json` (60 Paired Matches)
 
-Executed via `tests/audit-benchmark-reproducer.cjs` against authentic `VeryHardBot` models under strict $1.30\times$ defender attrition advantage:
+Executed via `research/legacy/tests/audit-benchmark-reproducer.cjs` against authentic `VeryHardBot` models under strict $1.30\times$ defender attrition advantage:
 
 ```
 ====================================================================================================
@@ -171,7 +171,7 @@ UNSHIPPED Engine (content/engine-core.js)  34/60  (56.70%)     24/30  (80.00%)  
 
 ### 4.2 Decision Latency Verification (100,000 Iterations)
 
-Executed via `tests/audit-latency-check.cjs`:
+Executed via `research/legacy/tests/audit-latency-check.cjs`:
 
 ```
 ====================================================================================================
@@ -194,17 +194,17 @@ UNSHIPPED Engine (content/engine-core.js)   0.54 µs            0.76 µs        
 
 ### 5.1 Test Execution Results
 
-1. **`node tests/core.test.js`**:
+1. **`node tests/unit/core.test.js`**:
    - **Result: FAILED.** Throws `Error: engine core loaded`.
-   - **Root Cause:** `tests/core.test.js` is not an executable Node script. It depends on `globalThis.TIOEngineCore` being pre-initialized by a test harness.
-2. **`node tests/run.cjs`**:
+   - **Root Cause:** `tests/unit/core.test.js` is not an executable Node script. It depends on `globalThis.TIOEngineCore` being pre-initialized by a test harness.
+2. **`node tests/browser/run.cjs`**:
    - **Result: FAILED.** Throws `Cannot find module 'playwright-core'`.
    - **Root Cause:** Missing local dependency in the environment.
-3. **Harness-Wrapped Test Execution (`tests/audit-test-runner.cjs`)**:
-   - Running `tests/core.test.js` against `experiments/engine-core-v2-advanced.js`: **PASS (3,112 assertions)**.
-   - Running `tests/core.test.js` against `content/engine-core.js`: **FAILED.** Throws `Error: engine core loaded` at line 17 because `content/engine-core.js` declares `version: '10.1.0'` instead of `'10.2.2'`.
+3. **Harness-Wrapped Test Execution (`research/legacy/tests/audit-test-runner.cjs`)**:
+   - Running `tests/unit/core.test.js` against `experiments/engine-core-v2-advanced.js`: **PASS (3,112 assertions)**.
+   - Running `tests/unit/core.test.js` against `content/engine-core.js`: **FAILED.** Throws `Error: engine core loaded` at line 17 because `content/engine-core.js` declares `version: '10.1.0'` instead of `'10.2.2'`.
 
-### 5.2 Adversarial Test Suite Results (`tests/audit-adversarial.test.cjs`)
+### 5.2 Adversarial Test Suite Results (`research/legacy/tests/audit-adversarial.test.cjs`)
 
 ```
 ======================================================================
@@ -246,10 +246,10 @@ Result: 2 PASSED, 5 FAILED
 ## 7. Audit Artifacts & Repository Status
 
 ### Files Created for this Audit (Strictly within allowed scope):
-* `tests/audit-test-runner.cjs` (Harness to test `tests/core.test.js` against various engine files)
-* `tests/audit-benchmark-reproducer.cjs` (Independent paired match runner on `seeds-final-test.json`)
-* `tests/audit-latency-check.cjs` (Micro-benchmark for `decide()` and `planSpend()` latency)
-* `tests/audit-adversarial.test.cjs` (Adversarial test suite targeting dead code and invariants)
+* `research/legacy/tests/audit-test-runner.cjs` (Harness to test `tests/unit/core.test.js` against various engine files)
+* `research/legacy/tests/audit-benchmark-reproducer.cjs` (Independent paired match runner on `seeds-final-test.json`)
+* `research/legacy/tests/audit-latency-check.cjs` (Micro-benchmark for `decide()` and `planSpend()` latency)
+* `research/legacy/tests/audit-adversarial.test.cjs` (Adversarial test suite targeting dead code and invariants)
 * `AUDIT_REPORT.md` (This audit document)
 
 ### Existing Files Modified:
