@@ -3,14 +3,14 @@
 ## 10.3.11 — 2026-10-22 22:10:30 EDT
 
 - Restore verified native bindings for the renamed October 22 official game source (`live-modern-v4`), including ownership, income, native command observers and match identity. Unknown source families still fail closed.
-- Keep the default V2.8.2 policy and existing command safety checks. Four MCP Impossible/512 comparison games all lost; capital-v1 remains default off. Retain the captured journals, exact ledger checks and tail-coverage limitation in `docs/MCP_IMPOSSIBLE_LOOP_2026_10_22.md`.
+- Keep the default V2.8.2 policy and existing command safety checks. Four MCP Impossible/512 comparison games all lost; capital-v1 remains default off. Retain the captured journals, exact ledger checks and tail-coverage limitation in `docs/research/MCP_IMPOSSIBLE_LOOP_2026_10_22.md`.
 
 ## 10.3.10 — 2026-10-21 20:09:46 EDT
 
 - Fix integer front allocation by selecting discrete marginal gains in log space. Continuous rounding could leave an improving one-troop exchange; underflow could force troop-by-troop iteration through enormous budgets.
 - Treat explicit slider ceilings as inequalities: round down, and return zero for zero/nonfinite ceilings. Native reserve and debit constraints still apply.
 - Add regression/oracle tests and a separate fresh-source arithmetic audit, `npm run test:math-native`. All 80 frozen production decision/spend fixtures remain unchanged.
-- Disclose the October 21 native source-contract break. Fresh live/bootstrap/spatial checks fail closed; the arithmetic audit is not a gameplay or integration pass. See `docs/MATH_AUDIT_2026_10_21.md`. No strength improvement is claimed.
+- Disclose the October 21 native source-contract break. Fresh live/bootstrap/spatial checks fail closed; the arithmetic audit is not a gameplay or integration pass. See `docs/math/MATH_AUDIT_2026_10_21.md`. No strength improvement is claimed.
 
 ## 10.3.9 — 2026-10-14 19:08:36 EDT
 
@@ -126,7 +126,7 @@
 
 ## 10.2.4 — 2026-10-04 10:50:25 EDT
 
-- Moved the authoritative V2.7 engine into `content/`; moved two unshipped kernels into `experiments/legacy/`. Updated both manifest worlds, tests and research runners.
+- Moved the authoritative V2.7 engine into `content/`; moved two unshipped kernels into `research/legacy/engines/`. Updated both manifest worlds, tests and research runners.
 - Separated archived audit/product/manuscript reports from current architecture and measured validation documentation. Preserved historical content with explicit caveats.
 - Added portable npm commands, pinned Playwright, lockfile-backed development setup and read-only GitHub CI.
 - Added manifest/runtime/import and release-metadata contracts; separated browser-independent tests from browser harnesses.

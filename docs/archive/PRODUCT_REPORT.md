@@ -1,4 +1,4 @@
-> Historical report. The repeated 81.20% connected-land, 61.40% overall/500-match, significance and approximately 1 µs controller claims below are **withdrawn**, not verified results. Do not use them as achieved metrics in research or a resume. Its reserve language does not prove forward invariance. See [checked corrections](../MATHEMATICAL_CORRECTIONS.md) and [dated evidence](../VALIDATION.md). The remaining narrative is retained as historical context, not current product behavior.
+> Historical report. The repeated 81.20% connected-land, 61.40% overall/500-match, significance and approximately 1 µs controller claims below are **withdrawn**, not verified results. Do not use them as achieved metrics in research or a resume. Its reserve language does not prove forward invariance. See [checked corrections](../math/MATHEMATICAL_CORRECTIONS.md) and [dated evidence](../testing/VALIDATION.md). The remaining narrative is retained as historical context, not current product behavior.
 
 # Comprehensive Product Report: Territorial.io Autonomous Agent
 **Product Version:** Extension v10.2.2 (Manifest V3) | **Engine Core:** V2.6 Deterministic Synthesis  
@@ -168,7 +168,7 @@ Archipelago (4 Isolated Islands): [========            ] 31.20% ( 39 / 125 wins)
 
 ## 5. Failure Mode Taxonomy & Technical Root Causes
 
-A deep diagnostic mining of 60 recorded losses in [`experiments/phase7-results.json`](file:///Users/phamvotriduc/territorial-chrome-extension/experiments/phase7-results.json) isolated three distinct remaining technical hurdles:
+A deep diagnostic mining of 60 recorded losses in [`research/results/phase7-results.json`](file:///Users/phamvotriduc/territorial-chrome-extension/experiments/phase7-results.json) isolated three distinct remaining technical hurdles:
 
 ### 1. Maritime / Water Map Bottleneck (The ~61% Overall Ceiling)
 * **Finding:** On maps with connected geography (Europe and Voronoi), the engine achieves **81.20%**. On Archipelago, it drops to **31.20%**, and in `ISLAND_START` scenarios, it wins **0.0%** (0 / 15).
@@ -216,14 +216,14 @@ $$\text{Current Holdout } 61.40\% \xrightarrow{\text{V2.7-A (Naval)}} 73.0\% \xr
 ### 7.1 Running Automated Unit Tests
 To verify all core decision routines, soft-cap math, and Control Barrier Function constraints:
 ```bash
-node tests/core.test.js
+node tests/unit/core.test.js
 ```
 *(Expected: 2,951 passing assertions, 0 failures, execution time < 150 ms).*
 
 ### 7.2 Running Benchmark Replays & Holdouts
 To verify the paired holdout tournament on the frozen seed dataset:
 ```bash
-node experiments/paired-ab-runner.cjs
+node research/benchmarks/paired-ab-runner.cjs
 ```
 
 ### 7.3 Chrome Extension Live Verification

@@ -1,0 +1,60 @@
+# Runtime and repository map
+
+The manifest is the authority for shipped code. Both content-script worlds load `content/engine-core-v2-advanced.js` through `content/engine-adapter.js`; V1 is an explicit fallback. `research/legacy/engines/engine-core.js` and `engine-core-v2.js` are unshipped alternatives, not production policies.
+
+```text
+MAIN world: source adapter → preloader → main hook → native game command
+                                            ↑ state / ↓ command
+ISOLATED world: internal bridge → orchestrator → engine policy → spend budget
+```
+
+The MAIN hook validates the recognized source contract, target availability, current balance, front capacity, reserve and exact debit immediately before actuation. The isolated orchestrator owns arming, state freshness, intent, timing and one-command-in-flight dispatch. The bridge preserves game time, territory trend and incoming-threat context. Do not select a different target after a rejection or bypass the final reserve check.
+
+| Location | Responsibility | Packaged |
+| --- | --- | --- |
+| `manifest.json`, `shared/` | Load contract, settings and release identity | Yes |
+| `content/` | Shipped engines, sensing, bridge and actuation | Manifest-listed files only |
+| `background/`, `popup/`, `icons/` | Browser integration and UI | Runtime assets only |
+| `tests/` | Production contracts and browser harnesses | No |
+| `research/` | Simulators, candidate engines, seeds and benchmarks | No |
+| `docs/`, `docs/archive/` | Current guidance and preserved historical evidence | No |
+| `tools/` | Analysis and release tooling | No |
+| `dist/` | Generated load-unpacked extension directories and hashes | Ignored |
+
+No bundler is required. Chrome loads the repository directly, or the clean directory produced by `npm run package`. The explicit release closure rejects references outside production directories. Historical reports are archival context; their unsupported claims are superseded by the [October 28 mathematical corrections](../math/MATHEMATICAL_CORRECTIONS.md).
+
+The v10.3.4 popup and passive HUD share `shared/presentation.js` and
+`shared/ui.css`. Presentation derives lifecycle state from the orchestrator's
+read-only, timestamped `GET_STATUS` response, independently of saved preferences.
+It never supplies targets, budgets or commands to the engine. The toolbar badge
+reports only the saved enable preference. `hudMode` and `advancedExpanded` are
+presentation-only settings: changing either preserves planner settings identity,
+engine selection and command pacing. Pause remains an explicit user command;
+failed persistence is displayed as local-only rather than silently acknowledged.
+See [UI contracts and validation](../ui/UI_UX_VALIDATION.md).
+
+V2.8 retains one shipped kernel file, but separates planning-state normalization, command application, income stepping, aggregate settlement and utility evaluation into shared functions. MPC and the endgame bandit use that same model conditionally. The source adapter maps verified v3/v4 income parameters; the MAIN hook snapshots economy, outgoing fronts, global bank totals and leader identity; both orchestrator paths pass the context to planning. The October 28 public bundle is unknown and unsupported until separately verified. See PLANNING_MODEL.md and the mathematical claim register.
+
+Experimental tree search is disabled by default and has no call path from decide(). Native actuation remains independent of speculation: every command is repriced and validated from live state. Planning utilities are not calibrated win probabilities. The 10.2.4 restructuring was behavior-preserving; 10.3.0 intentionally changes planning mathematics.
+
+V2.8.2 loads MAIN-only `content/frontier-model.js` and `content/frontier-episodes.js` after the source adapter and before the hook. Explicit recording installs reversible native land-admission/debit/transfer/batch/reinforcement/return/clear/tick instrumentation. The episode recorder keeps logical native front IDs across force changes, observes exact ticks, conditions on current forces and censors later unmodeled disturbances. Geometry is reconciled at the origin and discarded after compact contact extraction; no raster is exported. Event-serial source versions, whole-observation versions and geometry versions are distinct.
+
+The bridge exposes `frontier-start/stop/report/drain`; the isolated actuator exposes `frontierShadow(command, options)`. None is called by normal autoplay. `tools/frontier/frontier-report.cjs`, `frontier-fit.cjs` and `frontier-record.cjs` are offline research tools and are not packaged. Parameter files have no runtime importer. No Workers, shared memory, WASM, WebGPU or tree-search activation are introduced. See FRONTIER_MODEL.md and FRONTIER_CALIBRATION.md.
+
+The new shadow research phase adds MAIN-only `frontier-spatial.js`. Its ownership
+versions expose no mutable buffers: 256-cell pages are shared until a sparse
+update touches them. `frontier.start({spatial:true})` records one reconciled RLE
+baseline and source-attributed deltas, with a bounded byte/event ring. Extra bank,
+cell/naval-debit and non-income credit hooks exist only in this explicit mode.
+
+`frontier-dynamic.js` is an independently loadable **research-only** transition.
+It is intentionally absent from the manifest and runtime package. It evolves
+native ordered frontier queues and uses a bounded sparse overlay, source combat
+arithmetic, source timer phase, reinforcement debt and capped refunds. The phase
+reader is a read-only, signature-checked addition in the local research harness,
+not a packaged source export. No production planner can select this candidate.
+
+The `frontier-study-*` tools separate spatial acceptance, development recording,
+grouped calibration, frozen held-out scoring, Chrome profiling and derived report
+publication. Raw match traces and source stay under ignored `scratch/`; the
+reviewable derived statistics and SHA-256 manifest are under `docs/evidence/frontier/`.
