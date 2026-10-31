@@ -1,0 +1,600 @@
+{
+  "reviewDate": "2026-10-30",
+  "reviewedCommit": "5cb3bf93a5c98ebccd546c05113bb15920fcdf3c",
+  "runtimeReleaseSha256": "0a3dfb07d29e39ff394345162d7858d8d33943dc4332fb0f789de0b1dc9b8cb6",
+  "limits": "Synthetic Node fixtures and source inspection; no new official-game matches or full-browser CPU profile.",
+  "tests": {
+    "nodeSubtests": 155,
+    "failures": 0,
+    "mathContractCompatibilityPolicyGates": "pass"
+  },
+  "freshPublicSource": {
+    "sourceSha256FromSpatialGate": "242b1ebcaaeb41bce841b3cc0bd4b97178180ccd82e0a788486609939de000f0",
+    "mathNative": "reject: ambiguous/missing native marker function aJR()",
+    "liveIntegration": "reject: unsupported live source unknown",
+    "spatial": "reject: unknown native spatial source"
+  },
+  "stateProbes": {
+    "unknownBalances": [
+      {
+        "enemy": {
+          "id": 2,
+          "terr": 100
+        },
+        "observer": 1000,
+        "action": "fight",
+        "reason": "crush-adj",
+        "crushable": true,
+        "enemyBal": 0
+      },
+      {
+        "enemy": {
+          "id": 2,
+          "terr": 100,
+          "bal": 0,
+          "balanceKnown": false
+        },
+        "observer": 1000,
+        "action": "fight",
+        "reason": "crush-adj",
+        "crushable": true,
+        "enemyBal": 0
+      },
+      {
+        "enemy": {
+          "id": 2,
+          "terr": 100,
+          "bal": 1000,
+          "balanceKnown": true
+        },
+        "observer": 1000,
+        "action": "hold",
+        "reason": "hard-build-combat-bank",
+        "crushable": false,
+        "enemyBal": 1000
+      }
+    ],
+    "aggregateCapture": {
+      "territoryBefore": 100,
+      "enemyTerritory": 100000,
+      "enemyBalance": 10,
+      "requestedRatio": 0.1,
+      "horizonTicks": 10,
+      "territoryAfter": 100100,
+      "balanceAfter": 4488
+    },
+    "threatTruncation": {
+      "physicalEnemies": 33,
+      "exportedEnemies": 32,
+      "omittedId": 34,
+      "actualLargestBalance": 1000000,
+      "largestEnemyTerritory": 10000,
+      "exportedLargestBalance": 100,
+      "fullReserve": 132079,
+      "truncatedReserve": 514,
+      "fullPlan": {
+        "canAfford": false,
+        "reason": "cbf-crush-immunity-floor"
+      },
+      "truncatedPlan": {
+        "canAfford": true,
+        "ratio": 0.1884765625
+      }
+    },
+    "extraction": {
+      "fixturePlayers": 512,
+      "modernGetterReads": 4860
+    }
+  },
+  "performanceProbes": {
+    "kind": "Synthetic Node microbenchmarks; no browser CPU or gameplay inference",
+    "ranking": [
+      {
+        "candidates": 64,
+        "returned": 24,
+        "calls": 9,
+        "medianMs": 0.9208329999999982,
+        "maxMs": 1.3478749999999984,
+        "quadraticBuffersBytes": null
+      },
+      {
+        "candidates": 256,
+        "returned": 24,
+        "calls": 9,
+        "medianMs": 4.305292000000009,
+        "maxMs": 4.648333000000001,
+        "quadraticBuffersBytes": 1309696
+      },
+      {
+        "candidates": 1024,
+        "returned": 24,
+        "calls": 9,
+        "medianMs": 57.980999999999995,
+        "maxMs": 58.90466699999996,
+        "quadraticBuffersBytes": 20967424
+      }
+    ],
+    "search": [
+      {
+        "enemies": 2,
+        "budgetMs": 0.5,
+        "calls": 15,
+        "medianMs": 0.5310410000000729,
+        "maxMs": 0.5416659999999638,
+        "lastResult": {
+          "bestAction": "hold",
+          "targetId": null,
+          "ratio": 0,
+          "expectedUtility": 0.306,
+          "winProb": 0.306,
+          "scoreKind": "heuristic-utility",
+          "modelKind": "aggregate-combat-estimate",
+          "rollouts": 13,
+          "actionVisits": 5,
+          "actionCount": 3,
+          "completeCoverage": true
+        }
+      },
+      {
+        "enemies": 16,
+        "budgetMs": 0.5,
+        "calls": 15,
+        "medianMs": 0.5987909999998919,
+        "maxMs": 0.6602080000000115,
+        "lastResult": {
+          "bestAction": "hold",
+          "targetId": null,
+          "ratio": 0,
+          "expectedUtility": 0,
+          "winProb": 0,
+          "scoreKind": "heuristic-utility",
+          "modelKind": "aggregate-combat-estimate",
+          "rollouts": 3,
+          "actionVisits": 1,
+          "actionCount": 17,
+          "completeCoverage": false
+        }
+      },
+      {
+        "enemies": 32,
+        "budgetMs": 0.5,
+        "calls": 15,
+        "medianMs": 0.8057079999999814,
+        "maxMs": 0.9078340000000935,
+        "lastResult": {
+          "bestAction": "hold",
+          "targetId": null,
+          "ratio": 0,
+          "expectedUtility": 0,
+          "winProb": 0,
+          "scoreKind": "heuristic-utility",
+          "modelKind": "aggregate-combat-estimate",
+          "rollouts": 2,
+          "actionVisits": 1,
+          "actionCount": 17,
+          "completeCoverage": false
+        }
+      }
+    ],
+    "coordinateScale": {
+      "normalized1000": {
+        "origin": [
+          500,
+          500
+        ],
+        "target": [
+          900,
+          500
+        ],
+        "travelTime": 6
+      },
+      "grid320x180": {
+        "origin": [
+          160,
+          90
+        ],
+        "target": [
+          288,
+          90
+        ],
+        "travelTime": 2
+      }
+    }
+  },
+  "cpuBenchmarkRuns": [
+    {
+      "evidence": "Node microbenchmarks on fixed fixtures, not browser/game win rate or total CPU/power",
+      "baselineCommit": "188b1bf",
+      "host": {
+        "cpu": "Apple M4",
+        "logicalCpus": 10,
+        "architecture": "arm64",
+        "node": "v26.12.1"
+      },
+      "policyFixturesCompared": 80,
+      "changedDecisionFixtures": 48,
+      "changedSpendFixtures": 0,
+      "comparisonKind": "Different planning models: latency comparison, not behavior-preserving CPU optimization",
+      "engineFixtureKind": "80 follower states; speculative search cannot veto these decisions",
+      "engine": {
+        "baseline": {
+          "calls": 1200,
+          "meanMs": 0.19151176083333388,
+          "p50Ms": 0.12125000000000341,
+          "p95Ms": 0.5484170000000006,
+          "p99Ms": 0.584666999999996
+        },
+        "updated": {
+          "calls": 1200,
+          "meanMs": 0.02843329083333387,
+          "p50Ms": 0.02916699999997263,
+          "p95Ms": 0.03908400000000256,
+          "p99Ms": 0.04741599999999835
+        }
+      },
+      "leadingFixtureKind": "Three-player leading state; endgame search is active",
+      "leadingEngine": {
+        "baseline": {
+          "calls": 300,
+          "meanMs": 0.09295111333333239,
+          "p50Ms": 0.09266700000000583,
+          "p95Ms": 0.10470900000001393,
+          "p99Ms": 0.13683299999996734
+        },
+        "updated": {
+          "calls": 300,
+          "meanMs": 0.5501759833333327,
+          "p50Ms": 0.5491670000000113,
+          "p95Ms": 0.5693750000000364,
+          "p99Ms": 0.5860000000000127
+        }
+      },
+      "grid": {
+        "baseline": {
+          "calls": 400,
+          "meanMs": 0.08606468500000006,
+          "p50Ms": 0.08608300000003055,
+          "p95Ms": 0.09624999999994088,
+          "p99Ms": 0.10437500000000455,
+          "initialCellObjects": 0
+        },
+        "updated": {
+          "calls": 400,
+          "meanMs": 0.08814533999999952,
+          "p50Ms": 0.08870899999999438,
+          "p95Ms": 0.1003329999999778,
+          "p99Ms": 0.11533299999996416,
+          "initialCellObjects": 0
+        }
+      },
+      "unchangedSnapshotGate": {
+        "frames": 600,
+        "evaluations": 100,
+        "skipped": 500
+      },
+      "cpuProfile": {
+        "enabled": true,
+        "elapsedSec": 0.7545722499999999,
+        "capacity": 256,
+        "timing": "inclusive synchronous time; nested metrics overlap; rates since reset",
+        "metrics": {
+          "kernel.coalition": {
+            "calls": 1900,
+            "meanMs": 0.0005804405263166688,
+            "p50Ms": 0.0007090000000289365,
+            "p95Ms": 0.0012500000000272848,
+            "p99Ms": 0.0018750000000409273,
+            "callsPerSec": 2517.9828704275833,
+            "cpuMsPerSec": 1.461539302567343,
+            "recentSamples": 256
+          },
+          "engine.decide": {
+            "calls": 1900,
+            "meanMs": 0.14471805789473804,
+            "p50Ms": 0.5269170000000258,
+            "p95Ms": 0.5477499999999509,
+            "p99Ms": 0.5717920000000731,
+            "callsPerSec": 2517.9828704275833,
+            "cpuMsPerSec": 364.3975908204977,
+            "recentSamples": 256
+          },
+          "kernel.pmp": {
+            "calls": 1828,
+            "meanMs": 0.004050429431073321,
+            "p50Ms": 0.0028750000000172804,
+            "p95Ms": 0.0035830000000487416,
+            "p99Ms": 0.004124999999930878,
+            "callsPerSec": 2422.5645721798014,
+            "cpuMsPerSec": 9.812426841832616,
+            "recentSamples": 256
+          },
+          "engine.planSpend": {
+            "calls": 1900,
+            "meanMs": 0.020982215263157997,
+            "p50Ms": 0.020083999999997104,
+            "p95Ms": 0.02500000000009095,
+            "p99Ms": 0.030375000000049113,
+            "callsPerSec": 2517.9828704275833,
+            "cpuMsPerSec": 52.83285861625603,
+            "recentSamples": 256
+          },
+          "kernel.mcts": {
+            "calls": 500,
+            "meanMs": 0.5237304980000022,
+            "p50Ms": 0.520917000000054,
+            "p95Ms": 0.5419170000000122,
+            "p99Ms": 0.5631670000000213,
+            "callsPerSec": 662.6270711651536,
+            "cpuMsPerSec": 347.0380059696088,
+            "recentSamples": 256
+          }
+        }
+      }
+    },
+    {
+      "evidence": "Node microbenchmarks on fixed fixtures, not browser/game win rate or total CPU/power",
+      "baselineCommit": "188b1bf",
+      "host": {
+        "cpu": "Apple M4",
+        "logicalCpus": 10,
+        "architecture": "arm64",
+        "node": "v26.12.1"
+      },
+      "policyFixturesCompared": 80,
+      "changedDecisionFixtures": 48,
+      "changedSpendFixtures": 0,
+      "comparisonKind": "Different planning models: latency comparison, not behavior-preserving CPU optimization",
+      "engineFixtureKind": "80 follower states; speculative search cannot veto these decisions",
+      "engine": {
+        "baseline": {
+          "calls": 1200,
+          "meanMs": 0.19532855083333348,
+          "p50Ms": 0.12729199999998286,
+          "p95Ms": 0.5533750000000168,
+          "p99Ms": 0.5914579999999887
+        },
+        "updated": {
+          "calls": 1200,
+          "meanMs": 0.02890065416666701,
+          "p50Ms": 0.029583999999999833,
+          "p95Ms": 0.04004200000002811,
+          "p99Ms": 0.04675000000003138
+        }
+      },
+      "leadingFixtureKind": "Three-player leading state; endgame search is active",
+      "leadingEngine": {
+        "baseline": {
+          "calls": 300,
+          "meanMs": 0.09345375000000065,
+          "p50Ms": 0.09266700000000583,
+          "p95Ms": 0.10162500000001273,
+          "p99Ms": 0.14329200000003084
+        },
+        "updated": {
+          "calls": 300,
+          "meanMs": 0.5505769199999978,
+          "p50Ms": 0.5497080000000096,
+          "p95Ms": 0.5693340000000262,
+          "p99Ms": 0.580208999999968
+        }
+      },
+      "grid": {
+        "baseline": {
+          "calls": 400,
+          "meanMs": 0.0864538925000008,
+          "p50Ms": 0.08683299999995597,
+          "p95Ms": 0.09637500000008004,
+          "p99Ms": 0.10500000000001819,
+          "initialCellObjects": 0
+        },
+        "updated": {
+          "calls": 400,
+          "meanMs": 0.0855257374999988,
+          "p50Ms": 0.08262500000000728,
+          "p95Ms": 0.09666699999991124,
+          "p99Ms": 0.10654199999999037,
+          "initialCellObjects": 0
+        }
+      },
+      "unchangedSnapshotGate": {
+        "frames": 600,
+        "evaluations": 100,
+        "skipped": 500
+      },
+      "cpuProfile": {
+        "enabled": true,
+        "elapsedSec": 0.761490375,
+        "capacity": 256,
+        "timing": "inclusive synchronous time; nested metrics overlap; rates since reset",
+        "metrics": {
+          "kernel.coalition": {
+            "calls": 1900,
+            "meanMs": 0.0006087552631584303,
+            "p50Ms": 0.0007919999999330685,
+            "p95Ms": 0.0012080000000196378,
+            "p99Ms": 0.0018749999999272404,
+            "callsPerSec": 2495.1070458375784,
+            "cpuMsPerSec": 1.5189095462973086,
+            "recentSamples": 256
+          },
+          "engine.decide": {
+            "calls": 1900,
+            "meanMs": 0.14521528578947349,
+            "p50Ms": 0.5285840000000235,
+            "p95Ms": 0.5452080000000024,
+            "p99Ms": 0.5555420000000595,
+            "callsPerSec": 2495.1070458375784,
+            "cpuMsPerSec": 362.3276827366329,
+            "recentSamples": 256
+          },
+          "kernel.pmp": {
+            "calls": 1828,
+            "meanMs": 0.004064858862145762,
+            "p50Ms": 0.0028750000000172804,
+            "p95Ms": 0.0036250000000563887,
+            "p99Ms": 0.0038329999999859865,
+            "callsPerSec": 2400.555620942681,
+            "cpuMsPerSec": 9.75791978986268,
+            "recentSamples": 256
+          },
+          "engine.planSpend": {
+            "calls": 1900,
+            "meanMs": 0.021270779473684102,
+            "p50Ms": 0.020250000000032742,
+            "p95Ms": 0.0246670000000222,
+            "p99Ms": 0.030167000000005828,
+            "callsPerSec": 2495.1070458375784,
+            "cpuMsPerSec": 53.072871735246544,
+            "recentSamples": 256
+          },
+          "kernel.mcts": {
+            "calls": 500,
+            "meanMs": 0.5248365199999988,
+            "p50Ms": 0.522583999999938,
+            "p95Ms": 0.537166999999954,
+            "p99Ms": 0.544208000000026,
+            "callsPerSec": 656.6071173256786,
+            "cpuMsPerSec": 344.6113944644401,
+            "recentSamples": 256
+          }
+        }
+      }
+    },
+    {
+      "evidence": "Node microbenchmarks on fixed fixtures, not browser/game win rate or total CPU/power",
+      "baselineCommit": "188b1bf",
+      "host": {
+        "cpu": "Apple M4",
+        "logicalCpus": 10,
+        "architecture": "arm64",
+        "node": "v26.12.1"
+      },
+      "policyFixturesCompared": 80,
+      "changedDecisionFixtures": 48,
+      "changedSpendFixtures": 0,
+      "comparisonKind": "Different planning models: latency comparison, not behavior-preserving CPU optimization",
+      "engineFixtureKind": "80 follower states; speculative search cannot veto these decisions",
+      "engine": {
+        "baseline": {
+          "calls": 1200,
+          "meanMs": 0.1959510683333329,
+          "p50Ms": 0.12708299999999895,
+          "p95Ms": 0.5570000000000164,
+          "p99Ms": 0.5891669999999749
+        },
+        "updated": {
+          "calls": 1200,
+          "meanMs": 0.029064421666666125,
+          "p50Ms": 0.02983399999999392,
+          "p95Ms": 0.03895799999997962,
+          "p99Ms": 0.04529200000001765
+        }
+      },
+      "leadingFixtureKind": "Three-player leading state; endgame search is active",
+      "leadingEngine": {
+        "baseline": {
+          "calls": 300,
+          "meanMs": 0.0947302933333331,
+          "p50Ms": 0.09324999999995498,
+          "p95Ms": 0.10683299999999463,
+          "p99Ms": 0.13795799999996916
+        },
+        "updated": {
+          "calls": 300,
+          "meanMs": 0.5518531866666653,
+          "p50Ms": 0.55112500000007,
+          "p95Ms": 0.5698330000000169,
+          "p99Ms": 0.5989170000000286
+        }
+      },
+      "grid": {
+        "baseline": {
+          "calls": 400,
+          "meanMs": 0.08776168250000126,
+          "p50Ms": 0.08895800000004783,
+          "p95Ms": 0.09729099999992741,
+          "p99Ms": 0.10691700000006676,
+          "initialCellObjects": 0
+        },
+        "updated": {
+          "calls": 400,
+          "meanMs": 0.0871293749999964,
+          "p50Ms": 0.08641699999998309,
+          "p95Ms": 0.10020799999995234,
+          "p99Ms": 0.10812499999997272,
+          "initialCellObjects": 0
+        }
+      },
+      "unchangedSnapshotGate": {
+        "frames": 600,
+        "evaluations": 100,
+        "skipped": 500
+      },
+      "cpuProfile": {
+        "enabled": true,
+        "elapsedSec": 0.763307458,
+        "capacity": 256,
+        "timing": "inclusive synchronous time; nested metrics overlap; rates since reset",
+        "metrics": {
+          "kernel.coalition": {
+            "calls": 1900,
+            "meanMs": 0.0006024636842106116,
+            "p50Ms": 0.0007500000000391083,
+            "p95Ms": 0.001167000000009466,
+            "p99Ms": 0.0017910000000256332,
+            "callsPerSec": 2489.167346770507,
+            "cpuMsPerSec": 1.4996329303521123,
+            "recentSamples": 256
+          },
+          "engine.decide": {
+            "calls": 1900,
+            "meanMs": 0.14548917947368445,
+            "p50Ms": 0.5295830000000024,
+            "p95Ms": 0.5482499999999391,
+            "p99Ms": 0.5784159999999474,
+            "callsPerSec": 2489.167346770507,
+            "cpuMsPerSec": 362.14691485432917,
+            "recentSamples": 256
+          },
+          "kernel.pmp": {
+            "calls": 1828,
+            "meanMs": 0.004094460612691115,
+            "p50Ms": 0.0028750000000172804,
+            "p95Ms": 0.003167000000075859,
+            "p99Ms": 0.0036659999999528736,
+            "callsPerSec": 2394.841005208677,
+            "cpuMsPerSec": 9.805582169484525,
+            "recentSamples": 256
+          },
+          "engine.planSpend": {
+            "calls": 1900,
+            "meanMs": 0.021368451052631125,
+            "p50Ms": 0.020250000000032742,
+            "p95Ms": 0.023957999999993262,
+            "p99Ms": 0.030791000000021995,
+            "callsPerSec": 2489.167346770507,
+            "cpuMsPerSec": 53.189650611273265,
+            "recentSamples": 256
+          },
+          "kernel.mcts": {
+            "calls": 500,
+            "meanMs": 0.5259207320000019,
+            "p50Ms": 0.5236669999999322,
+            "p95Ms": 0.5407910000000129,
+            "p99Ms": 0.5720000000000027,
+            "callsPerSec": 655.0440386238175,
+            "cpuMsPerSec": 344.5012402852756,
+            "recentSamples": 256
+          }
+        }
+      }
+    }
+  ],
+  "independentChecks": {
+    "reserveFloorOracle": "exact rational ceiling of threat/7.6 plus 500",
+    "quantizedExampleSent": 498,
+    "quantizedExampleTax": 58,
+    "spectral1024QuadraticBytes": 20967424,
+    "grid320x180OccupiedMacroCells": 12
+  }
+}

@@ -6,6 +6,7 @@ its repository-root `manifest.json`; research and evidence have separate homes.
 | Task | Start here |
 | --- | --- |
 | Understand the running extension | [Architecture](architecture/ARCHITECTURE.md) |
+| Review algorithms, state defects and improvement priorities | [October 30 computer science review](architecture/COMPUTER_SCIENCE_REVIEW_2026_10_30.md) |
 | Check implementation versus mathematical claims | [Corrections and claim register](math/MATHEMATICAL_CORRECTIONS.md) |
 | Change or verify mathematics | [Math test protocol](math/MATH_TEST_PROTOCOL.md), [planning model](math/PLANNING_MODEL.md) |
 | Run the official single-player MCP improvement loop | [Agent runbook](testing/AGENT_EXPERIMENT_HANDOFF.md) |
