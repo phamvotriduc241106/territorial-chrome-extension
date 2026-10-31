@@ -32,3 +32,8 @@ stay outside tracked research data. Approximate simulator output, a numerical
 helper, or a low prediction error does not establish official-game strength.
 Read the [mathematical claim register](../docs/math/MATHEMATICAL_CORRECTIONS.md)
 and [MCP runbook](../docs/testing/AGENT_EXPERIMENT_HANDOFF.md) before treatment.
+
+The two `benchmarks/engine-review-*-probes.cjs` CLIs reproduce dated synthetic
+findings from the [October 30 CS review](../docs/architecture/COMPUTER_SCIENCE_REVIEW_2026_10_30.md).
+They require that reviewed runtime hash and are separate from release gates;
+after a fix, reproduce historical findings from the archived audit revision.
