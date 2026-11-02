@@ -1,5 +1,10 @@
 # Changelog
 
+## 10.3.12 — 2026-11-02 15:58:44 EST
+
+- Restore current-source native integration through structurally checked `live-modern-v6` bindings. Keep the V2.8.2 policy, reserve/debit checks and unknown-source rejection unchanged.
+- Validate original income/command routines, ownership, combat, event restoration and an installed MCP single-player flow. Detailed ENG-01 evidence and limits are recorded in the November 2 report.
+
 ## 10.3.11 — 2026-10-22 22:10:30 EDT
 
 - Restore verified native bindings for the renamed October 22 official game source (`live-modern-v4`), including ownership, income, native command observers and match identity. Unknown source families still fail closed.

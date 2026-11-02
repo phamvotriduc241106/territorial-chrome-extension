@@ -36,8 +36,15 @@ async function audit(source) {
     assert.ok(response.ok, 'Official source HTTP ' + response.status);
     source = await response.text();
   }
-  // A source-family boundary, independent of the production v3 adapter.
-  const economySource = nativeFunction(source, 'function aJR()');
+  const adapterBox = {};
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'content/source-adapter.js'), 'utf8'), adapterBox);
+  const adapter = adapterBox.TIOSourceAdapter, family = adapter.detectContract(source);
+  assert.ok(['live-modern-v4', 'live-modern-v6'].includes(family), 'Unsupported native arithmetic source: ' + family);
+  // Execute original arithmetic with explicit alpha-renamed bindings. Operators,
+  // constants and control flow are unchanged; independent oracles remain below.
+  const extract = marker => adapter.mapNativeSnippet(nativeFunction(source,
+    adapter.mapNativeSnippet(marker, family)), family, true);
+  const economySource = extract('function aJR()');
   for (const token of ['13440-6*bc.ql()', 'this.bb=function(player)', '100*y.aO[player]', 'this.b8=function()'])
     assert.ok(economySource.includes(token), 'Unverified economy routine: ' + token);
   const box = environment();
@@ -49,14 +56,14 @@ async function audit(source) {
     ij: { aUC: [0], zr: [0, 0] }, pz: { qH: new Array(32).fill(0) },
     a0n: { iu: (player, sent) => { native.sent = sent; } },
     aAZ: { yd() {} }, aTz() {}, tick: 9, disabled: false, q: {}, aIw: {} });
-  native.q.aN = vm.runInContext('(' + nativeFunction(source, 'this.aN=function(cy,cT)') + ')', native);
+  native.q.aN = vm.runInContext('(' + extract('this.aN=function(') + ')', native);
   for (const name of ['aPX', 'aPY'])
-    vm.runInContext(nativeFunction(source, 'function ' + name + '('), native);
+    vm.runInContext(extract('function ' + name + '('), native);
   for (const name of ['py', 'aYY', 'aTU', 'aTe'])
-    native.aa.bY[name] = vm.runInContext('(' + nativeFunction(source, 'this.' + name + '=function(') + ')', native);
+    native.aa.bY[name] = vm.runInContext('(' + extract('this.' + name + '=function(') + ')', native);
   for (const name of ['aNK', 'aNL'])
-    native.aIw[name] = vm.runInContext('(' + nativeFunction(source, 'this.' + name + '=function(') + ')', native);
-  native.bot = vm.runInContext('(' + nativeFunction(source, 'this.aHD=function(') + ')', native);
+    native.aIw[name] = vm.runInContext('(' + extract('this.' + name + '=function(') + ')', native);
+  native.bot = vm.runInContext('(' + extract('this.aHD=function(') + ')', native);
   native.ay = vm.runInContext('new (' + economySource + ')()', native);
   native.ay.a2p();
   const settings = [
@@ -107,7 +114,7 @@ async function audit(source) {
     commandCases++;
   }
   return { sourceSha256: crypto.createHash('sha256').update(source).digest('hex'),
-    nativeFamily: '2026-10-21-renamed-bundle', incomeCases, humanCommandCases: commandCases,
+    nativeFamily: family, incomeCases, humanCommandCases: commandCases,
     botCommandCases: commandCases, integrationVerified: false, status: 'passed' };
 }
 if (require.main === module) audit(process.argv[2] && fs.readFileSync(process.argv[2], 'utf8'))

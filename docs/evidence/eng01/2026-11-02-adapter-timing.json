@@ -1,0 +1,18 @@
+[
+  {
+    "kind": "live-modern-v4",
+    "calls": 100,
+    "warmups": 10,
+    "p50Ms": 0.0003750000000000142,
+    "p95Ms": 0.0008750000000006253,
+    "meaning": "Node snippet construction only; families differ; no installed-game CPU inference"
+  },
+  {
+    "kind": "live-modern-v6",
+    "calls": 100,
+    "warmups": 10,
+    "p50Ms": 0.7907920000000033,
+    "p95Ms": 0.8635829999999984,
+    "meaning": "Node snippet construction only; families differ; no installed-game CPU inference"
+  }
+]

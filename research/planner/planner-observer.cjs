@@ -144,7 +144,7 @@ function installNativeObserver(game, options = {}) {
   const v4 = game.contract === 'live-modern-v4';
   const incomingName = v4 ? 'pv' : 'hc', attackName = v4 ? 'xn' : 'i6';
   const incomingOwner = game.ae, attackOwner = v4 ? game.bB?.a1M : game.bB?.hz;
-  if (!['live-modern-v3', 'live-modern-v4'].includes(game.contract) ||
+  if (!['live-modern-v3', 'live-modern-v4', 'live-modern-v6'].includes(game.contract) ||
       text(modern.incoming) !== (v4 ? 'function(p,t){returna0n.pv(p,t)}' : 'function(p,t){returnae.hc(p,t)}') ||
       text(modern.attack) !== (v4 ? 'function(code,t){returnss.a1M.xn(code,t)}' : 'function(code,t){returnbB.hz.i6(code,t)}') ||
       typeof incomingOwner?.[incomingName] !== 'function' || typeof attackOwner?.[attackName] !== 'function')

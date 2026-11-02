@@ -3,7 +3,7 @@
 // This is integration/math evidence, never an official gameplay outcome.
 async function verify(page) {
   return page.evaluate(async () => {
-    const g = window.__TIO_GAME__, api = window.__TIO_HOOK_API__, core = window.TIOEngineCore;
+    const g = window.__TIO_NATIVE_FIXTURE_VIEW__(window.__TIO_GAME__), api = window.__TIO_HOOK_API__, core = window.TIOEngineCore;
     const raster = g.modern.ownership(4194304);
     if (!raster || raster.counts.some((n,p) => n !== g.modern.territory(p))) throw Error('Ownership mismatch');
     let combatCases = 0, incomeCases = 0;
