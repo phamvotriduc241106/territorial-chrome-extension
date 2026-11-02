@@ -1,0 +1,510 @@
+{
+  "schema": 1,
+  "ticket": "ENG-01",
+  "date": "2026-11-02",
+  "baselineCommit": "ddc2c29139410b434f5f26c23ac9fe221916c284",
+  "release": {
+    "extensionVersion": "10.3.12",
+    "engineVersion": "V2.8.2",
+    "updatedAt": "2026-11-02 15:58:44 EST",
+    "releaseSha256": "6191c1e7794cc4e452d8e6d7455019a066ff8ce0646969e0271431d984bff055",
+    "engineSha256": "b7013850c1b3262c0fa5af59db84281a737df0db6d1f975edab468f929b9eb33",
+    "settings": {
+      "botEnabled": true,
+      "engineVersion": 2,
+      "autoExpand": true,
+      "autoAttack": true,
+      "clickSpeed": 4,
+      "sliderPercentage": 0,
+      "hotkeysEnabled": true,
+      "strategy": "aggressive",
+      "allowVisionFallback": true,
+      "visionFps": 12,
+      "allowCameraAccess": false,
+      "hudMode": "compact",
+      "advancedExpanded": false,
+      "settingsSchema": 2
+    }
+  },
+  "sourceSha256": "0446414b842bfcf43078afb98f50fcce60ecf740d82b5e418ba714cd31df4e04",
+  "contract": "live-modern-v6",
+  "arithmetic": {
+    "income": 1512,
+    "humanCommands": 6144,
+    "botCommands": 6144
+  },
+  "integration": {
+    "combat": 292,
+    "income": 54,
+    "ownershipCells": 262144,
+    "ownershipPlayers": 512,
+    "restoredFunctions": 16,
+    "spatialSupportCases": 252
+  },
+  "live": {
+    "sourceHash": "0446414b842bfcf43078afb98f50fcce60ecf740d82b5e418ba714cd31df4e04",
+    "outcome": "loss",
+    "observedDurationSeconds": 50.819,
+    "terminalTick": 904,
+    "peakObservedLand": 1997,
+    "decisions": 537,
+    "submissions": 31,
+    "receipts": 31,
+    "nativeCommands": 31,
+    "uniquelyJoined": 31,
+    "debitViolations": 0,
+    "reserveViolations": 0,
+    "debitCeilingViolations": 0,
+    "snapshotMismatches": 0,
+    "unjoinedNative": 0,
+    "tailExported": true,
+    "observerDrops": 0,
+    "observerErrors": 0,
+    "dispatchLatency": {
+      "meaning": "wall-clock submission-to-receipt, includes bridge/observer scheduling, not CPU or game acknowledgement tick",
+      "samples": 31,
+      "p50Ms": 8,
+      "p95Ms": 12
+    }
+  },
+  "strengthClaim": false,
+  "otherTicketsCompleted": false,
+  "setupErrors": 1,
+  "setupReason": "DPR=2 prevented the assigned spawn; retained before retry at DPR=1. Initial reconnect/leaderboard explanation was an unverified hypothesis, corrected in the raw samples.",
+  "observerTailExported": true,
+  "artifact": {
+    "file": "2026-11-02-eng01-live.json.gz",
+    "sha256": "597ee6f630dab39bcbcb6b1d80509b70d88589f299203b7ef4e2c61d109312f9"
+  },
+  "logArtifact": {
+    "file": "2026-11-02-eng01-logs.json.gz",
+    "sha256": "f2677b7f06d47fd18105ea21f4d98139801bae727442178eac0f910fbfdc5638"
+  },
+  "screenshots": {
+    "settings": {
+      "file": "2026-11-02-settings.png",
+      "sha256": "9f2d50501717f9f925ef51f82403292643979e2af6daf7eeb406e90d0ede4bfe"
+    },
+    "selection": {
+      "file": "2026-11-02-selection.png",
+      "sha256": "ddef5c280e3150092643d5c308946bbf22a116672949dd0aac0c07dbcb8dc5a1"
+    },
+    "viewport-corrected": {
+      "file": "2026-11-02-viewport-corrected.png",
+      "sha256": "526a6b3f06b4af947f0bf2ec830e48f025934f1a58db4bf92def29f5a65b64c3"
+    },
+    "retry1-before-spawn": {
+      "file": "2026-11-02-retry1-before-spawn.png",
+      "sha256": "d98f1e3ccda03f13d57c60b55cdfa241cac9a64df0f9d07cc3c34d8e01d799a4"
+    },
+    "retry1-start": {
+      "file": "2026-11-02-retry1-start.png",
+      "sha256": "a0db178201191770e6c4f01a1d59d267e57e5cb7447fd599b7ad4cf675fa3007"
+    },
+    "retry1-finish": {
+      "file": "2026-11-02-retry1-finish.png",
+      "sha256": "8c94ebe95202dcb1fe103b502c8d7c1c7dd7f50b96d78d02c41d2fc23c4ea88d"
+    }
+  },
+  "commands": {
+    "baseline-install": {
+      "id": "baseline-install",
+      "command": [
+        "npm",
+        "ci"
+      ],
+      "began": "2026-11-02T20:56:35.703Z",
+      "ended": "2026-11-02T20:56:36.277Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "baseline-install.log",
+      "sha256": "d70aac6124570944107c10be413c5254e6c0040094112befc4593fe4bde483c0"
+    },
+    "baseline-math-native": {
+      "id": "baseline-math-native",
+      "command": [
+        "npm",
+        "run",
+        "test:math-native"
+      ],
+      "began": "2026-11-02T20:56:43.545Z",
+      "ended": "2026-11-02T20:56:43.945Z",
+      "exitCode": 1,
+      "error": null,
+      "signal": null,
+      "log": "baseline-math-native.log",
+      "sha256": "94ff429d8ad3aaee3a5451e77dd3cbdc6d4f7bf9fa97b3ceb72dabe8b1e3b68f"
+    },
+    "baseline-live": {
+      "id": "baseline-live",
+      "command": [
+        "npm",
+        "run",
+        "test:live"
+      ],
+      "began": "2026-11-02T20:56:43.544Z",
+      "ended": "2026-11-02T20:56:44.021Z",
+      "exitCode": 1,
+      "error": null,
+      "signal": null,
+      "log": "baseline-live.log",
+      "sha256": "bb1bce1f35ddff77ed28af979f99427e756fef86e88026c7127932ab9c41b954"
+    },
+    "baseline-spatial": {
+      "id": "baseline-spatial",
+      "command": [
+        "npm",
+        "run",
+        "test:spatial"
+      ],
+      "began": "2026-11-02T20:56:44.103Z",
+      "ended": "2026-11-02T20:56:44.550Z",
+      "exitCode": 1,
+      "error": null,
+      "signal": null,
+      "log": "baseline-spatial.log",
+      "sha256": "0f9ebaaa01043b5599df88c39fba43888514f864a990c793ddf76d8c2b78935e"
+    },
+    "baseline-unit": {
+      "id": "baseline-unit",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "began": "2026-11-02T20:56:43.545Z",
+      "ended": "2026-11-02T20:56:46.473Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "baseline-unit.log",
+      "sha256": "68caf0564401a7845d76d87defdd5733e38dc104d4ba6ac71155355cb29bd338"
+    },
+    "red-source-v6": {
+      "id": "red-source-v6",
+      "command": [
+        "node",
+        "--test",
+        "tests/unit/source-v6.test.cjs"
+      ],
+      "began": "2026-11-02T20:57:39.194Z",
+      "ended": "2026-11-02T20:57:39.363Z",
+      "exitCode": 1,
+      "error": null,
+      "signal": null,
+      "log": "red-source-v6.log",
+      "sha256": "726a7fabe3865ab07597f0db29dd1013a052e520bf88d06bad3666f71cc8f30d"
+    },
+    "green-source-v6": {
+      "id": "green-source-v6",
+      "command": [
+        "node",
+        "--test",
+        "tests/unit/source-v6.test.cjs"
+      ],
+      "began": "2026-11-02T20:58:17.203Z",
+      "ended": "2026-11-02T20:58:17.365Z",
+      "exitCode": 1,
+      "error": null,
+      "signal": null,
+      "log": "green-source-v6.log",
+      "sha256": "15498dd180b265d0343c67e7854733e53e49de20b2ba876ad5d2b465aa20aac5"
+    },
+    "green-source-v6-retry1": {
+      "id": "green-source-v6-retry1",
+      "command": [
+        "node",
+        "--test",
+        "tests/unit/source-v6.test.cjs"
+      ],
+      "began": "2026-11-02T20:58:29.383Z",
+      "ended": "2026-11-02T20:58:29.556Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "green-source-v6-retry1.log",
+      "sha256": "ba9e775fc85c7f1214669ea17e322c175f334f2cb3dc788467b566b4c1b005be"
+    },
+    "candidate-math-native": {
+      "id": "candidate-math-native",
+      "command": [
+        "npm",
+        "run",
+        "test:math-native"
+      ],
+      "began": "2026-11-02T20:58:29.634Z",
+      "ended": "2026-11-02T20:58:30.125Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-math-native.log",
+      "sha256": "81b59f01e81325962308ffe8ac4a09803a08e17a3b3ae52f78416ecf8b49309b"
+    },
+    "candidate-live": {
+      "id": "candidate-live",
+      "command": [
+        "npm",
+        "run",
+        "test:live"
+      ],
+      "began": "2026-11-02T20:58:44.924Z",
+      "ended": "2026-11-02T20:58:50.888Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-live.log",
+      "sha256": "1f64a57954405373067e9257e0bb9f6f75edfbdecc69adf63839baadd967edfa"
+    },
+    "candidate-spatial": {
+      "id": "candidate-spatial",
+      "command": [
+        "npm",
+        "run",
+        "test:spatial"
+      ],
+      "began": "2026-11-02T20:58:50.976Z",
+      "ended": "2026-11-02T20:58:52.666Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-spatial.log",
+      "sha256": "45bb5de56e5a8c1191326212911ce44517b2fc2ce85b482f6f794130208966aa"
+    },
+    "candidate-ui-state": {
+      "id": "candidate-ui-state",
+      "command": [
+        "npm",
+        "run",
+        "test:ui-state"
+      ],
+      "began": "2026-11-02T20:59:17.346Z",
+      "ended": "2026-11-02T20:59:17.695Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-ui-state.log",
+      "sha256": "b7a9e98b0d24b0a10f12a2b91eb603000fa8b4c419f7cff5a1d3637ee5c121e3"
+    },
+    "candidate-cpu": {
+      "id": "candidate-cpu",
+      "command": [
+        "npm",
+        "run",
+        "benchmark:cpu"
+      ],
+      "began": "2026-11-02T20:59:17.347Z",
+      "ended": "2026-11-02T20:59:18.430Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-cpu.log",
+      "sha256": "58fa0c70944ed2e7209ffbaf4d463ef14990b0ebffbd3a79909e7c4e1e3ee135"
+    },
+    "candidate-unit": {
+      "id": "candidate-unit",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "began": "2026-11-02T20:59:17.346Z",
+      "ended": "2026-11-02T20:59:21.001Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-unit.log",
+      "sha256": "e9dc51d4b817effbb2223482d277474fe2a85094a0ff384165c43624a4531f1b"
+    },
+    "candidate-planning": {
+      "id": "candidate-planning",
+      "command": [
+        "node",
+        "--test",
+        "tests/unit/planning-math.test.cjs"
+      ],
+      "began": "2026-11-02T20:59:21.093Z",
+      "ended": "2026-11-02T20:59:21.492Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-planning.log",
+      "sha256": "bab2c15a3f188ec3db19bbd4662aca0da39f76da3ccb61f1c5a282ac2e5efd29"
+    },
+    "candidate-browser": {
+      "id": "candidate-browser",
+      "command": [
+        "npm",
+        "run",
+        "test:browser"
+      ],
+      "began": "2026-11-02T20:59:21.581Z",
+      "ended": "2026-11-02T20:59:26.703Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-browser.log",
+      "sha256": "cd9b96fc40193a0fa52afe6973c5ac1c4b2356c01c3f2f977218c1368ba4497a"
+    },
+    "candidate-ui": {
+      "id": "candidate-ui",
+      "command": [
+        "npm",
+        "run",
+        "test:ui"
+      ],
+      "began": "2026-11-02T20:59:17.784Z",
+      "ended": "2026-11-02T20:59:29.743Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-ui.log",
+      "sha256": "a4a5a5beda21122bf03eb93ac2bf7629e52cb584b8f07f341ca3404d05520648"
+    },
+    "candidate-a11y": {
+      "id": "candidate-a11y",
+      "command": [
+        "npm",
+        "run",
+        "test:a11y"
+      ],
+      "began": "2026-11-02T20:59:29.829Z",
+      "ended": "2026-11-02T20:59:38.937Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-a11y.log",
+      "sha256": "07cd811e677eae8723d25249294c90b4da3c9bc12fae3959c40e9187f19860a0"
+    },
+    "candidate-package": {
+      "id": "candidate-package",
+      "command": [
+        "npm",
+        "run",
+        "package"
+      ],
+      "began": "2026-11-02T20:59:39.020Z",
+      "ended": "2026-11-02T20:59:39.475Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-package.log",
+      "sha256": "99d30f34b0e8136e8f4ad164541ff73c463151adcdb7f7d26615fe490d0c6630"
+    },
+    "installed-live-analysis": {
+      "id": "installed-live-analysis",
+      "command": [
+        "node",
+        "scratch/eng01-2026-11-02/analyze-live.cjs"
+      ],
+      "began": "2026-11-02T21:04:16.815Z",
+      "ended": "2026-11-02T21:04:16.915Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "installed-live-analysis.log",
+      "sha256": "e97ab7481dbbd76dfe9c11f2b5d1ca5285e16f472eb6a0cd2b7f4414d04e4eeb"
+    },
+    "historical-v4-math": {
+      "id": "historical-v4-math",
+      "command": [
+        "node",
+        "tools/validation/planning-native-math.cjs",
+        "scratch/math-audit/official-source.html"
+      ],
+      "began": "2026-11-02T21:04:16.999Z",
+      "ended": "2026-11-02T21:04:17.126Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "historical-v4-math.log",
+      "sha256": "6a127521f9f1e5e68abd47e40438128a526bc9a0362aff38bdcd92878abfe7b6"
+    },
+    "candidate-diff-check": {
+      "id": "candidate-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "began": "2026-11-02T21:04:17.208Z",
+      "ended": "2026-11-02T21:04:17.228Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "installed-full-ledger": {
+      "id": "installed-full-ledger",
+      "command": [
+        "node",
+        "scratch/eng01-2026-11-02/analyze-live.cjs"
+      ],
+      "began": "2026-11-02T21:05:39.920Z",
+      "ended": "2026-11-02T21:05:40.018Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "installed-full-ledger.log",
+      "sha256": "be874cecaaa997497b1432af818c426fa7ff60b05fefcb351a3cc2cc387c79b8"
+    },
+    "candidate-source-v6-final": {
+      "id": "candidate-source-v6-final",
+      "command": [
+        "node",
+        "--test",
+        "tests/unit/source-v6.test.cjs"
+      ],
+      "began": "2026-11-02T21:05:40.105Z",
+      "ended": "2026-11-02T21:05:40.293Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "candidate-source-v6-final.log",
+      "sha256": "2db138830d6cf639a397f95f38a1e78a54176de7c3e429ee8c7f0f0fd1256351"
+    },
+    "final-unit": {
+      "id": "final-unit",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "began": "2026-11-02T21:06:08.273Z",
+      "ended": "2026-11-02T21:06:11.189Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "final-unit.log",
+      "sha256": "22da0bb3bfcaa1e898484c047320adde94b6b0c28e22b442bf25096c5c740a27"
+    },
+    "final-contracts": {
+      "id": "final-contracts",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "began": "2026-11-02T21:07:35.521Z",
+      "ended": "2026-11-02T21:07:35.745Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "final-contracts.log",
+      "sha256": "66abdc9f1946cc6289cf29fc2615f62f9856f2582d0d2f01fdd8937de27b6fe8"
+    },
+    "final-diff-check": {
+      "id": "final-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "began": "2026-11-02T21:07:35.824Z",
+      "ended": "2026-11-02T21:07:35.844Z",
+      "exitCode": 0,
+      "error": null,
+      "signal": null,
+      "log": "final-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

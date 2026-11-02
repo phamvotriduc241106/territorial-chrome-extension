@@ -3,7 +3,7 @@
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), with a
 native command bridge, deterministic policy and separate research/test tooling.
 
-**Release:** v10.3.11 · **Production engine:** V2.8.2 · **Updated:** 2026-10-22 22:10:30 EDT
+**Release:** v10.3.12 · **Production engine:** V2.8.2 · **Updated:** 2026-11-02 15:58:44 EST
 
 **Native integration:** the fresh-source checks on October 29
 returned an unknown contract and failed closed. October 22 native integration
@@ -90,6 +90,7 @@ helpers have explicit research/coverage limits. **Reliable competitive strength
 and a win-rate improvement are unestablished.** Unsupported historical 81.20%
 win-rate and approximately 1 µs controller claims are withdrawn.
 
+- [November 2 current-source repair and MCP result](docs/research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_02.md)
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Planning model](docs/math/PLANNING_MODEL.md) and [math protocol](docs/math/MATH_TEST_PROTOCOL.md)
 - [Validation and limits](docs/testing/VALIDATION.md)

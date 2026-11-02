@@ -5,6 +5,60 @@
 
   const REQUIRED_READABLE = ['function cE(', 'function dF(', 'function dJ(', 'function dD(', 'function dU('];
 
+  // Explicit, reviewed names for the November 2 v6 family. No runtime discovery.
+  const V6_GLOBALS = Object.freeze({"y":"ah","c":"aE","q":"bO","nl":"aS","ss":"bB","ep":"bm","aa":"bD","gW":"bV","ij":"bR","a0f":"bv","a0n":"ae","o9":"ap","j1":"ad","ay":"af","bc":"bi","aAZ":"aG","aJ":"am","aIw":"b5","aJR":"cd","aPX":"aPa","aPY":"aLY","aTz":"k0","sf":"n8","abQ":"gh","a0e":"gp","a0c":"gU","a0o":"gQ","a0p":"gP","a0q":"gR","a16":"gS","a0r":"gV","abM":"gZ","abL":"gY","a18":"gX","aUr":"aJG","aUn":"aJC","aUu":"aJJ","aVH":"aJj","aYb":"a5p","pz":"bg","a14":"gT","abU":"gr","a0a":"hA"});
+  const V6_MEMBERS = Object.freeze({"ax":"hb","aO":"hN","an":"nU","t":"fJ","bW":"h1","c2":"fW","aI":"ku","a1T":"i5","a1X":"i8","a1W":"fS","q5":"kF","pv":"hc","q7":"gg","az":"ka","ql":"kr","bb":"aDc","aP":"ke","bY":"gv","o2":"kH","aXJ":"a6e","aXL":"a5l","qI":"a5m","xa":"a5j","zY":"h9","zZ":"fR","zb":"fQ","gX":"fk","gY":"fl","a0x":"gt","kY":"fF","q8":"gl","q9":"gm","qD":"gn","aH":"lE","a1D":"hk","bZ":"hl","a1M":"hz","xn":"i6","a1R":"i3","eq":"qo","er":"qp","b":"dk","a1g":"fb","b8":"ee","iu":"ei","q4":"h0","zw":"gw","aTe":"n4","a5f":"qr","py":"gy","a19":"h4","aT5":"zu","aU1":"k6","aTJ":"a0G","aVI":"aJk","aED":"m6","aGr":"jf","aHD":"k2","zr":"g6","aN":"g0","aYY":"a5i","aTU":"n2","aNK":"a5q","aNL":"a5w","a2p":"dr","aK":"lQ","bX":"lV","aUC":"g5","qH":"nQ","yR":"a2Q","sU":"ae5","xR":"a5a","d":"lC","yd":"k1","a0":"ij","pw":"ha","q0":"gz","qr":"a6j","acY":"a7B","qs":"a78","qu":"a6n"});
+  const V6_REVERSE_GLOBALS = Object.freeze(Object.fromEntries(Object.entries(V6_GLOBALS).map(([a,b])=>[b,a])));
+  const V6_REVERSE_MEMBERS = Object.freeze(Object.fromEntries(Object.entries(V6_MEMBERS).map(([a,b])=>[b,a])));
+  const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+
+  /** Alpha-rename our verified recipe/arithmetic fragments, preserving operators.
+   * Quoted private signatures are code fragments; public event names stay intact.
+   * This is deliberately not a general source parser or contract discovery API.
+   */
+  function mapNativeSnippet(text, sourceKind, reverse) {
+    if (sourceKind === 'live-modern-v4') return String(text);
+    if (sourceKind !== 'live-modern-v6') throw Error('Unsupported native binding family');
+    const globals = reverse ? V6_REVERSE_GLOBALS : V6_GLOBALS;
+    const members = reverse ? V6_REVERSE_MEMBERS : V6_MEMBERS;
+    function word(token, member) {
+      const map = member ? members : globals;
+      return hasOwn(map, token) ? map[token] : token;
+    }
+    function code(input) {
+      let output = '', i = 0;
+      while (i < input.length) {
+        const ch = input[i];
+        if (ch === "'" || ch === '"' || ch === '`') {
+          let end = i + 1;
+          for (; end < input.length; end++) {
+            if (input[end] === '\\') end++;
+            else if (input[end] === ch) break;
+          }
+          const value = input.slice(i + 1, end);
+          const mapped = hasOwn(members, value) ? members[value] : code(value);
+          output += ch + mapped + (end < input.length ? ch : '');
+          i = end + 1;
+        } else if (/[A-Za-z_$]/.test(ch)) {
+          let end = i + 1;
+          while (end < input.length && /[\w$]/.test(input[end])) end++;
+          let previous = i - 1;
+          while (previous >= 0 && /\s/.test(input[previous])) previous--;
+          output += word(input.slice(i, end), input[previous] === '.'); i = end;
+        } else { output += ch; i++; }
+      }
+      return output;
+    }
+    return code(String(text));
+  }
+
+  function nativeBindings(sourceKind) {
+    if (sourceKind === 'live-modern-v6') return Object.freeze({ globals: V6_GLOBALS, members: V6_MEMBERS });
+    if (sourceKind === 'live-modern-v4') return Object.freeze({ globals: Object.freeze({}), members: Object.freeze({}) });
+    throw Error('Unsupported native binding family');
+  }
+
+
   function compact(text) {
     return String(text || '').replace(/\s+/g, '');
   }
@@ -65,6 +119,17 @@
       'this.bZ=function(player){returny.an[player]!==0&&y.xR[player]!==2'
     ];
     if (modernV4.every((token) => code.includes(token))) return 'live-modern-v4';
+    const modernV6 = [
+ 'var k4=bO.g0(12*ah.hb[player],1024)', 'bB.hz.i6(aS.i3(),aE.fW)',
+ 'this.kF=function(player,aLS)', 'this.n4=function(player){var iI=bR.g6[0];ah.hb[player]-=iI+bR.g6[1]',
+ 'this.i3=function(){return bO.ij(Math.floor(jC*1024+0.5)-1,0,1023)',
+ 'this.ka=function(player){return Math.min(100*ah.hN[player],aE.a6e)',
+ 'this.gg=function(player){return size[player]',
+ 'gU=ae.gl(gQ,gP);gR=ae.gm(gQ,gP);gS=ae.gn(gQ,gP)',
+ 'this.hl=function(player){return ah.nU[player]!==0&&ah.a5a[player]!==2',
+ '13440-6*bi.kr()', 'this.g0=function(fs,ft){return Math.floor((fs+0.5)/ft)',
+ 'af=new cd()', 'this.aDc=function(player){return aLZ(player)'];
+    if (modernV6.every(token => code.includes(compact(token)))) return 'live-modern-v6';
     return 'unknown';
   }
 
@@ -655,6 +720,8 @@
 
   /** Build the only code injected into a recognized game closure. */
   function buildExportSnippet(hookVersion, sourceKind) {
+    if (sourceKind === 'live-modern-v6') return mapNativeSnippet(buildV4ExportSnippet(String(hookVersion || 'unknown')), sourceKind)
+      .replace(/live-modern-v4/g, 'live-modern-v6');
     if (sourceKind === 'live-modern-v4') return buildV4ExportSnippet(String(hookVersion || 'unknown'));
     const version = JSON.stringify(String(hookVersion || 'unknown'));
     const contract = JSON.stringify(
@@ -740,7 +807,7 @@
     if (typeof text !== 'string' || text.length < 80000) return 'not-game';
     const contract = detectContract(text);
     if (contract === 'readable-legacy' || contract === 'live-modern' ||
-        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4') return contract;
+        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6') return contract;
     if (text.indexOf('canvasA') >= 0 ||
         (text.indexOf('territorial.io') >= 0 && text.length > 100000) ||
         (text.indexOf('Uint32Array') >= 0 && text.indexOf('fillText') >= 0 && text.length > 200000)) {
@@ -789,6 +856,8 @@
     patch,
     inspect,
     buildExportSnippet,
-    detectContract
+    detectContract,
+    nativeBindings,
+    mapNativeSnippet
   });
 })(typeof window !== 'undefined' ? window : globalThis);
