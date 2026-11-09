@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "ticket": "ENG-01",
+  "date": "2026-11-09",
+  "baselineCommit": "de35c3b97c6beaeb9e631e2fababe2daf1c80431",
+  "implementationCommit": "e47e8dd",
+  "release": {
+    "extensionVersion": "10.3.13",
+    "engineVersion": "V2.8.2",
+    "updatedAt": "2026-11-09 16:27:10 EST",
+    "releaseSha256": "d8e7f0b05f8a1818ebb521af9ce37eed0a79dc24ac96616f45bd0089c3bfe704",
+    "engineSha256": "cd4d9765fd0e68954dbd5caa612cd8c33d33c1063d9a73f9010f1a575901c67e",
+    "settings": {
+      "botEnabled": true,
+      "engineVersion": 2,
+      "autoExpand": true,
+      "autoAttack": true,
+      "clickSpeed": 4,
+      "sliderPercentage": 0,
+      "hotkeysEnabled": true,
+      "strategy": "aggressive",
+      "allowVisionFallback": true,
+      "visionFps": 12,
+      "allowCameraAccess": false,
+      "hudMode": "compact",
+      "advancedExpanded": false,
+      "settingsSchema": 2
+    }
+  },
+  "sourceSha256": "2c70f903a601cb0725776bb1843567c5efca84bbe61a5a58b8ab44d7ca511066",
+  "source": {
+    "fetchedAt": "2026-11-09T21:13:02.012Z",
+    "utf8Bytes": 705217,
+    "javascriptStringLength": 703690,
+    "preloaderBytesFieldMeaning": "JavaScript string length, not UTF-8 bytes",
+    "rechecks": [
+      {
+        "fetchedAt": "2026-11-09T21:27:23.130Z",
+        "sha256": "2c70f903a601cb0725776bb1843567c5efca84bbe61a5a58b8ab44d7ca511066"
+      },
+      {
+        "fetchedAt": "2026-11-09T21:28:17.847Z",
+        "sha256": "2c70f903a601cb0725776bb1843567c5efca84bbe61a5a58b8ab44d7ca511066"
+      }
+    ]
+  },
+  "contract": "live-modern-v7",
+  "diagnosis": {
+    "referenceSource": {
+      "description": "Internet Archive snapshot 2026-10-28T04:18:56Z of the official page, recognised as live-modern-v4 by all nine v4 signatures; used only to generate and check rename hypotheses",
+      "sha256OfDecodedPage": "b4db59b83acac6d371d55edb4997a443a5eab7b8204fa0feb07a1233cd8ea548",
+      "committed": false
+    },
+    "alphaEquivalentUnitPairs": 2055,
+    "bindings": {
+      "globals": 43,
+      "members": 81,
+      "unanimous": true
+    },
+    "alphaEquivalentRecipeRoutines": [
+      "economy constructor",
+      "front manager",
+      "interest table helpers",
+      "combat batch",
+      "return",
+      "tick",
+      "slider read",
+      "human debit",
+      "bot debit",
+      "naval/cell debit",
+      "credit",
+      "cap/transfer helpers",
+      "playing guard",
+      "living guard",
+      "rounding",
+      "clamp",
+      "slider storage",
+      "command namespace"
+    ],
+    "mechanicChanges": [
+      {
+        "what": "native spectating guard",
+        "where": "every human command method (bB.i1.*, bB.gw.*) and input handlers",
+        "expression": "if(aE.hk){return;}",
+        "source": "aE.hk=this.data.a86 in start routine a85; data.a86 default 0, set only for a multiplayer client outside the human list",
+        "adapterResponse": "canAttack false and spectating() true while set"
+      },
+      {
+        "what": "start routine reordering",
+        "where": "aE.a85 (v4 qu)",
+        "effect": "adds a3q reset and hk assignment, reorders resets; used only by test fixtures to start a native game"
+      }
+    ]
+  },
+  "arithmetic": {
+    "income": 1512,
+    "humanCommands": 6144,
+    "botCommands": 6144
+  },
+  "integration": {
+    "combat": 292,
+    "income": 54,
+    "ownershipCells": 262144,
+    "ownershipPlayers": 512,
+    "restoredFunctions": 16,
+    "spatialSupportCases": 252,
+    "spatialFullAudits": 9,
+    "spatialRestoredOwnershipFunctions": 5,
+    "singlePlayerAttack": {
+      "balanceBefore": 512,
+      "exactDebit": 108,
+      "sent": 102
+    }
+  },
+  "regression": {
+    "file": "tests/unit/source-v7.test.cjs",
+    "originalAdapter": {
+      "pass": 1,
+      "fail": 4
+    },
+    "repairedAdapter": {
+      "pass": 5,
+      "fail": 0
+    },
+    "nodeCasesBefore": 159,
+    "nodeCasesAfter": 165,
+    "nodeCasesAfterNote": "159 retained + 5 v7 regression + 1 retained-evidence case"
+  },
+  "live": {
+    "controlMethod": "CLI automation through tools/live/live-chrome-audit.cjs in an owned temporary system-Chrome profile; MCP control unavailable in this session",
+    "plan": {
+      "declaredAt": "2026-11-09T21:40:00Z",
+      "ticket": "ENG-01 November 9 installed integration smoke",
+      "question": "Does the frozen 10.3.13 extension bootstrap the current official source as live-modern-v7 and issue native-admitted, exactly debited land commands in official single-player Impossible?",
+      "notAQuestion": "Strength, win rate or policy benefit. One smoke match cannot establish any of these.",
+      "controlMethod": "CLI automation via tools/live/live-chrome-audit.cjs (Playwright, owned temporary system-Chrome profile, browser-level CDP Extensions.loadUnpacked). NOT MCP: no MCP tool in this session can load an unpacked extension into an owned temporary profile.",
+      "scenario": {
+        "mode": "Custom Scenario, single-player",
+        "map": "Europe",
+        "players": 512,
+        "visibleDifficulty": "Impossible",
+        "expectedNativeDifficulty": 5
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "spawnRule": "fixed predeclared coordinate (560,440), identical to the accepted November 2 retry; select click then confirm click",
+      "cutoffSeconds": 90,
+      "policy": "baseline V2.8.2; experimental policy off; no capital-v1/tree/frontier treatment",
+      "observers": "--shadow: existing planner and native original-call observers, bounded 4096 events / 4194304 bytes, drained every sample and stopped at end",
+      "interventions": "none: no manual attacks, slider changes, scheduler acceleration or state writes",
+      "retryRule": "If native territory is not positive after the confirm click (setup error), retain that attempt and make at most one retry on a fresh page with identical settings; a setup error is not a loss.",
+      "outcomeRules": "loss = native alive=false and territory=0; last survivor = milestone only; otherwise censored-time-limit"
+    },
+    "chromeVersion": "156.0.8078.80",
+    "extensionId": "pjinhodmpnafkmbnndonmpkcjjpdinah",
+    "sourceHash": "2c70f903a601cb0725776bb1843567c5efca84bbe61a5a58b8ab44d7ca511066",
+    "navigationHash": "5e62998fead073ae31ad87dd889f1cc62b9ccf5f65efb4e177c2d2811f9e7f64",
+    "sourceBinding": "captured-preloader-synchronous-xhr-response-before-patch",
+    "visibleDifficulty": "Impossible",
+    "difficultySelectionVisible": 1,
+    "nativeDifficulty": 5,
+    "players": 512,
+    "map": "Europe (Realistic Map)",
+    "devicePixelRatio": 1,
+    "spawn": {
+      "x": 560,
+      "y": 440
+    },
+    "outcome": "loss",
+    "observedDurationSeconds": 45.844,
+    "terminalTick": 820,
+    "peakObservedLand": 1966,
+    "firstEnemyContactTick": 436,
+    "decisions": 581,
+    "submissions": 31,
+    "receipts": 31,
+    "nativeCommands": 31,
+    "uniquelyJoined": 31,
+    "debitViolations": 0,
+    "reserveViolations": 0,
+    "debitCeilingViolations": 0,
+    "ratioRoundedUp": 0,
+    "busyTargetsAtSubmission": 0,
+    "unjoinedNative": 0,
+    "incomingLookups": 1240,
+    "invalidIncomingLookups": 0,
+    "observerDrops": 0,
+    "observerErrors": 0,
+    "retainedAfterDrain": 0,
+    "tailExported": true,
+    "setupErrors": 0,
+    "manualCombatCommands": 0,
+    "accelerated": false,
+    "experimentalPolicy": "off",
+    "spectating": false,
+    "limitations": [
+      "start.png is an all-black compositor capture and is not committed; native observation establishes the start",
+      "installed-page identity restoration of observer wrappers was not asserted; fixture gates verify 16+5 exact restorations",
+      "native acknowledgement ticks are unavailable"
+    ]
+  },
+  "strengthClaim": false,
+  "setupErrors": 0,
+  "commands": [
+    {
+      "label": "base-npm-ci",
+      "start": "2026-11-09T21:12:36Z",
+      "end": "2026-11-09T21:12:37Z",
+      "exit": 0,
+      "command": "npm ci"
+    },
+    {
+      "label": "base-npm-test",
+      "start": "2026-11-09T21:12:37Z",
+      "end": "2026-11-09T21:12:40Z",
+      "exit": 0,
+      "command": "npm test"
+    },
+    {
+      "label": "base-math-native",
+      "start": "2026-11-09T21:12:40Z",
+      "end": "2026-11-09T21:12:40Z",
+      "exit": 1,
+      "command": "npm run test:math-native"
+    },
+    {
+      "label": "base-live",
+      "start": "2026-11-09T21:12:40Z",
+      "end": "2026-11-09T21:12:41Z",
+      "exit": 1,
+      "command": "npm run test:live"
+    },
+    {
+      "label": "base-spatial",
+      "start": "2026-11-09T21:12:41Z",
+      "end": "2026-11-09T21:12:42Z",
+      "exit": 1,
+      "command": "npm run test:spatial"
+    },
+    {
+      "label": "red-source-v7",
+      "start": "2026-11-09T21:23:58Z",
+      "end": "2026-11-09T21:23:58Z",
+      "exit": 1,
+      "command": "node --test tests/unit/source-v7.test.cjs"
+    },
+    {
+      "label": "red-source-v7-final",
+      "start": "2026-11-09T21:25:27Z",
+      "end": "2026-11-09T21:25:27Z",
+      "exit": 1,
+      "command": "node --test tests/unit/source-v7.test.cjs"
+    },
+    {
+      "label": "wip-math-native-captured",
+      "start": "2026-11-09T21:26:25Z",
+      "end": "2026-11-09T21:26:25Z",
+      "exit": 0,
+      "command": "node tools/validation/planning-native-math.cjs scratch/eng01-2026-11-09/source/official-2026-11-09.html"
+    },
+    {
+      "label": "wip-browser-live-captured",
+      "start": "2026-11-09T21:26:30Z",
+      "end": "2026-11-09T21:26:36Z",
+      "exit": 0,
+      "command": "node tests/browser/run.cjs"
+    },
+    {
+      "label": "wip-spatial",
+      "start": "2026-11-09T21:26:44Z",
+      "end": "2026-11-09T21:26:46Z",
+      "exit": 0,
+      "command": "npm run test:spatial"
+    },
+    {
+      "label": "wip-npm-test",
+      "start": "2026-11-09T21:26:46Z",
+      "end": "2026-11-09T21:26:50Z",
+      "exit": 0,
+      "command": "npm test"
+    },
+    {
+      "label": "g-npm-test",
+      "start": "2026-11-09T21:27:23Z",
+      "end": "2026-11-09T21:27:23Z",
+      "exit": 1,
+      "command": "npm test"
+    },
+    {
+      "label": "g-planning-math",
+      "start": "2026-11-09T21:27:23Z",
+      "end": "2026-11-09T21:27:23Z",
+      "exit": 0,
+      "command": "node --test tests/unit/planning-math.test.cjs"
+    },
+    {
+      "label": "g-math-docs",
+      "start": "2026-11-09T21:27:23Z",
+      "end": "2026-11-09T21:27:24Z",
+      "exit": 0,
+      "command": "npm run test:math-docs"
+    },
+    {
+      "label": "g-math-native",
+      "start": "2026-11-09T21:27:24Z",
+      "end": "2026-11-09T21:27:24Z",
+      "exit": 0,
+      "command": "npm run test:math-native"
+    },
+    {
+      "label": "g-math-native-captured",
+      "start": "2026-11-09T21:27:24Z",
+      "end": "2026-11-09T21:27:24Z",
+      "exit": 0,
+      "command": "node tools/validation/planning-native-math.cjs ~/territorial-chrome-extension/scratch/eng01-2026-11-09/source/official-2026-11-09.html"
+    },
+    {
+      "label": "g-browser",
+      "start": "2026-11-09T21:27:24Z",
+      "end": "2026-11-09T21:27:30Z",
+      "exit": 0,
+      "command": "npm run test:browser"
+    },
+    {
+      "label": "g-live",
+      "start": "2026-11-09T21:27:30Z",
+      "end": "2026-11-09T21:27:36Z",
+      "exit": 0,
+      "command": "npm run test:live"
+    },
+    {
+      "label": "g-live-captured",
+      "start": "2026-11-09T21:27:36Z",
+      "end": "2026-11-09T21:27:42Z",
+      "exit": 0,
+      "command": "node tests/browser/run.cjs"
+    },
+    {
+      "label": "g-spatial",
+      "start": "2026-11-09T21:27:42Z",
+      "end": "2026-11-09T21:27:44Z",
+      "exit": 0,
+      "command": "npm run test:spatial"
+    },
+    {
+      "label": "g-ui-state",
+      "start": "2026-11-09T21:27:44Z",
+      "end": "2026-11-09T21:27:44Z",
+      "exit": 0,
+      "command": "npm run test:ui-state"
+    },
+    {
+      "label": "g-ui",
+      "start": "2026-11-09T21:27:44Z",
+      "end": "2026-11-09T21:28:00Z",
+      "exit": 0,
+      "command": "npm run test:ui"
+    },
+    {
+      "label": "g-a11y",
+      "start": "2026-11-09T21:28:00Z",
+      "end": "2026-11-09T21:28:16Z",
+      "exit": 0,
+      "command": "npm run test:a11y"
+    },
+    {
+      "label": "g-package",
+      "start": "2026-11-09T21:28:16Z",
+      "end": "2026-11-09T21:28:17Z",
+      "exit": 0,
+      "command": "npm run package"
+    },
+    {
+      "label": "g-diff-check",
+      "start": "2026-11-09T21:28:17Z",
+      "end": "2026-11-09T21:28:17Z",
+      "exit": 0,
+      "command": "git diff --check"
+    },
+    {
+      "label": "g-npm-test-rerun",
+      "start": "2026-11-09T21:28:44Z",
+      "end": "2026-11-09T21:28:48Z",
+      "exit": 0,
+      "command": "npm test"
+    },
+    {
+      "label": "installed-attempt0",
+      "start": "2026-11-09T21:29:06Z",
+      "end": "2026-11-09T21:29:56Z",
+      "exit": 0,
+      "command": "node scratch/eng01-2026-11-09/installed-run.cjs attempt0"
+    },
+    {
+      "label": "final-npm-test",
+      "start": "2026-11-09T21:34:17Z",
+      "end": "2026-11-09T21:34:20Z",
+      "exit": 0,
+      "command": "npm test"
+    },
+    {
+      "label": "final-math-docs",
+      "start": "2026-11-09T21:34:20Z",
+      "end": "2026-11-09T21:34:20Z",
+      "exit": 0,
+      "command": "npm run test:math-docs"
+    },
+    {
+      "label": "final-package",
+      "start": "2026-11-09T21:34:20Z",
+      "end": "2026-11-09T21:34:21Z",
+      "exit": 0,
+      "command": "npm run package"
+    },
+    {
+      "label": "final-diff-check",
+      "start": "2026-11-09T21:34:21Z",
+      "end": "2026-11-09T21:34:21Z",
+      "exit": 0,
+      "command": "git diff --check"
+    }
+  ],
+  "artifact": {
+    "file": "2026-11-09-eng01-live.json.gz",
+    "sha256": "8daae178dad57156713a56b132ac8e9627ec9af6a3b7ba53682206d5a5264477"
+  },
+  "logs": {
+    "file": "2026-11-09-eng01-logs.json.gz",
+    "sha256": "3ab28c8c98c564d38b10509c440356a7413c70c3e4fbca22ade89cc93212c1c9"
+  },
+  "screenshots": {
+    "2026-11-09-difficulty-settings.png": "fb615fe6102fe16e6677330a7c22c236fc0b2552826c03cf7d59e897d7d04cc3",
+    "2026-11-09-spawn-selection.png": "fa6fff6d61ab369bbbe1d2718bad9c95f850b083086d4bc4a31e34c75c714836",
+    "2026-11-09-finish.png": "5d041204a156ac6dcf868986680b71be1f07be8a3e9f36e7228fab4d26769d72"
+  }
+}

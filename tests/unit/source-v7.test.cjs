@@ -107,3 +107,31 @@ test('v6 signatures do not satisfy v7 and v7 signatures do not satisfy v6',()=>{
  const partial=signatures.slice(0,13).join('\n')+' '.repeat(80000);
  assert.equal(adapter.detectContract(partial),'unknown');
 });
+
+test('retained installed v7 evidence has complete tails and an independently checked command ledger',()=>{
+ const zlib=require('node:zlib'),dir=path.join(__dirname,'../../docs/evidence/eng01');
+ const manifest=JSON.parse(fs.readFileSync(path.join(dir,'2026-11-09-eng01.json')));
+ const data=fs.readFileSync(path.join(dir,manifest.artifact.file));
+ assert.equal(sha(data),manifest.artifact.sha256);
+ const evidence=JSON.parse(zlib.gunzipSync(data));
+ assert.equal(evidence.identity.hash,manifest.sourceSha256);assert.equal(evidence.identity.contract,'live-modern-v7');
+ assert.equal(evidence.identity.binding,'captured-preloader-synchronous-xhr-response-before-patch');
+ assert.equal(evidence.report.outcome,'loss');assert.equal(evidence.report.final,undefined);
+ assert.equal(evidence.report.finalNative.alive,false);assert.equal(evidence.report.finalNative.territory,0);
+ assert.equal(evidence.report.scenario.nativeDifficulty,5);assert.equal(evidence.report.difficultySelectionVisible,1);
+ assert.equal(manifest.strengthClaim,false);assert.equal(manifest.setupErrors,0);
+ for(const stats of [evidence.report.shadow.plannerObserver,evidence.report.shadow.nativeObserver]){
+  assert.equal(stats.dropped,0);assert.equal(stats.errors,0);assert.equal(stats.retainedEvents,0);assert.equal(stats.active,false);
+ }
+ const commands=evidence.native.filter(e=>e.kind==='native-command');assert.equal(commands.length,31);
+ assert.equal(evidence.planner.filter(e=>e.kind==='submission').length,31);
+ assert.equal(evidence.planner.filter(e=>e.kind==='receipt').length,31);
+ assert.equal(evidence.planner.filter(e=>e.kind==='decision').length,evidence.report.shadow.plannerObserver.decisions);
+ for(const command of commands){
+  const B=BigInt(command.before),tax=(24n*B+1n)/2048n,request=B*BigInt(command.il+1)/1024n;
+  const sent=request<B-tax?request:B-tax;
+  assert.equal(command.observedDebit,Number(sent+tax));assert.equal(command.after,command.before-command.observedDebit);
+ }
+ assert.equal(evidence.analysis.joined.length,31);
+ for(const row of evidence.analysis.joined){assert(row.after>=row.reserved);assert.equal(row.debit,row.tax+row.sent);}
+});
