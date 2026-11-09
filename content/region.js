@@ -29,6 +29,15 @@
       this.reset();
     }
 
+    /** Grow to hold labels 0..n-1; a w*h raster can need up to w*h labels. */
+    ensureCapacity(n) {
+      if (n <= this.parent.length) return;
+      let capacity = Math.max(1, this.parent.length);
+      while (capacity < n) capacity *= 2;
+      this.parent = new Int32Array(capacity);
+      this.rank = new Int32Array(capacity);
+    }
+
     reset() {
       const len = this.parent.length;
       for (let i = 0; i < len; i++) {
@@ -220,6 +229,9 @@
       const typeMat = this.grid.typeMatrix;
 
       this.allocate(size);
+      // Preliminary labels are unbounded by the old fixed table: past its end,
+      // find() returned undefined and unrelated components merged silently.
+      this.uf.ensureCapacity(size + 1);
       this.uf.reset();
       this.regions.clear();
 

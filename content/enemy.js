@@ -168,6 +168,7 @@
   class EnemyTracker {
     constructor() {
       this.opponents = new Map(); // Key: Enemy ID, Value: Enemy instance
+      this.nextOpponentSequence = 0; // IDs must stay unique within one frame
 
       // Ranked Categorical References
       this.strongestEnemy = null;
@@ -218,7 +219,7 @@
         } else {
           const cellX = Math.round(cx / 20) * 20;
           const cellY = Math.round(cy / 20) * 20;
-          const id = `opp_${cellX}_${cellY}_${now | 0}`;
+          const id = `opp_${cellX}_${cellY}_${now | 0}_${++this.nextOpponentSequence}`;
           opp = new Enemy(id, cx, cy, cluster.area);
           this.opponents.set(id, opp);
           currentIds.add(id);

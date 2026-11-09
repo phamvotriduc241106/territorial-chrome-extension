@@ -63,9 +63,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'UPDATE_SETTINGS') {
-      chrome.storage.local.set(self.TIOConfig.normalizeSettings(request.settings || {}), () => {
-        const error = chrome.runtime.lastError;
-        sendResponse(error ? { status: 'error', message: error.message } : { status: 'ok' });
+      // A partial patch must not reset every other stored preference to defaults.
+      chrome.storage.local.get(DEFAULT_SETTINGS, (current) => {
+        const readError = chrome.runtime.lastError;
+        if (readError) { sendResponse({ status: 'error', message: readError.message }); return; }
+        const merged = self.TIOConfig.normalizeSettings(Object.assign({}, current, request.settings || {}));
+        chrome.storage.local.set(merged, () => {
+          const error = chrome.runtime.lastError;
+          sendResponse(error ? { status: 'error', message: error.message } : { status: 'ok' });
+        });
       });
       return true;
     }
