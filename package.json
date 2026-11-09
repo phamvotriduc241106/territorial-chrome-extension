@@ -1,6 +1,6 @@
 {
   "name": "territorial-chrome-extension",
-  "version": "10.3.12",
+  "version": "10.3.13",
   "private": true,
   "description": "Territorial.io Manifest V3 extension and reproducible validation tools",
   "engines": {
@@ -9,7 +9,7 @@
   "scripts": {
     "check:layout": "node tools/validation/check-layout.cjs",
     "check": "node tests/contracts/repository.test.cjs",
-    "test": "npm run check && node tools/validation/check-document-math.cjs && node tests/unit/assertions.cjs && node tests/compatibility/test-v2-compatibility.cjs && node tests/compatibility/hard-mode-crush-test.cjs && node tests/compatibility/numerical-stability-test.cjs && node tests/compatibility/test-adapter.cjs && node tests/unit/hard-mode-policy.test.cjs && node --test tests/unit/very-hard-standard.test.cjs tests/unit/very-hard-cli.test.cjs tests/unit/cpu-optimization.test.cjs tests/unit/planning-math.test.cjs tests/unit/frontier-model.test.cjs tests/unit/frontier-episodes.test.cjs tests/unit/frontier-spatial.test.cjs tests/unit/frontier-dynamic.test.cjs tests/unit/frontier-study.test.cjs tests/unit/spawn-confirmation.test.cjs tests/unit/live-chrome-audit.test.cjs tests/unit/impossible-audit-evidence.test.cjs tests/unit/contact-risk-candidate.test.cjs tests/unit/planner-observer.test.cjs tests/unit/banking-alternatives.test.cjs tests/unit/capital-policy.test.cjs tests/unit/source-v4.test.cjs tests/unit/source-v6.test.cjs",
+    "test": "npm run check && node tools/validation/check-document-math.cjs && node tests/unit/assertions.cjs && node tests/compatibility/test-v2-compatibility.cjs && node tests/compatibility/hard-mode-crush-test.cjs && node tests/compatibility/numerical-stability-test.cjs && node tests/compatibility/test-adapter.cjs && node tests/unit/hard-mode-policy.test.cjs && node --test tests/unit/very-hard-standard.test.cjs tests/unit/very-hard-cli.test.cjs tests/unit/cpu-optimization.test.cjs tests/unit/planning-math.test.cjs tests/unit/frontier-model.test.cjs tests/unit/frontier-episodes.test.cjs tests/unit/frontier-spatial.test.cjs tests/unit/frontier-dynamic.test.cjs tests/unit/frontier-study.test.cjs tests/unit/spawn-confirmation.test.cjs tests/unit/live-chrome-audit.test.cjs tests/unit/impossible-audit-evidence.test.cjs tests/unit/contact-risk-candidate.test.cjs tests/unit/planner-observer.test.cjs tests/unit/banking-alternatives.test.cjs tests/unit/capital-policy.test.cjs tests/unit/source-v4.test.cjs tests/unit/source-v6.test.cjs tests/unit/source-v7.test.cjs",
     "test:browser": "node tests/browser/run.cjs",
     "test:ui": "node tests/ui/ui-browser.cjs",
     "test:a11y": "node tests/ui/ui-browser.cjs --a11y",

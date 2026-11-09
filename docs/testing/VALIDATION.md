@@ -6,6 +6,19 @@ Production gates: `npm test` runs core contracts, version/timestamp checks, mani
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `research/`; they are not silently treated as release gates. For example, `research/legacy/tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
+## v10.3.13 current-source integration, 2026-11-09 EST
+
+The [November 9 ENG-01 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)
+records verified `live-modern-v7` support on source `2c70f903a601cb0725776bb1843567c5efca84bbe61a5a58b8ab44d7ca511066`.
+The bundle renamed the verified land arithmetic and added a native spectating
+guard to human commands. All three fresh-source gates pass.
+
+An installed single-player Impossible/512 run lost. It was driven by the CLI
+recorder in an owned profile, not by MCP, and that MCP layer is unvalidated.
+31 commands have exact debit/reserve/ceiling checks and complete recorder tails.
+Policy V2.8.2 is unchanged, and ENG-02 onward remain unresolved. The November 2
+entry below is dated evidence.
+
 ## v10.3.12 current-source integration, 2026-11-02 EST
 
 The [ENG-01 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_02.md) records

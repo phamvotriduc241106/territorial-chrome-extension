@@ -1,7 +1,7 @@
 'use strict';
-/** Test-only canonical access to private v4/v6 fields. Never injected by runtime. */
+/** Test-only canonical access to private v4/v6/v7 fields. Never injected by runtime. */
 function nativeFixtureView(game) {
-  if (!game || game.contract !== 'live-modern-v6') return game;
+  if (!game || (game.contract !== 'live-modern-v6' && game.contract !== 'live-modern-v7')) return game;
   if (!nativeFixtureView.views) nativeFixtureView.views = new WeakMap();
   if (nativeFixtureView.views.has(game)) return nativeFixtureView.views.get(game);
   const members = window.TIOSourceAdapter.nativeBindings(game.contract).members;

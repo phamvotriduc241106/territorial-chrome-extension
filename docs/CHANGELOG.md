@@ -1,5 +1,10 @@
 # Changelog
 
+## 10.3.13 — 2026-11-09 16:27:10 EST
+
+- Restore current-source native integration through structurally checked `live-modern-v7` bindings. The November 9 bundle renamed the same land arithmetic and added a native spectating guard on every human command; `canAttack` now refuses while that guard is set. Keep the V2.8.2 policy, reserve/debit checks and unknown-source rejection unchanged.
+- Validate original income/command routines, ownership, combat, event restoration and an installed single-player flow. Detailed ENG-01 evidence and limits are recorded in the November 9 report.
+
 ## 10.3.12 — 2026-11-02 15:58:44 EST
 
 - Restore current-source native integration through structurally checked `live-modern-v6` bindings. Keep the V2.8.2 policy, reserve/debit checks and unknown-source rejection unchanged.

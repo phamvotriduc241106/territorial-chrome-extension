@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Territorial.io Commander",
-  "version": "10.3.12",
-  "description": "V2.8.2 policy; verified November 2 native bindings and command safety. Updated 2026-11-02 15:58:44 EST.",
+  "version": "10.3.13",
+  "description": "V2.8.2 policy; verified November 9 native bindings and command safety. Updated 2026-11-09 16:27:10 EST.",
   "permissions": [
     "storage"
   ],

@@ -1,0 +1,22 @@
+{
+  "environment": {
+    "node": "v26.12.1",
+    "cpu": "Apple M4",
+    "warmups": 10,
+    "samples": 100
+  },
+  "measuredAt": "2026-11-09T21:31:58.436Z",
+  "meaning": "buildExportSnippet wall time per call in Node; once per bootstrap in ordinary use; not browser CPU, startup or planning cost",
+  "live-modern-v4": {
+    "p50Ms": 0.000375,
+    "p95Ms": 0.001375
+  },
+  "live-modern-v6": {
+    "p50Ms": 0.813416,
+    "p95Ms": 0.920833
+  },
+  "live-modern-v7": {
+    "p50Ms": 0.826291,
+    "p95Ms": 0.964167
+  }
+}

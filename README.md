@@ -3,11 +3,13 @@
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), with a
 native command bridge, deterministic policy and separate research/test tooling.
 
-**Release:** v10.3.12 · **Production engine:** V2.8.2 · **Updated:** 2026-11-02 15:58:44 EST
+**Release:** v10.3.13 · **Production engine:** V2.8.2 · **Updated:** 2026-11-09 16:27:10 EST
 
-**Native integration:** the fresh-source checks on October 29
-returned an unknown contract and failed closed. October 22 native integration
-passes and four Impossible/512 comparison losses remain dated evidence. See the
+**Native integration:** the November 9 official source is supported as the
+structurally verified `live-modern-v7` family; unknown sources still fail closed.
+Earlier source failures, the October 22 passes and four Impossible/512 comparison
+losses remain dated evidence. See the
+[November 9 report](docs/research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md), the
 [mathematical corrections](docs/math/MATHEMATICAL_CORRECTIONS.md),
 [current-source checks](docs/architecture/REPOSITORY_LAYOUT.md#verification)
 and [live MCP report](docs/research/MCP_IMPOSSIBLE_LOOP_2026_10_22.md).
@@ -90,6 +92,7 @@ helpers have explicit research/coverage limits. **Reliable competitive strength
 and a win-rate improvement are unestablished.** Unsupported historical 81.20%
 win-rate and approximately 1 µs controller claims are withdrawn.
 
+- [November 9 current-source repair (`live-modern-v7`) and installed result](docs/research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)
 - [November 2 current-source repair and MCP result](docs/research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_02.md)
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Planning model](docs/math/PLANNING_MODEL.md) and [math protocol](docs/math/MATH_TEST_PROTOCOL.md)

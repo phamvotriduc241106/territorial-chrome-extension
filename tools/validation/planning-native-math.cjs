@@ -39,7 +39,7 @@ async function audit(source) {
   const adapterBox = {};
   vm.runInNewContext(fs.readFileSync(path.join(root, 'content/source-adapter.js'), 'utf8'), adapterBox);
   const adapter = adapterBox.TIOSourceAdapter, family = adapter.detectContract(source);
-  assert.ok(['live-modern-v4', 'live-modern-v6'].includes(family), 'Unsupported native arithmetic source: ' + family);
+  assert.ok(['live-modern-v4', 'live-modern-v6', 'live-modern-v7'].includes(family), 'Unsupported native arithmetic source: ' + family);
   // Execute original arithmetic with explicit alpha-renamed bindings. Operators,
   // constants and control flow are unchanged; independent oracles remain below.
   const extract = marker => adapter.mapNativeSnippet(nativeFunction(source,
