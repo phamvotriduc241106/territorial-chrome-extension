@@ -201,10 +201,14 @@ async function run(options = {}) {
     // Click the current official UI label; do not equate hook's policy DIFF=5
     // with game difficulty. Current Very Hard is native value 4.
     await page.getByText(new RegExp('^(?:⚪|🟢) ' + difficultyLabel + '$', 'u')).click();
+    // Retain the visible selected label separately from the native value below.
+    report.difficultySelectionVisible = await page.getByText(new RegExp('^🟢 ' + difficultyLabel + '$', 'u')).count();
+    await page.screenshot({ path: path.join(output, 'difficulty-settings.png') });
     await page.getByRole('button', { name: '⬅️ Back', exact: true }).click();
     report.scenario = await page.evaluate(() => {
       const g = window.__TIO_GAME__, d = g.aE.data;
       return { nativeDifficulty: d.botDifficultyValue, playerCount: d.playerCount,
+        devicePixelRatio: window.devicePixelRatio, viewport: { width: innerWidth, height: innerHeight },
         mapType: d.mapType, mapIndex: d.mapProceduralIndex, mapSeed: d.mapSeed,
         nativeMapSettings: Object.fromEntries(Object.entries(d).filter(([key, value]) =>
           /map/i.test(key) && ['number', 'string', 'boolean'].includes(typeof value))) };

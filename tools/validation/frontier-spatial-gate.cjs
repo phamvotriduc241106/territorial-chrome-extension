@@ -10,7 +10,7 @@ async function gate() {
   const sourceBox = {};
   vm.runInNewContext(fs.readFileSync(path.join(root, 'content/source-adapter.js'), 'utf8'), sourceBox);
   const contract = sourceBox.TIOSourceAdapter.detectContract(html);
-  if (!['live-modern-v3','live-modern-v4','live-modern-v6'].includes(contract)) throw Error('Unsupported native spatial source: ' + contract + ' (' + hash + ')');
+  if (!['live-modern-v3','live-modern-v4','live-modern-v6', 'live-modern-v7'].includes(contract)) throw Error('Unsupported native spatial source: ' + contract + ' (' + hash + ')');
   const server = http.createServer((req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(html); });
   await new Promise(r => server.listen(0, '127.0.0.1', r)); let browser;
   try {
@@ -22,7 +22,7 @@ async function gate() {
       'content/frontier-model.js', 'content/frontier-spatial.js', 'research/frontier/frontier-dynamic.js', 'content/frontier-episodes.js'];
     const scripts = ['window.__TIO_NATIVE_FIXTURE_VIEW__ = '+require('../lib/native-fixture.cjs').toString()+';', ...files.map(f => fs.readFileSync(path.join(root, f), 'utf8'))];
     scripts.push(`{const build=TIOSourceAdapter.buildExportSnippet; window.TIOSourceAdapter={...TIOSourceAdapter,
-      buildExportSnippet(v,k){if(['live-modern-v4','live-modern-v6'].includes(k))return build(v,k).replace('window.__TIO_GAME__={',TIOSourceAdapter.mapNativeSnippet(\`window.__TIO_GAME__={testStep:function(){return sf();},
+      buildExportSnippet(v,k){if(['live-modern-v4','live-modern-v6', 'live-modern-v7'].includes(k))return build(v,k).replace('window.__TIO_GAME__={',TIOSourceAdapter.mapNativeSnippet(\`window.__TIO_GAME__={testStep:function(){return sf();},
       researchBatch:function(x){var saved=[a0o,a0c,a0q,a0r,a16,a14],actor=c.t,target=(actor+1)%c.c2;
         var banks=y.ax.slice(),lands=y.aO.slice(),debts=y.xa.slice(),incoming=a0n.pv,setCounter=a0n.pw,credit=pz.q0,counter=x.counter||0;
         try{a0o=actor;a0c=x.neutral?c.c2:target;a0q=x.force;a0r=x.cells;a16=!!x.reinforced;
@@ -48,10 +48,10 @@ async function gate() {
     await page.addInitScript({ content: scripts.join('\n') }); await page.goto(base);
     await page.waitForFunction(() => window.__TIO_GAME__?.modern);
     await page.evaluate(() => {
-      const g = window.__TIO_NATIVE_FIXTURE_VIEW__(__TIO_GAME__); if (!['live-modern-v3','live-modern-v4','live-modern-v6'].includes(g.contract)) throw Error('Unsupported source');
+      const g = window.__TIO_NATIVE_FIXTURE_VIEW__(__TIO_GAME__); if (!['live-modern-v3','live-modern-v4','live-modern-v6', 'live-modern-v7'].includes(g.contract)) throw Error('Unsupported source');
       g.aE.data.botDifficultyValue = 5; g.aE.data.playerCount = 64; g.aE.data.selectableSpawn = 0;
       g.aE.data.mapSeed = 240071;
-      if(['live-modern-v4','live-modern-v6'].includes(g.contract)){g.aE.qr.acY();g.aE.qr.qs();g.aE.qu();}
+      if(['live-modern-v4','live-modern-v6', 'live-modern-v7'].includes(g.contract)){g.aE.qr.acY();g.aE.qr.qs();g.aE.qu();}
       else{g.aE.a6i.a7A();g.aE.a6i.a77();g.aE.a6m();}
       let kernelCases = 0;
       for (const reinforced of [false,true]) for (const neutral of [false,true])
@@ -63,7 +63,7 @@ async function gate() {
               throw Error('Native support arithmetic mismatch '+k+' '+JSON.stringify({x,native,predicted}));
             kernelCases++;
           }
-      const ownershipKeys=['live-modern-v4','live-modern-v6'].includes(g.contract)?['a19','aT5','aU1','aTJ','aVI']:['h4','zu','k6','a0G','aJi'];
+      const ownershipKeys=['live-modern-v4','live-modern-v6', 'live-modern-v7'].includes(g.contract)?['a19','aT5','aU1','aTJ','aVI']:['h4','zu','k6','a0G','aJi'];
       const originals = ownershipKeys.map(k => g.ad[k]);
       const stats = { deltas: 0, captures: 0, hostileBatches: 0, neutralBatches: 0, cellWrites: 0,
         reconciliations: 0, fullAudits: 0, changedOwnerAttribution: true, candidateSelection: true, nativeSupportKernelCases: kernelCases };
@@ -83,7 +83,7 @@ async function gate() {
           }
         } else if (e.event === 'native_batch' && e.selectedFrontier) {
           const before = e.changedCells?.length ? previous : snapshot, seen = new Set(), expected = [];
-          const offsets = Array.from(['live-modern-v4','live-modern-v6'].includes(g.contract)?g.ad.a1g:g.ad.fb, x => x / 4), target = e.target === 'neutral' ? g.modern.neutral() : e.target;
+          const offsets = Array.from(['live-modern-v4','live-modern-v6', 'live-modern-v7'].includes(g.contract)?g.ad.a1g:g.ad.fb, x => x / 4), target = e.target === 'neutral' ? g.modern.neutral() : e.target;
           for (let k = 3; k >= 0; k--) for (let j = e.selectedFrontier.length - 1; j >= 0; j--) {
             const i = e.selectedFrontier[j] + offsets[k];
             if (i >= 0 && i < before.cells && !seen.has(i) && TIOSpatial.at(before, i) === target) { seen.add(i); expected.push(i); }

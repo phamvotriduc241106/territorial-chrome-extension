@@ -8,8 +8,18 @@
   // Explicit, reviewed names for the November 2 v6 family. No runtime discovery.
   const V6_GLOBALS = Object.freeze({"y":"ah","c":"aE","q":"bO","nl":"aS","ss":"bB","ep":"bm","aa":"bD","gW":"bV","ij":"bR","a0f":"bv","a0n":"ae","o9":"ap","j1":"ad","ay":"af","bc":"bi","aAZ":"aG","aJ":"am","aIw":"b5","aJR":"cd","aPX":"aPa","aPY":"aLY","aTz":"k0","sf":"n8","abQ":"gh","a0e":"gp","a0c":"gU","a0o":"gQ","a0p":"gP","a0q":"gR","a16":"gS","a0r":"gV","abM":"gZ","abL":"gY","a18":"gX","aUr":"aJG","aUn":"aJC","aUu":"aJJ","aVH":"aJj","aYb":"a5p","pz":"bg","a14":"gT","abU":"gr","a0a":"hA"});
   const V6_MEMBERS = Object.freeze({"ax":"hb","aO":"hN","an":"nU","t":"fJ","bW":"h1","c2":"fW","aI":"ku","a1T":"i5","a1X":"i8","a1W":"fS","q5":"kF","pv":"hc","q7":"gg","az":"ka","ql":"kr","bb":"aDc","aP":"ke","bY":"gv","o2":"kH","aXJ":"a6e","aXL":"a5l","qI":"a5m","xa":"a5j","zY":"h9","zZ":"fR","zb":"fQ","gX":"fk","gY":"fl","a0x":"gt","kY":"fF","q8":"gl","q9":"gm","qD":"gn","aH":"lE","a1D":"hk","bZ":"hl","a1M":"hz","xn":"i6","a1R":"i3","eq":"qo","er":"qp","b":"dk","a1g":"fb","b8":"ee","iu":"ei","q4":"h0","zw":"gw","aTe":"n4","a5f":"qr","py":"gy","a19":"h4","aT5":"zu","aU1":"k6","aTJ":"a0G","aVI":"aJk","aED":"m6","aGr":"jf","aHD":"k2","zr":"g6","aN":"g0","aYY":"a5i","aTU":"n2","aNK":"a5q","aNL":"a5w","a2p":"dr","aK":"lQ","bX":"lV","aUC":"g5","qH":"nQ","yR":"a2Q","sU":"ae5","xR":"a5a","d":"lC","yd":"k1","a0":"ij","pw":"ha","q0":"gz","qr":"a6j","acY":"a7B","qs":"a78","qu":"a6n"});
-  const V6_REVERSE_GLOBALS = Object.freeze(Object.fromEntries(Object.entries(V6_GLOBALS).map(([a,b])=>[b,a])));
-  const V6_REVERSE_MEMBERS = Object.freeze(Object.fromEntries(Object.entries(V6_MEMBERS).map(([a,b])=>[b,a])));
+  // Explicit, reviewed names for the November 9 v7 family (same canonical keys as v6).
+  // Each value was read from alpha-equivalent native units and checked against the
+  // original routines; v7 also adds a native spectating guard (see buildExportSnippet).
+  const V7_GLOBALS = Object.freeze({"y":"ah","c":"aE","q":"bO","nl":"aS","ss":"bB","ep":"bm","aa":"bD","gW":"bV","ij":"bR","a0f":"bv","a0n":"ae","o9":"ap","j1":"ad","ay":"af","bc":"bi","aAZ":"aG","aJ":"am","aIw":"b5","aJR":"cd","aPX":"aRs","aPY":"aNo","aTz":"k2","sf":"nC","abQ":"gi","a0e":"gq","a0c":"gV","a0o":"gR","a0p":"gQ","a0q":"gS","a16":"gT","a0r":"gW","abM":"ga","abL":"gZ","a18":"gY","aUr":"aLX","aUn":"aLT","aUu":"aLa","aVH":"aM0","aYb":"a76","pz":"bg","a14":"gU","abU":"gs","a0a":"hB"});
+  const V7_MEMBERS = Object.freeze({"ax":"hc","aO":"hO","an":"nY","t":"fK","bW":"h2","c2":"fX","aI":"kw","a1T":"i7","a1X":"iA","a1W":"fT","q5":"kH","pv":"hd","q7":"gh","az":"kc","ql":"kt","bb":"aF6","aP":"kg","bY":"gw","o2":"kJ","aXJ":"a7w","aXL":"a72","qI":"a73","xa":"a70","zY":"hA","zZ":"fS","zb":"fR","gX":"fl","gY":"fm","a0x":"gu","kY":"fG","q8":"gm","q9":"gn","qD":"go","aH":"lG","a1D":"hm","bZ":"hn","a1M":"i1","xn":"i8","a1R":"i5","eq":"qy","er":"qz","b":"dk","a1g":"fc","b8":"ef","iu":"ej","q4":"h1","zw":"gx","aTe":"n6","a5f":"r1","py":"gz","a19":"h5","aT5":"a14","aU1":"k8","aTJ":"a1Q","aVI":"aM1","aED":"m8","aGr":"jh","aHD":"k4","zr":"g7","aN":"g1","aYY":"a6z","aTU":"n4","aNK":"a77","aNL":"a7D","a2p":"dr","aK":"lS","bX":"lX","aUC":"g6","qH":"nU","yR":"a3Y","sU":"agH","xR":"a6r","d":"lE","yd":"k3","a0":"il","pw":"hb","q0":"h0","qr":"a81","acY":"a8V","qs":"a8S","qu":"a85"});
+  const reverseMap = map => Object.freeze(Object.fromEntries(Object.entries(map).map(([a,b])=>[b,a])));
+  const FAMILY_BINDINGS = Object.freeze({
+    'live-modern-v6': Object.freeze({ globals: V6_GLOBALS, members: V6_MEMBERS,
+      reverseGlobals: reverseMap(V6_GLOBALS), reverseMembers: reverseMap(V6_MEMBERS) }),
+    'live-modern-v7': Object.freeze({ globals: V7_GLOBALS, members: V7_MEMBERS,
+      reverseGlobals: reverseMap(V7_GLOBALS), reverseMembers: reverseMap(V7_MEMBERS) })
+  });
   const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
   /** Alpha-rename our verified recipe/arithmetic fragments, preserving operators.
@@ -18,9 +28,10 @@
    */
   function mapNativeSnippet(text, sourceKind, reverse) {
     if (sourceKind === 'live-modern-v4') return String(text);
-    if (sourceKind !== 'live-modern-v6') throw Error('Unsupported native binding family');
-    const globals = reverse ? V6_REVERSE_GLOBALS : V6_GLOBALS;
-    const members = reverse ? V6_REVERSE_MEMBERS : V6_MEMBERS;
+    if (!hasOwn(FAMILY_BINDINGS, sourceKind)) throw Error('Unsupported native binding family');
+    const family = FAMILY_BINDINGS[sourceKind];
+    const globals = reverse ? family.reverseGlobals : family.globals;
+    const members = reverse ? family.reverseMembers : family.members;
     function word(token, member) {
       const map = member ? members : globals;
       return hasOwn(map, token) ? map[token] : token;
@@ -53,7 +64,8 @@
   }
 
   function nativeBindings(sourceKind) {
-    if (sourceKind === 'live-modern-v6') return Object.freeze({ globals: V6_GLOBALS, members: V6_MEMBERS });
+    if (hasOwn(FAMILY_BINDINGS, sourceKind)) return Object.freeze({ globals: FAMILY_BINDINGS[sourceKind].globals,
+      members: FAMILY_BINDINGS[sourceKind].members });
     if (sourceKind === 'live-modern-v4') return Object.freeze({ globals: Object.freeze({}), members: Object.freeze({}) });
     throw Error('Unsupported native binding family');
   }
@@ -130,6 +142,21 @@
  '13440-6*bi.kr()', 'this.g0=function(fs,ft){return Math.floor((fs+0.5)/ft)',
  'af=new cd()', 'this.aDc=function(player){return aLZ(player)'];
     if (modernV6.every(token => code.includes(compact(token)))) return 'live-modern-v6';
+    // November 9 family: the same land arithmetic as v6 under new names, plus a
+    // native spectating guard on every human command. Both are required.
+    const modernV7 = [
+ 'var k6=bO.g1(12*ah.hc[player],1024)', 'bB.i1.i8(aS.i5(),aE.fX)',
+ 'this.kH=function(player,aNi)', 'this.n6=function(player){var iK=bR.g7[0];ah.hc[player]-=iK+bR.g7[1]',
+ 'this.i5=function(){return bO.il(Math.floor(jE*1024+0.5)-1,0,1023)',
+ 'this.kc=function(player){return Math.min(100*ah.hO[player],aE.a7w)',
+ 'this.gh=function(player){return size[player]',
+ 'gV=ae.gm(gR,gQ);gS=ae.gn(gR,gQ);gT=ae.go(gR,gQ)',
+ 'this.hn=function(player){return ah.nY[player]!==0&&ah.a6r[player]!==2',
+ '13440-6*bi.kt()', 'this.g1=function(ft,fu){return Math.floor((ft+0.5)/fu)',
+ 'af=new cd()', 'this.aF6=function(player){return aNp(player)',
+ 'this.i8=function(jE,k5){if(aE.hk){return;}if(this.qv){this.qv=0;bm.qy.qz(182,jE);}if(aE.lG){bB.qq.i8(aE.fK,jE,k5);}',
+ 'this.hk=this.data.a86'];
+    if (modernV7.every(token => code.includes(compact(token)))) return 'live-modern-v7';
     return 'unknown';
   }
 
@@ -720,6 +747,16 @@
 
   /** Build the only code injected into a recognized game closure. */
   function buildExportSnippet(hookVersion, sourceKind) {
+    if (sourceKind === 'live-modern-v7') {
+      // v7 native human commands return silently while aE.hk (spectating) is set.
+      // Make that disabled state explicit instead of trusting a void native return.
+      const base = 'canAttack:function(p){return !!bD.gw.hm(1)&&!!bD.gw.hn(p)},';
+      const mapped = mapNativeSnippet(buildV4ExportSnippet(String(hookVersion || 'unknown')), sourceKind)
+        .replace(/live-modern-v4/g, 'live-modern-v7');
+      if (mapped.split(base).length !== 2) throw Error('Unverified v7 command guard recipe');
+      return mapped.replace(base, 'canAttack:function(p){return !aE.hk&&!!bD.gw.hm(1)&&!!bD.gw.hn(p)},' +
+        'spectating:function(){return !!aE.hk},');
+    }
     if (sourceKind === 'live-modern-v6') return mapNativeSnippet(buildV4ExportSnippet(String(hookVersion || 'unknown')), sourceKind)
       .replace(/live-modern-v4/g, 'live-modern-v6');
     if (sourceKind === 'live-modern-v4') return buildV4ExportSnippet(String(hookVersion || 'unknown'));
@@ -807,7 +844,7 @@
     if (typeof text !== 'string' || text.length < 80000) return 'not-game';
     const contract = detectContract(text);
     if (contract === 'readable-legacy' || contract === 'live-modern' ||
-        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6') return contract;
+        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6' || contract === 'live-modern-v7') return contract;
     if (text.indexOf('canvasA') >= 0 ||
         (text.indexOf('territorial.io') >= 0 && text.length > 100000) ||
         (text.indexOf('Uint32Array') >= 0 && text.indexOf('fillText') >= 0 && text.length > 200000)) {

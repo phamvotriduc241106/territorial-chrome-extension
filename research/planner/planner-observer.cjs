@@ -141,12 +141,18 @@ function installNativeObserver(game, options = {}) {
   // modern is a fresh facade on every getter access. Wrap the stable native
   // namespaces it delegates to, and reject a changed delegation signature.
   const text = fn => Function.prototype.toString.call(fn).replace(/\s+/g,'');
-  const v4 = game.contract === 'live-modern-v4';
-  const incomingName = v4 ? 'pv' : 'hc', attackName = v4 ? 'xn' : 'i6';
-  const incomingOwner = game.ae, attackOwner = v4 ? game.bB?.a1M : game.bB?.hz;
-  if (!['live-modern-v3', 'live-modern-v4', 'live-modern-v6'].includes(game.contract) ||
-      text(modern.incoming) !== (v4 ? 'function(p,t){returna0n.pv(p,t)}' : 'function(p,t){returnae.hc(p,t)}') ||
-      text(modern.attack) !== (v4 ? 'function(code,t){returnss.a1M.xn(code,t)}' : 'function(code,t){returnbB.hz.i6(code,t)}') ||
+  // Explicit reviewed delegation per verified family; no name inference.
+  const delegation = {
+    'live-modern-v3': { incoming: 'hc', owner: 'hz', attack: 'i6', incomingText: 'function(p,t){returnae.hc(p,t)}', attackText: 'function(code,t){returnbB.hz.i6(code,t)}' },
+    'live-modern-v4': { incoming: 'pv', owner: 'a1M', attack: 'xn', incomingText: 'function(p,t){returna0n.pv(p,t)}', attackText: 'function(code,t){returnss.a1M.xn(code,t)}' },
+    'live-modern-v6': { incoming: 'hc', owner: 'hz', attack: 'i6', incomingText: 'function(p,t){returnae.hc(p,t)}', attackText: 'function(code,t){returnbB.hz.i6(code,t)}' },
+    'live-modern-v7': { incoming: 'hd', owner: 'i1', attack: 'i8', incomingText: 'function(p,t){returnae.hd(p,t)}', attackText: 'function(code,t){returnbB.i1.i8(code,t)}' }
+  }[game.contract];
+  const incomingName = delegation && delegation.incoming, attackName = delegation && delegation.attack;
+  const incomingOwner = game.ae, attackOwner = delegation ? game.bB?.[delegation.owner] : null;
+  if (!delegation ||
+      text(modern.incoming) !== delegation.incomingText ||
+      text(modern.attack) !== delegation.attackText ||
       typeof incomingOwner?.[incomingName] !== 'function' || typeof attackOwner?.[attackName] !== 'function')
     throw Error('Unsupported stable native delegation signature');
   const buffer = createBuffer(options), originals = {

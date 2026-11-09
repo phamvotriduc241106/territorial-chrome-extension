@@ -3,7 +3,7 @@
 Chrome Manifest V3 extension for [Territorial.io](https://territorial.io), with a
 native command bridge, deterministic policy and separate research/test tooling.
 
-**Release:** v10.3.12 · **Production engine:** V2.8.2 · **Updated:** 2026-11-02 15:58:44 EST
+**Release:** v10.3.13 · **Production engine:** V2.8.2 · **Updated:** 2026-11-09 16:27:10 EST
 
 **Native integration:** the fresh-source checks on October 29
 returned an unknown contract and failed closed. October 22 native integration

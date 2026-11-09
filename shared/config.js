@@ -7,11 +7,11 @@
 
   if (root.TIOConfig) return;
 
-  const VERSION = '10.3.12';
+  const VERSION = '10.3.13';
   const ENGINE_VERSION = 'V2.8.2';
   const ENGINE_SOURCE = 'content/engine-core-v2-advanced.js (V2.8.2 authoritative runtime)';
   // Always include local wall-clock time and timezone in extension details.
-  const ENGINE_UPDATED_AT = '2026-11-02 15:58:44 EST';
+  const ENGINE_UPDATED_AT = '2026-11-09 16:27:10 EST';
   const BRIDGE_VERSION = 1;
   const SETTINGS_SCHEMA = 2;
 
