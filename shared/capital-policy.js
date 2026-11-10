@@ -51,7 +51,8 @@
     if(!integer(plan.minAttack)||plan.minAttack<1||!Number.isFinite(ratio)||ratio<0.01||ratio>0.72||
         plan.maxSpendTotal>st.balance-plan.minRemaining)return blocked('invalid-budget');
     const reserve=Math.max(plan.minRemaining,risk.reserve);
-    const B=st.balance,ceiling=Math.round(ratio*1024);
+    // The ratio is an upper bound: never round it up to the next slider code.
+    const B=st.balance,ceiling=Math.floor(ratio*1024);
     const cost=units=>{const requested=Math.floor(B*units/1024),c=core.humanAttackDebit(B,requested);
       return {before:B,requested,...c,after:B-c.debit};};
     let lo=10,hi=ceiling,best=0;

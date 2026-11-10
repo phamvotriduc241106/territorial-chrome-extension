@@ -6,6 +6,19 @@ Production gates: `npm test` runs core contracts, version/timestamp checks, mani
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `research/`; they are not silently treated as release gates. For example, `research/legacy/tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
+## v10.3.15 math implementation audit, 2026-11-09 EST
+
+The [implementation audit](../math/MATH_IMPLEMENTATION_AUDIT_2026_11_09.md)
+maps every documented formula to its code and checks each one with an
+independent oracle. Six defects were found, each reproduced by a failing
+regression first:
+
+- the legacy V1 and capital-v1 slider ceilings could round up;
+- the Eikonal, Poisson and spectral ranking solvers stopped before converging.
+
+The V2 command path, spend policy and the 80 frozen fingerprints are unchanged,
+and no match was played.
+
 ## v10.3.13 current-source integration, 2026-11-09 EST
 
 The [November 9 ENG-01 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)

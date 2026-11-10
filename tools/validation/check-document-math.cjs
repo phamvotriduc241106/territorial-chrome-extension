@@ -1,5 +1,5 @@
 'use strict';
-// Independent worked-example checks for docs/MATHEMATICAL_CORRECTIONS.md.
+// Independent worked-example checks for docs/math/MATHEMATICAL_CORRECTIONS.md.
 // No network or game mutation; these are mathematical counterexamples, not play.
 const assert = require('node:assert/strict');
 const { kernel } = require('../benchmarks/cpu-benchmark.cjs');
@@ -50,6 +50,20 @@ const tax=Math.floor((12*B+.5)/1024), wrongTax=Math.floor(12*requested/1024);
 assert.equal(requested,1280); assert.equal(tax,120); assert.equal(wrongTax,15);
 assert.equal(requested+tax,1400);
 assert.equal(kernel().TIOEngineCore.humanAttackDebit(B,requested).debit,1400);
+// Section 6 identities (2026-11-09): one tax; exact crush threshold; ceilings
+// round down; the native integer root is not sqrt.
+const core=kernel().TIOEngineCore;
+for (const bank of [0,1,85,86,1023,10240,123456789,2147483647]) {
+  assert.equal(core.humanAttackDebit(bank,0).tax,Math.floor(3*bank/256));
+  assert.equal(core.botAttackDebit(bank,0).tax,Math.floor(3*bank/256));
+}
+for (const bank of [0,1,125,9999]) {
+  assert.equal(core.al(8*bank+7,8)>bank,false); assert.equal(core.al(8*bank+8,8)>bank,true);
+}
+assert.equal(Math.floor(0.62*1024),634); assert.equal(Math.round(0.62*1024),635);
+assert.equal(core.maxSafeRatio(1000000,1,0.62),634/1024);
+let iroot=core.al(26880+1,2); for (let i=0;i<9;i++) iroot=core.al(iroot+core.al(26880,iroot),2);
+assert.equal(iroot,163); assert.equal(Math.round(Math.sqrt(26880)),164);
 assert.equal(102+102,204); assert.notEqual(102+102,203);
 assert.equal(102+102+65+39,308); assert.notEqual(102+102+65+39,307);
 console.log(JSON.stringify({status:'passed',scope:'document worked examples; no current-source or gameplay claim',
@@ -57,4 +71,6 @@ console.log(JSON.stringify({status:'passed',scope:'document worked examples; no 
   boundaryControl:'224/326475; exact residual 0',
   spectral:{eigenvalues,signCut:cut(signMask),minimumCut:1,balancedMinimumCut:2},
   humanCommand:{bank:B,requested,tax,wrongProportionalTax:wrongTax,debit:1400},
-  withdrawnTable:{connectedSum:204,claimedConnected:203,totalSum:308,claimedTotal:307}},null,2));
+  withdrawnTable:{connectedSum:204,claimedConnected:203,totalSum:308,claimedTotal:307},
+  identities:{tax:'floor(3B/256) for human and bot',crush:'al(M,8)>B iff M>=8B+8',
+    ceiling062Units:634,nativeRootOf26880:iroot}},null,2));

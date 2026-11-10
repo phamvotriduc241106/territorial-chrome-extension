@@ -59,15 +59,17 @@ the corrected rate and the current fresh-source failure separately.
 
 | Area | Invariant or oracle |
 | --- | --- |
-| Slider | Encoded code is an integer in `[0,1023]`; units are `code+1`; requested troops are `floor(B*units/1024)`. An explicit upper bound must never be rounded upward. Zero/nonfinite safety ceilings must block spending. |
-| Human land debit | Tax is `floor((12*B+0.5)/1024)`; sent force is `min(requested,max(0,B-tax))`; debit is sent force plus tax. Validate actual native routines and distinguish admission from arithmetic. |
-| Bot land debit | Tax is `floor((3*B+0.5)/256)`; native bots subtract tax from requested force at or above the half-bank threshold. Do not substitute the human formula. |
+| Slider | Encoded code is an integer in `[0,1023]`; units are `code+1`; requested troops are `floor(B*units/1024)`. An explicit upper bound must never be rounded upward: a ceiling `rho` admits at most `floor(1024*rho)` units. Zero/nonfinite safety ceilings must block spending. This applies to every engine and controller (V2, legacy V1, capital-v1), not only the default path. |
+| Human land debit | Tax is `floor((12*B+0.5)/1024)`, which equals `floor(3*B/256)` for every integer bank; sent force is `min(requested,max(0,B-tax))`; debit is sent force plus tax. Validate actual native routines and distinguish admission from arithmetic. |
+| Bot land debit | Tax is `floor((3*B+0.5)/256)`, numerically the same as the human tax; native bots subtract it from requested force at or above the half-bank threshold. The sent-force rule differs, so do not substitute the human formula. |
 | Reserves/fronts | Every approved command retains its required reserve, respects its debit cap and excludes busy/illegal targets. A burst must use each successive remaining bank, including every command tax. |
 | Income | Integer rounding, source tick phase, multipliers, per-player settings, disabled interest, debt repayment and caps match the native routine. Check ticks `8,9,99,1919,1929,2999`; do not substitute continuous compound interest. |
 | Planning | One command is debited once. Incoming force has already left the sender's bank. Pending fronts persist until settlement. Inputs remain unchanged; repeated transitions evolve the previous output. Horizons use explicit source ticks. |
 | Global state | Preserve outside territory, banks and player counts. A local rival set must not invent global domination or a completed game. |
 | Integer allocation | Integer/nonnegative allocations, sum no greater than budget, feasible floors/caps, explicit infeasibility and no improving feasible one-troop exchange. Compare with exhaustive/DP optima and test tied/saturated utilities. |
 | Beliefs/search | Quantiles use cumulative weight; median and expectation stay distinct. Utilities are labelled as utilities. Partial action coverage must not authorize a confident veto; experimental search remains isolated. |
+| Crush threshold | `al(M,8) > B` is exactly `M >= 8*B+8`. Any reserve floor claimed to avoid it must be shown to exceed `(M-7)/8`. |
+| Iterative solvers | Eikonal, Poisson, spectral and similar helpers must reach their stated discrete fixpoint or tolerance before use. Compare with a converged reference on the same discretization or an exact combinatorial answer (breadth-first distance, cluster labels). A fixed iteration count needs evidence that it converges on hard inputs (winding corridors, nearly disconnected clusters). Bound added work so that unbounded inputs cost no more than before. |
 | Numerical boundaries | Exercise zero, tiny, normal and maximum supported banks; empty/dead/busy opponents; infeasible budgets; zero horizons; degenerate geometry; and NaN/Infinity at public safety boundaries. Preserve input validity/provenance. |
 
 Allocation objective: for extra troops `y_i = allocation_i - min_i`,
@@ -87,6 +89,19 @@ At extension 10.3.10, the committed gates include 151 Node cases plus existing
 assertion suites, 80 frozen decision/spend fixtures, 5,000 seeded allocation
 invariant cases, 200 exhaustive comparisons and 300 DP comparisons. Keep these
 cases when adding coverage. Passing counts alone do not prove correctness.
+
+At 10.3.15, `npm test` runs 182 Node cases. They include the
+formula-to-implementation regressions in
+`tests/unit/math-implementation.test.cjs`:
+
+- the tax identity for every bank up to 300,000;
+- the exact crush threshold;
+- 3,000 exhaustive slider scans;
+- ceiling rules for V1 and capital-v1;
+- breadth-first, cluster-label and converged-solve oracles for the three
+  ranking solvers.
+
+See the [November 9 implementation audit](MATH_IMPLEMENTATION_AUDIT_2026_11_09.md).
 
 The fresh arithmetic audit checks 1,512 income/debt cases, all 1,024 slider codes
 at six bank sizes for 6,144 human and 6,144 bot cases. It executes extracted

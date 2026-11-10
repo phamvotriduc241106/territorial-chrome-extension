@@ -6,6 +6,13 @@ This corrects the historical manuscript; it does not change the controller or
 establish a new gameplay result. Subjective review scores are not measurements
 and are not adopted as project results.
 
+**Addendum, 2026-11-09 (release 10.3.15).** A formula-by-formula comparison of
+this document with the shipped code is in the
+[implementation audit](MATH_IMPLEMENTATION_AUDIT_2026_11_09.md). Section 6 below
+adds the identities it proved. The October 28 source failure described next is
+dated: current-source support was restored as `live-modern-v7` (see the
+[November 9 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)).
+
 ## Verification before editing
 
 The original offline suite passed: **155 Node cases** plus existing assertion
@@ -169,7 +176,7 @@ native single-command actuator does not execute that allocation vector.
 | Belief observation | `BayesianTroopObserver` | Scalar log-space Kalman-style bank observation; median and expectation distinguished; not EKF |
 | Endgame sampling | `computeMCTSEndgameAction` | Conditional UCB action bandit; no search tree and no calibrated win probability |
 | Experimental tree | `runMultiStepMCTS` | `enableTreeSearch=false`; not called by `decide` |
-| Eikonal/Poisson/spectral | `rankTargets` and numerical helpers | Conditional perimeter/vision ranking helpers; not demonstrated as part of the normal mapped native command path |
+| Eikonal/Poisson/spectral | `rankTargets` and numerical helpers | Conditional perimeter/vision ranking helpers; not demonstrated as part of the normal mapped native command path. Since 10.3.15 each iterates to a tolerance; before that, fixed small iteration counts returned unconverged fields (§6) |
 | Reserve control | `computeCrushBarrierFloor`, native admission | Checked command accounting plus heuristic risk floors; no invariant-controller theorem |
 | PMP-labelled spending | `solvePontryaginOptimalControl` | Rule-based ratios; no solved Hamiltonian or proved singular control |
 
@@ -191,10 +198,52 @@ data. Percentage-point changes must also be distinguished from relative percent
 changes. The original pre-correction text remains in Git history. The unchanged
 historical PDF is also superseded by these corrections.
 
+## 6. Arithmetic identities and implementation status (2026-11-09)
+
+The following hold for every integer bank and are checked by
+`tests/unit/math-implementation.test.cjs`. Full derivations and measurements
+are in the [implementation audit](MATH_IMPLEMENTATION_AUDIT_2026_11_09.md).
+
+**One tax, two names.** Write `12B = 1024q + r` with `0 ≤ r ≤ 1023`. Then
+`floor((12B+0.5)/1024) = floor(q + (2r+1)/2048) = q`, because `2r+1 < 2048`.
+So the human tax in §2 equals `floor(12B/1024) = floor(3B/256)`, which is also
+the bot tax. The `+0.5` changes nothing for an integer bank. The worked example
+above is unaffected: at `B = 10,240` the tax is 120 either way.
+
+**Exact crush threshold.** `al(M,8) = floor((2M+1)/16)`, so a bot with bank
+`M` crushes bank `B` exactly when `M ≥ 8B+8`.
+
+The shipped floor `ceil(M/7.6) + max(60, floor(0.05B))` exceeds `(M−7)/8`, so
+it always lies outside that region. This is a statement about one opponent's
+current bank. It does not change §1: it is not a forward-invariance proof.
+
+**Ceilings round down.** A slider ceiling `ρ` admits at most `floor(1024ρ)`
+units, and a zero or nonfinite ceiling admits none. Release 10.3.10 enforced
+this for engine V2. Release 10.3.15 extends it to the legacy V1 engine (whose
+0.62 crush cap had admitted 635 units) and to capital-v1.
+
+**Native root is not `√`.** The interest index uses nine integer Newton steps
+copied from the game. For `0 ≤ g ≤ 120,000` it differs from `round(√g)` at
+53,663 values, by at most 1.77. The planner must reproduce this routine, and it
+does: the fresh-source audit checks it against the original.
+
+**Solvers must converge before their fields are used.**
+
+| Solver | Converged reference | Before 10.3.15 |
+| --- | --- | --- |
+| Eikonal fast sweeping | Breadth-first distance through a one-cell corridor | 35 reachable cells reported unreachable |
+| Poisson SOR | Separately converged Gauss–Seidel | Errors up to 0.016 |
+| Spectral power iteration | Cluster labels and a Jacobi eigen-solver | Wrong partition for 100 of 300 clearly two-cluster layouts |
+
+Convergence makes each helper compute its stated discrete quantity. It does not
+turn the spectral sign cut into a certified cut (§3), nor a ranking score into
+evidence of strength.
+
 ## Reproduce and proceed
 
-Run `npm run test:math-docs` for the counterexample, tangency, spectral and tax
-checks; `npm test` includes it. Run
+Run `npm run test:math-docs` for the counterexample, tangency, spectral, tax
+and §6 identity checks; `npm test` includes it and
+`tests/unit/math-implementation.test.cjs`. Run
 `node --test tests/unit/planning-math.test.cjs` for existing allocation/economics
 oracles. `npm run test:math-native` independently fetches the current public
 bundle and must retain its failure when signatures change.

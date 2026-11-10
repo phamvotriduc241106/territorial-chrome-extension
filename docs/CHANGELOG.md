@@ -1,5 +1,16 @@
 # Changelog
 
+## 10.3.15 — 2026-11-09 20:14:25 EST
+
+- Audit every documented formula against its implementation with independent oracles. Fix six defects, each reproduced by a failing case in `tests/unit/math-implementation.test.cjs`:
+  - the legacy V1 `maxSafeRatio` rounded its ceiling up and turned a zero ceiling into 0.01;
+  - capital-v1 rounded its slider ceiling up;
+  - both Eikonal solvers stopped before convergence and reported reachable cells as unreachable;
+  - the Poisson field stopped before convergence;
+  - the spectral Fiedler vector was far from converged; it now starts from the principal axis and iterates to a tolerance under a bounded work cap.
+- Document proved identities: the human and bot taxes are both `floor(3B/256)`; the crush rule is exactly `M ≥ 8B+8`; the reserve floor lies outside it; the native integer root is not `√`.
+- V2 policy, spend, reserve and native-command logic are unchanged, and the 80 frozen fingerprints still match. See the [math implementation audit](math/MATH_IMPLEMENTATION_AUDIT_2026_11_09.md).
+
 ## 10.3.14 — 2026-11-09 16:51:15 EST
 
 - Fix six runtime defects found in a repository sweep, each reproduced by a failing regression in `tests/unit/runtime-defects.test.cjs`. Vision-fallback region labelling silently merged components past 25,000 labels. Same-frame opponents could share an ID. A paced click dropped by a full queue was reported as fired. Sword-confirm timer IDs accumulated. Pocket centroids were skewed toward the origin. The service worker's `UPDATE_SETTINGS` reset unrelated preferences.
