@@ -6,6 +6,19 @@ Production gates: `npm test` runs core contracts, version/timestamp checks, mani
 
 Candidate-only tests and historical falsification scripts remain accessible under `tests/` and `research/`; they are not silently treated as release gates. For example, `research/legacy/tests/test-singular-arc-spending.test.cjs` intentionally requests behavior that is not implemented. Passing the release gate does not imply every exploratory test passes.
 
+## Elo testing protocol, 2026-11-09 EST
+
+The [Elo protocol](ELO_TESTING_PROTOCOL.md) rates the engine against one
+Impossible bot (0 Elo) using every match's finishing place, not just wins. It
+uses interval-censored placements from the live recorder and a preregistered,
+hash-locked schedule. Two-arm sequential tests decide whether a change is
+stronger.
+
+The statistics are validated on model-generated data, where 95% intervals cover
+the true rating 94.7% of the time at 512 players. The fit to the real game is
+checked by per-report diagnostics. No campaign has been run yet, so no rating
+is reported here.
+
 ## v10.3.15 math implementation audit, 2026-11-09 EST
 
 The [implementation audit](../math/MATH_IMPLEMENTATION_AUDIT_2026_11_09.md)

@@ -11,6 +11,7 @@ its repository-root `manifest.json`; research and evidence have separate homes.
 | Change or verify mathematics | [Math test protocol](math/MATH_TEST_PROTOCOL.md), [planning model](math/PLANNING_MODEL.md) |
 | Run the official single-player MCP improvement loop | [Agent runbook](testing/AGENT_EXPERIMENT_HANDOFF.md) |
 | Read test results and their limits | [Validation](testing/VALIDATION.md) |
+| Measure engine strength in Elo, or decide whether a change is stronger | [Elo testing protocol](testing/ELO_TESTING_PROTOCOL.md) |
 | Run a prospective Very Hard evaluation | [Evaluation standard](testing/VERY_HARD_TEST.md) |
 | Understand performance measurements | [CPU profiling](performance/CPU_OPTIMIZATION.md) |
 | Work on the popup or HUD | [UI validation](ui/UI_UX_VALIDATION.md), [theme](ui/NEON_THEME.md) |
