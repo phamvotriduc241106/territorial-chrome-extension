@@ -152,8 +152,12 @@
     if (B <= leave + 8) return 0;
     // Search the exact 10-bit values the game consumes; float rounding must not
     // turn a safe result into the next, unsafe troop-bar code.
-    var cap = Math.max(0.01, Math.min(0.72, ceiling != null ? ceiling : 0.72));
-    var lo = ratioToIl(0.01), hi = ratioToIl(cap), bestIl = -1;
+    // A ceiling is an inequality: round it down to a code, and let an explicit
+    // zero/nonfinite ceiling block spending (same contract as engine V2).
+    var cap = ceiling != null ? Number(ceiling) : 0.72;
+    if (!Number.isFinite(cap) || cap <= 0) return 0;
+    cap = Math.min(0.72, cap);
+    var lo = ratioToIl(0.01), hi = Math.floor(cap * 1024) - 1, bestIl = -1;
     while (lo <= hi) {
       var mid = (lo + hi) >> 1;
       var ratio = ilToRatio(mid);

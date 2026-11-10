@@ -1,5 +1,5 @@
 /**
- * Territorial.io deterministic policy kernel v10.3.14
+ * Territorial.io deterministic policy kernel v10.3.15
  *
  * Faithful to readable dump (dU / dD / dF / dJ / d3) + live aF tables.
  *
@@ -536,7 +536,8 @@
 
   /**
    * Crush reserve barrier (legacy CBF name; not a derivative-based CBF proof).
-   * Hard bots evaluate dJ crush when: al(B_bot, 8) > B_us (i.e. B_bot > 8 * B_us).
+   * Hard bots evaluate dJ crush when: al(B_bot, 8) > B_us. For integer banks
+   * al(M,8) = floor((2M+1)/16), so this is exactly B_bot >= 8*B_us + 8.
    *
    * To remain strictly outside the crush domain of all bordering enemies:
    *   B_post >= ceil(B_threat_max / 7.6) + sigma
@@ -1457,22 +1458,34 @@
         }
       }
 
-      if (T_cand < T[idx]) T[idx] = T_cand;
+      // Report a change only if the STORED value fell (Float32 storage may
+      // round a candidate back to the previous value; that is not progress).
+      if (T_cand < T[idx]) {
+        const before = T[idx];
+        T[idx] = T_cand;
+        return T[idx] < before;
+      }
+      return false;
     }
 
-    for (let iter = 0; iter < 2; iter++) {
+    // Fast sweeping needs about one round per turn of the shortest path; a
+    // fixed two rounds left winding corridors unreached. Sweep to the
+    // fixpoint. Values only decrease, so this terminates (bounded by cells).
+    for (let iter = 0; iter <= numCells; iter++) {
+      let changed = false;
       for (let j = 0; j < H; j++) {
-        for (let i = 0; i < W; i++) updateGodunovCell(i, j);
+        for (let i = 0; i < W; i++) if (updateGodunovCell(i, j)) changed = true;
       }
       for (let j = 0; j < H; j++) {
-        for (let i = W - 1; i >= 0; i--) updateGodunovCell(i, j);
+        for (let i = W - 1; i >= 0; i--) if (updateGodunovCell(i, j)) changed = true;
       }
       for (let j = H - 1; j >= 0; j--) {
-        for (let i = W - 1; i >= 0; i--) updateGodunovCell(i, j);
+        for (let i = W - 1; i >= 0; i--) if (updateGodunovCell(i, j)) changed = true;
       }
       for (let j = H - 1; j >= 0; j--) {
-        for (let i = 0; i < W; i++) updateGodunovCell(i, j);
+        for (let i = 0; i < W; i++) if (updateGodunovCell(i, j)) changed = true;
       }
+      if (!changed) break;
     }
 
     const timesOut = new Float32Array(numCells);
@@ -2149,7 +2162,9 @@
    * Graph Laplacian L = D - W with an adaptive RBF kernel:
    *   W_{ij} = exp(-||x_i - x_j||^2 / (2 * sigma^2))
    * Solves for the algebraic connectivity lambda_2 and Fiedler Vector v_2 via
-   * shifted power iteration with Gram-Schmidt 1-deflation in 8 iterations (< 3 µs).
+   * shifted power iteration with mean (1-vector) deflation, iterated to a
+   * tolerance under a work cap (see the loop). The sign cut is a relaxation
+   * heuristic, not a certified minimum or balanced cut.
    */
   // Persistent flat scratch buffers for Spectral Graph Cut (0 GC)
   const SPEC_MAX_N = 64;
@@ -2262,9 +2277,27 @@
 
     const mu = 2.0 * (maxDegree + 1e-5);
     const v = n <= SPEC_MAX_N ? specVBuf : new Float64Array(n);
+    // Start from the point cloud's principal axis. For spatial RBF graphs the
+    // Fiedler vector is strongly aligned with it (a cluster split or the long
+    // axis), so the iteration starts near the answer instead of from an
+    // index-parity pattern. A small parity term keeps every eigen-component
+    // nonzero; with no spatial spread the parity pattern alone is used.
+    let mx = 0, my = 0;
+    for (let i = 0; i < n; i++) { mx += xs[i]; my += ys[i]; }
+    mx /= n; my /= n;
+    let sxx = 0, syy = 0, sxy = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xs[i] - mx, dy = ys[i] - my;
+      sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+    }
+    const theta = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+    const ax = Math.cos(theta), ay = Math.sin(theta);
+    const spread = Math.sqrt((sxx + syy) / n);
     let sumV = 0;
     for (let i = 0; i < n; i++) {
-      const initVal = (i % 2 === 0 ? 1 : -1) * (1 + (i / n));
+      const parity = (i % 2 === 0 ? 1 : -1) * (1 + (i / n));
+      const axis = spread > 1e-9 ? ((xs[i] - mx) * ax + (ys[i] - my) * ay) / spread : 0;
+      const initVal = axis + 1e-3 * parity;
       v[i] = initVal;
       sumV += initVal;
     }
@@ -2280,7 +2313,16 @@
     for (let i = 0; i < n; i++) v[i] *= invNormV;
 
     const vNext = n <= SPEC_MAX_N ? specVNextBuf : new Float64Array(n);
-    for (let iter = 0; iter < 8; iter++) {
+    // The shifted iteration contracts the unwanted components by about
+    // (mu-lambda3)/(mu-lambda2), which is close to 1 because mu = 2*maxDegree.
+    // Eight fixed iterations therefore often returned a vector far from the
+    // Fiedler vector. Iterate to a tolerance (at most 64 iterations), with
+    // extra work capped at 32 iterations of a 64-point input. Inputs of 128+
+    // points keep the old 8-iteration cost, so this does not worsen the
+    // unbounded-input case (R5). When lambda2 ~ lambda3 (e.g. uniformly
+    // scattered points) the sign cut stays ill-conditioned at any budget.
+    const maxIter = Math.max(8, Math.min(64, Math.floor(SPEC_MAX_N * SPEC_MAX_N * 32 / (n * n))));
+    for (let iter = 0; iter < maxIter; iter++) {
       let sNext = 0;
       for (let i = 0; i < n; i++) {
         let rowSum = (mu - D[i]) * v[i];
@@ -2300,7 +2342,15 @@
       }
       normNext = Math.sqrt(normNext) || 1;
       const invNormNext = 1.0 / normNext;
-      for (let i = 0; i < n; i++) v[i] = vNext[i] * invNormNext;
+      // mu*I - L is positive semidefinite, so iterates do not flip sign.
+      let delta = 0;
+      for (let i = 0; i < n; i++) {
+        const next = vNext[i] * invNormNext;
+        const step = Math.abs(next - v[i]);
+        if (step > delta) delta = step;
+        v[i] = next;
+      }
+      if (delta < 1e-6) break;
     }
 
     const bottleneckScores = n <= SPEC_MAX_N ? specBScoreBuf.subarray(0, n) : new Float64Array(n);
@@ -2334,13 +2384,15 @@
   /**
    * Priority 4: Harmonic Analysis & Poisson PDE Potential Fields
    *
-   * Solves the 2D Poisson boundary value problem:
-   *   \nabla^2 \Phi(x, y) = \rho(x, y)
-   * on a spatial mesh with Dirichlet boundary conditions via Successive Over-Relaxation (SOR).
+   * Solves the discrete 2D Laplace problem (rho = 0) on an N x N mesh:
+   * sources are fixed at +1, sinks at -1, obstacle cells at 0.6, and the
+   * unfixed outer ring stays at 0 (homogeneous Dirichlet). Successive
+   * over-relaxation (omega = 1.35) is iterated to convergence.
    *
-   * By the Strong Maximum Principle for harmonic functions, \Phi has NO local extrema
-   * in the interior, guaranteeing that troop flow J = -\nabla \Phi never gets trapped
-   * in concave terrain, fjords, or mountain dead-ends.
+   * Discrete maximum principle: every unfixed interior cell is the average of
+   * its four neighbours, so it cannot be a strict local extremum. Extrema lie
+   * on fixed cells or the zero ring. This is a property of the coarse mesh
+   * field, not a guarantee about troop movement on the real map.
    */
   function computePoissonPotentialField() { return profileKernel('kernel.poisson', computePoissonPotentialFieldImpl, arguments); }
   function computePoissonPotentialFieldImpl(sources, sinks, obstacles, gridSize) {
@@ -2407,12 +2459,19 @@
     const oneMinusOmega = 1.0 - omega;
     const omegaQuarter = omega * 0.25;
 
-    for (let iter = 0; iter < 8; iter++) {
+    // Eight fixed sweeps left errors up to ~0.016 against the converged
+    // solution. Iterate to a tolerance; the cap bounds an unusually large grid.
+    for (let iter = 0; iter < 2000; iter++) {
+      let delta = 0;
       for (let i = 0; i < interiorCount; i++) {
         const idx = interiorIndices[i];
         const neighborSum = Phi[idx - 1] + Phi[idx + 1] + Phi[idx - N] + Phi[idx + N];
-        Phi[idx] = oneMinusOmega * Phi[idx] + omegaQuarter * neighborSum;
+        const next = oneMinusOmega * Phi[idx] + omegaQuarter * neighborSum;
+        const step = Math.abs(next - Phi[idx]);
+        if (step > delta) delta = step;
+        Phi[idx] = next;
       }
+      if (delta < 1e-12) break;
     }
 
     return {
@@ -2742,8 +2801,10 @@
    *
    * Solves the continuous isotropic Eikonal equation:
    *   || \nabla T(x) || = 1 / v(x)
-   * on a discretized macro-grid via zero-GC typed-array priority-queue wavefront propagation.
-   * Eliminates detour blindness around water bodies, straits, and impassable mountain ridges.
+   * on a discretized macro-grid with first-order Godunov upwind updates and
+   * Gauss-Seidel fast sweeping (four orderings) repeated to the discrete
+   * fixpoint. Despite the historical title this is fast sweeping, not a
+   * priority-queue fast-marching method; FastMinHeap is not used here.
    */
   function computeEikonalGeodesicField() { return profileKernel('kernel.eikonal', computeEikonalGeodesicFieldImpl, arguments); }
   function computeEikonalGeodesicFieldImpl(gridW, gridH, sources, obstacles, speedGrid) {
@@ -2821,22 +2882,32 @@
         }
       }
 
-      if (T_cand < T[idx]) T[idx] = T_cand;
+      // Report a change only if the STORED value fell (Float32 storage may
+      // round a candidate back to the previous value; that is not progress).
+      if (T_cand < T[idx]) {
+        const before = T[idx];
+        T[idx] = T_cand;
+        return T[idx] < before;
+      }
+      return false;
     }
 
-    for (let iter = 0; iter < 2; iter++) {
+    // Same fixpoint rule as computeEikonalGodunovIsotropic (see above).
+    for (let iter = 0; iter <= numCells; iter++) {
+      let changed = false;
       for (let j = 0; j < H; j++) {
-        for (let i = 0; i < W; i++) updateCell(i, j);
+        for (let i = 0; i < W; i++) if (updateCell(i, j)) changed = true;
       }
       for (let j = 0; j < H; j++) {
-        for (let i = W - 1; i >= 0; i--) updateCell(i, j);
+        for (let i = W - 1; i >= 0; i--) if (updateCell(i, j)) changed = true;
       }
       for (let j = H - 1; j >= 0; j--) {
-        for (let i = W - 1; i >= 0; i--) updateCell(i, j);
+        for (let i = W - 1; i >= 0; i--) if (updateCell(i, j)) changed = true;
       }
       for (let j = H - 1; j >= 0; j--) {
-        for (let i = 0; i < W; i++) updateCell(i, j);
+        for (let i = 0; i < W; i++) if (updateCell(i, j)) changed = true;
       }
+      if (!changed) break;
     }
 
     return {
@@ -2855,11 +2926,15 @@
   /**
    * Priority 7: Stochastic SDE Attrition / Breach Probability Solver
    *
-   * Formulates frontline penetration via an Ornstein-Uhlenbeck / Brownian drift-diffusion SDE:
+   * Heuristic normal approximation (not a solved SDE). pBreach = Phi(z) with
+   * z = (A - 1.28*D) / (sigma*sqrt(A+D+1)), sigma = 0.38 by default, and Phi
+   * evaluated through A&S 7.1.26 (|error| <= 1.5e-7). The veto threshold is
+   * CONFIG.sigmaSDE (0.5765), a probability despite its name.
+   * Historical framing, retained for context:
    *   dX_t = (mu_A - mu_D) dt + sigma dW_t
    * Attacker A faces defender D with defensive multiplier (~1.28x).
    * Calculates breach probability P_breach via Abramowitz & Stegun erf polynomial approximation (<0.05 µs, 0 GC).
-   * Vetoes attacks with P_breach < 0.55 to eliminate Lanchester suicide traps.
+   * Vetoes attacks with P_breach < CONFIG.sigmaSDE (0.5765).
    */
   function computeBreachProbability(attackerTroops, defenderTroops, sigmaParam) {
     if (!isFinite(attackerTroops) || !isFinite(defenderTroops)) {
@@ -3548,7 +3623,7 @@
   }
 
   const EngineCore = {
-    version: '10.3.14',
+    version: '10.3.15',
     DIFF,
     DUMP,
     LIVE,
@@ -3620,7 +3695,7 @@
   root.TIOEngineCore = EngineCore;
   root.TIOHardMode = EngineCore;
   console.log(
-    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-11-09 16:51:15 EST',
+    '%c[TIO Engine Core V2.8.2] Capital-preserving policy · Updated: 2026-11-09 20:14:25 EST',
     'color: #10b981; font-weight: bold;'
   );
   if (typeof module !== 'undefined' && module.exports) {

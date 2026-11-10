@@ -24,7 +24,8 @@ test('unsafe contact deficit holds without tax, while no-contact state preserves
   assert.equal(r.ok,false);assert.equal(r.ledger.tax,0);assert.equal(r.ledger.debit,0);
   s.enemies=[];s.physicalNeighbors=[512];
   r=b.TIOCapitalPolicy.constrain(b.TIOEngineCore,s,{action:'expand'},p,0.08,10);
-  assert.equal(r.sliderUnits,82);
+  // 0.08*1024 = 81.92: the ceiling is an upper bound, so 81 units, not 82.
+  assert.equal(r.sliderUnits,81);
 });
 test('stale, online, missing incoming, duplicate/truncated risk and unknown availability reject',()=>{
   const c=environment().TIOCapitalPolicy;

@@ -1,12 +1,14 @@
 # Planning mathematics and boundaries
 
-Documentation reviewed 2026-10-28 against release 10.3.11, engine V2.8.2.
+Documentation reviewed 2026-11-09 against release 10.3.15, engine V2.8.2.
 The latency figures below remain dated V2.8 measurements, not a new benchmark.
-See [checked mathematical corrections and implementation status](MATHEMATICAL_CORRECTIONS.md).
+See [checked mathematical corrections and implementation status](MATHEMATICAL_CORRECTIONS.md)
+and the [formula-to-code audit](MATH_IMPLEMENTATION_AUDIT_2026_11_09.md).
 
-**Current-source limit:** the October 28 public bundle is unknown to the adapter;
-the fresh native arithmetic audit fails its economy signature check. The October
-22 v4 integration passes are historical evidence, not present compatibility.
+**Current-source status:** the November 9 public bundle is supported as
+`live-modern-v7`, and the fresh native arithmetic audit passes on it (see the
+[November 9 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)).
+The October 28 failure and the October 22 v4 passes are dated evidence.
 
 Production planning still uses the V2.8 aggregate model described below. A separate opt-in shadow call to the **same** transition API can use source-cost incremental combat with compact initial border geometry. This path is not invoked by production policy. Geometry evolution, reinforcement, attack scheduling, refunds and opponent behavior remain estimates; see [FRONTIER_MODEL.md](../research/frontier/FRONTIER_MODEL.md).
 
@@ -14,8 +16,8 @@ MPC and the UCB endgame action bandit share planning-state normalization, comman
 
 | Layer | Model | Boundary |
 | --- | --- | --- |
-| Command | Quantized 1,024-position slider; separate native human/bot debits | Native actuator revalidates live state |
-| Income | Integer interest curve; interest at tick `%10=9`, territory at `%100=99`; configured multipliers, debt and caps | Parameters mapped for verified v3/v4 source families; current unknown source unsupported; missing-source defaults are estimates |
+| Command | Quantized 1,024-position slider; separate native human/bot debits sharing one tax, `floor(3B/256)` | Native actuator revalidates live state |
+| Income | Integer interest curve using the native nine-step integer root (not `√`); interest at tick `%10=9`, territory at `%100=99`; configured multipliers, debt and caps | Parameters mapped for verified source families (v3/v4/v6/v7); unknown sources unsupported; missing-source defaults are estimates |
 | Global context | Global troop/territory totals, leader identity, alive count; outside mass retained | Outside rivals' future growth/attacks are not simulated |
 | Active fronts | Incoming/outgoing forces persist; no repeated debit or duplicate target command | Default settlement delay 10 ticks is estimated |
 | Combat | Aggregate attrition, neutral cost 2 troops/cell, defense estimate 1.25 | No pixel/frontier evolution or native return-force model |
