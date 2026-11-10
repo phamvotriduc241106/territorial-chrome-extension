@@ -1,5 +1,10 @@
 # Changelog
 
+## 10.3.14 — 2026-11-09 16:51:15 EST
+
+- Fix six runtime defects found in a repository sweep, each reproduced by a failing regression in `tests/unit/runtime-defects.test.cjs`. Vision-fallback region labelling silently merged components past 25,000 labels. Same-frame opponents could share an ID. A paced click dropped by a full queue was reported as fired. Sword-confirm timer IDs accumulated. Pocket centroids were skewed toward the origin. The service worker's `UPDATE_SETTINGS` reset unrelated preferences.
+- No policy, spend, reserve or native-command logic changed; V2.8.2 and its 80 frozen fingerprints are unchanged. See the [sweep report](research/RUNTIME_BUG_SWEEP_2026_11_09.md).
+
 ## 10.3.13 — 2026-11-09 16:27:10 EST
 
 - Restore current-source native integration through structurally checked `live-modern-v7` bindings. The November 9 bundle renamed the same land arithmetic and added a native spectating guard on every human command; `canAttack` now refuses while that guard is set. Keep the V2.8.2 policy, reserve/debit checks and unknown-source rejection unchanged.

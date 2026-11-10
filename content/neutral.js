@@ -244,19 +244,22 @@
         const key = `${Math.floor(r.x / cell)}_${Math.floor(r.y / cell)}`;
         let p = map.get(key);
         if (!p) {
-          p = { id: key, area: 0, sumX: 0, sumY: 0, sumScore: 0, minDist: Infinity };
+          p = { id: key, area: 0, count: 0, sumX: 0, sumY: 0, sumScore: 0, minDist: Infinity };
           map.set(key, p);
         }
         p.area += 1 + (r.pocketLocal || 0) * 0.1;
+        p.count++;
         p.sumX += r.x;
         p.sumY += r.y;
         p.sumScore += r.score;
         if (r.dist < p.minDist) p.minDist = r.dist;
       }
       const list = Array.from(map.values()).map((p) => {
+        // sumX/sumY add one term per cell; dividing by the weighted area
+        // pulled centroids toward (0,0).
         const centroid = {
-          x: Math.round(p.sumX / Math.max(1, p.area)),
-          y: Math.round(p.sumY / Math.max(1, p.area))
+          x: Math.round(p.sumX / p.count),
+          y: Math.round(p.sumY / p.count)
         };
         // Prefer large, nearby, high-score pockets
         const score = p.sumScore + p.area * 3 - p.minDist * 0.2;

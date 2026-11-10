@@ -260,10 +260,10 @@
       // Only queue if a hard pacing floor is set; uncapped (0) fires immediately
       const pace = this.minActionIntervalMs | 0;
       if (pace > 0 && now - this.lastActionTimestamp < pace) {
-        if (this.queue.length < 6) {
-          this.queue.push({ type: 'attack', x, y, priority: 10 });
-          this.drainQueue();
-        }
+        // A dropped attack must not be counted or debited by the caller.
+        if (this.queue.length >= 6) return false;
+        this.queue.push({ type: 'attack', x, y, priority: 10 });
+        this.drainQueue();
         return true;
       }
 
@@ -273,6 +273,8 @@
       // Step 2: confirm sword (same coords — button centered on first click)
       const self = this;
       const t = setTimeout(() => {
+        const pendingIndex = self._confirmTimers.indexOf(t);
+        if (pendingIndex >= 0) self._confirmTimers.splice(pendingIndex, 1);
         if (self.userPointerDown) return;
         // Re-check chrome in case coords are stale
         if (!self.isMapSafeClick(x, y)) return;
