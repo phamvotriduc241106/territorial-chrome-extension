@@ -78,7 +78,7 @@ test('v7 binding map is bijective, collision-free and round-trips the complete r
  assert.ok(mapped.includes('bR.g7[0]+bR.g7[1]'));
  assert.equal(adapter.mapNativeSnippet(mapped,'live-modern-v7',true),fragment);
  assert.throws(()=>adapter.mapNativeSnippet(fragment,'unknown'),/Unsupported/);
- assert.throws(()=>adapter.nativeBindings('live-modern-v8'),/Unsupported/);
+ assert.throws(()=>adapter.nativeBindings('live-modern-v9'),/Unsupported/);
 });
 
 test('v7 export is the mapped v4 recipe plus only the spectating guard; older families are byte-identical',()=>{

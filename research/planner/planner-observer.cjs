@@ -146,7 +146,8 @@ function installNativeObserver(game, options = {}) {
     'live-modern-v3': { incoming: 'hc', owner: 'hz', attack: 'i6', incomingText: 'function(p,t){returnae.hc(p,t)}', attackText: 'function(code,t){returnbB.hz.i6(code,t)}' },
     'live-modern-v4': { incoming: 'pv', owner: 'a1M', attack: 'xn', incomingText: 'function(p,t){returna0n.pv(p,t)}', attackText: 'function(code,t){returnss.a1M.xn(code,t)}' },
     'live-modern-v6': { incoming: 'hc', owner: 'hz', attack: 'i6', incomingText: 'function(p,t){returnae.hc(p,t)}', attackText: 'function(code,t){returnbB.hz.i6(code,t)}' },
-    'live-modern-v7': { incoming: 'hd', owner: 'i1', attack: 'i8', incomingText: 'function(p,t){returnae.hd(p,t)}', attackText: 'function(code,t){returnbB.i1.i8(code,t)}' }
+    'live-modern-v7': { incoming: 'hd', owner: 'i1', attack: 'i8', incomingText: 'function(p,t){returnae.hd(p,t)}', attackText: 'function(code,t){returnbB.i1.i8(code,t)}' },
+    'live-modern-v8': { incoming: 'hf', owner: 'i3', attack: 'iA', incomingText: 'function(p,t){returnae.hf(p,t)}', attackText: 'function(code,t){returnbB.i3.iA(code,t)}' }
   }[game.contract];
   const incomingName = delegation && delegation.incoming, attackName = delegation && delegation.attack;
   const incomingOwner = game.ae, attackOwner = delegation ? game.bB?.[delegation.owner] : null;

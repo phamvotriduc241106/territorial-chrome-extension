@@ -5,9 +5,9 @@ The latency figures below remain dated V2.8 measurements, not a new benchmark.
 See [checked mathematical corrections and implementation status](MATHEMATICAL_CORRECTIONS.md)
 and the [formula-to-code audit](MATH_IMPLEMENTATION_AUDIT_2026_11_09.md).
 
-**Current-source status:** the November 9 public bundle is supported as
-`live-modern-v7`, and the fresh native arithmetic audit passes on it (see the
-[November 9 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)).
+**Current-source status:** the November 10 public bundle is supported as
+`live-modern-v8`, and the fresh native arithmetic audit passes on it (see the
+[November 10 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_10.md)).
 The October 28 failure and the October 22 v4 passes are dated evidence.
 
 Production planning still uses the V2.8 aggregate model described below. A separate opt-in shadow call to the **same** transition API can use source-cost incremental combat with compact initial border geometry. This path is not invoked by production policy. Geometry evolution, reinforcement, attack scheduling, refunds and opponent behavior remain estimates; see [FRONTIER_MODEL.md](../research/frontier/FRONTIER_MODEL.md).

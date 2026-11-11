@@ -1,5 +1,10 @@
 # Changelog
 
+## 10.3.16 — 2026-11-10 20:28:18 EST
+
+- Restore current-source native integration through structurally checked `live-modern-v8` bindings. The November 10 bundle renamed the same land arithmetic and spectating guard again; every v7 recognition fragment is present under its new name. The only other changes found were UI code: dates, message IDs and one button condition. Keep the V2.8.2 policy, reserve/debit checks and unknown-source rejection unchanged.
+- Validate original income/command routines, ownership, combat and event restoration on the new source. Detailed ENG-01 evidence and limits are recorded in the November 10 report.
+
 ## 10.3.15 — 2026-11-09 20:14:25 EST
 
 - Audit every documented formula against its implementation with independent oracles. Fix six defects, each reproduced by a failing case in `tests/unit/math-implementation.test.cjs`:
