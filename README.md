@@ -71,6 +71,7 @@ npm run package
 | Downloaded-source local integration/spatial replay | `npm run test:live`, `npm run test:spatial` |
 | Installed official-game diagnostics | [MCP runbook](docs/testing/AGENT_EXPERIMENT_HANDOFF.md), `npm run audit:live` |
 | Approximate policy/CPU benchmarks | `npm run benchmark`, `npm run benchmark:cpu` |
+| Engine strength in Elo; A/B decisions | [Elo protocol](docs/testing/ELO_TESTING_PROTOCOL.md), `npm run elo` |
 | Prospective official outcomes | [Very Hard standard](docs/testing/VERY_HARD_TEST.md) |
 
 Offline fixtures do not join an official online match. Fresh-source commands

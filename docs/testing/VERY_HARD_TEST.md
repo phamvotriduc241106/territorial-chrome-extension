@@ -2,6 +2,8 @@
 
 Test tooling updated: **2026-10-04 11:09:21 EDT**. Extension strategy and release identity are unchanged.
 
+For automated strength measurement and A/B decisions in Elo, use the [Elo testing protocol](ELO_TESTING_PROTOCOL.md). This page remains the separate human-recorded pilot.
+
 Purpose: measure consistency after the user's reported real Very Hard win. That prior win is an anecdote, not a prospective test result; it is not inserted into this campaign.
 
 ## Fixed protocol

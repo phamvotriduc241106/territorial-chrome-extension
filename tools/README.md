@@ -9,11 +9,11 @@ stable.
 | --- | --- | --- |
 | [release/](release/) | Manifest-derived file closure, clean packaging, optional icon generator | `npm run package` |
 | [validation/](validation/) | Layout/link checks, document arithmetic, native arithmetic, spatial gate and source analysis | `npm run check:layout`, `npm run test:math-docs`, `npm run test:math-native`, `npm run test:spatial` |
-| [live/](live/) | Installed-extension single-player recording and prospective/pilot campaign bookkeeping | `npm run audit:live`, `npm run test:very-hard` |
+| [live/](live/) | Installed-extension single-player recording, prospective/pilot campaign bookkeeping and Elo campaigns | `npm run audit:live`, `npm run test:very-hard`, `npm run elo` |
 | [frontier/](frontier/) | Research recording, fitting, reporting, freeze checks and profiling | `npm run research:record`, `npm run research:report` |
 | [reports/](reports/) | Published planner journals, capital summaries and banking replay analysis | See the [research documents](../docs/README.md#research-and-dated-observations) |
 | [benchmarks/](benchmarks/) | Kernel/CPU measurement harness | `npm run benchmark:cpu` |
-| [lib/](lib/) | Shared repository root and old-to-new path map | [Migration map](lib/layout-map.json) |
+| [lib/](lib/) | Shared repository root, old-to-new path map and the Elo rating model | [Migration map](lib/layout-map.json), [Elo model](lib/elo-model.cjs) |
 
 The optional icon generator, `python3 tools/release/generate-icons.py`, requires
 Pillow, as it did before the move; it is
