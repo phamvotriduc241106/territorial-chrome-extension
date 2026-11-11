@@ -16,8 +16,11 @@ stronger.
 
 The statistics are validated on model-generated data, where 95% intervals cover
 the true rating 94.7% of the time at 512 players. The fit to the real game is
-checked by per-report diagnostics. No campaign has been run yet, so no rating
-is reported here.
+checked by per-report diagnostics.
+
+The first campaign, the [Impossible/512 baseline](../research/ELO_BASELINE_2026_11_09.md),
+rated release 10.3.15 at **−469 Elo** (95% −523 to −409) over 38 matches.
+Europe and Asia differ sharply (−359 vs −964), and no match was won.
 
 ## v10.3.15 math implementation audit, 2026-11-09 EST
 

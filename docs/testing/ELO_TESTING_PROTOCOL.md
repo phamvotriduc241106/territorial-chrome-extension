@@ -102,7 +102,8 @@ at Very Hard/64. Use one configuration throughout.
 | Maps | `Europe` and `Asia`, rotated by the schedule |
 | Spawn | The recorder's fixed point for each map; never reroll for a nicer start |
 | Time limit | 900 s (the recorder's maximum); survivors become censored observations |
-| Browser | Recorder-owned temporary Chrome profile, 1280×900, visible window, one match at a time |
+| Browser | Recorder-owned temporary Chrome profile, 1280×900, one match at a time |
+| Display | `"display": "headless"` (no window on screen) for new campaigns. The display mode is fixed per plan, and the tool rejects a report from the other mode. Plans without the field are visible-window plans (the first baseline was one) |
 | Machine | Same computer, plugged in, no other heavy load, for the whole campaign |
 | Source | Pin the official source hash in the plan. A changed source stops the campaign |
 | Input | No manual commands, slider changes, pauses or restarts |
@@ -152,7 +153,7 @@ for **no other reason**: not because the Elo "looks good" or "looks hopeless".
 ```json
 {
   "difficultyLabel": "Impossible", "players": 512, "maps": ["Europe", "Asia"],
-  "seconds": 900, "sourceSha256": "<hash from npm run test:live>",
+  "seconds": 900, "display": "headless", "sourceSha256": "<hash from npm run test:live>",
   "arms": [
     { "name": "baseline",  "releaseSha256": "<npm run elo -- release, baseline checkout>",  "policy": "baseline" },
     { "name": "candidate", "releaseSha256": "<npm run elo -- release, candidate checkout>", "policy": "baseline" }
@@ -175,35 +176,50 @@ npm run elo -- init campaign-spec.json test-results/elo/plan.json
 - **Plan hash.** Keep the plan file. Record its hash somewhere dated, such as
   the PR or report that will cite the result.
 
-**Step 2: play the next slot.** Each arm runs from its own checkout (use one Git
-worktree per release). The recorder loads the extension from the checkout it
-runs in, and stamps that checkout's release hash:
+**Step 2: run the schedule.** Each arm runs from its own checkout (use one Git
+worktree per release), because the recorder loads the extension from the
+checkout it runs in and stamps that checkout's release hash.
 
 ```sh
-npm run audit:live -- 900 Impossible 512 Europe            # baseline worktree
-npm run audit:live -- 900 Impossible 512 Europe --policy=capital-v1   # if the arm's policy is capital-v1
+npm run elo -- run test-results/elo/plan.json --checkout baseline=. --checkout candidate=../tio-candidate
 ```
 
-**Step 3: record it, in order.** Pass the slot number and the recorder's
-report:
+`run` plays the slots in order, one recorder process per match. It records
+each report and stops when the schedule ends or the SPRT decides. Before the
+first match it checks that every checkout is its arm's release. It is gentle
+with the official site and **halts instead of retrying** in these cases:
 
-```sh
-npm run elo -- record test-results/elo/plan.json 1 scratch/live-chrome-audit/<run>/report.json
-```
+| Situation | What `run` does |
+| --- | --- |
+| A match finished | Records it, waits 15 s, plays the next slot |
+| A setup error (no match started) | Records it, waits 120 s, retries the same slot once |
+| A second setup error in a row | Halts; the slot keeps its remaining retry |
+| The site refused the page (HTTP error), or the game source changed (`contract-unmapped`) | Halts at once; no retry |
+| The recorder produced no report, or a record was rejected | Halts |
 
-The tool rejects any of the following:
+**Never work around a block.** If the site refuses requests, wait. If the
+source changed, the campaign is over: repair source support first, then
+preregister a new plan.
+
+**Manual alternative.** Play one slot with `npm run audit:live -- 900
+Impossible 512 Europe --headless` (add `--policy=capital-v1` for that arm),
+then record it with
+`npm run elo -- record test-results/elo/plan.json <slot> <report.json>`.
+
+**Step 3: what recording checks.** The tool rejects any of the following:
 - a slot recorded out of order;
 - a report recorded twice;
-- a report whose difficulty, player count, map, release hash or policy differs
-  from the slot;
+- a report whose difficulty, player count, map, release hash, policy or
+  display mode differs from the slot;
 - a manual or accelerated run;
 - a changed official source.
 
 A *setup error* (no match ever started) may be retried in the same slot, at
 most 3 times; after that the slot is abandoned and flagged. A *game error*
 after the match started is kept as a censored observation, never discarded.
+That includes a match interrupted because the operator stopped the run.
 
-**Step 4: check the stopping rule after every pair.**
+**Step 4: check the status at any time.** `run` applies the stopping rule itself; `report` shows where the campaign stands.
 
 ```sh
 npm run elo -- report test-results/elo/plan.json
@@ -261,6 +277,7 @@ do that.
 | Confirm SPRT [0, 50], N=64, baseline −150 Elo, 200 campaigns, evaluated every 4 pairs | Δ=0: 2.5% accept H1, 2% undecided at cap. Δ=+25: 44.5% accept H1. Δ=+50: 90% accept H1, 4% undecided. About 148 matches per arm |
 | Screen SPRT [0, 100], same setup | Δ=0: 3.5% accept H1. Δ=+100: 98.5% accept H1. About 42 matches per arm |
 | Full simulated A/B campaign through the CLI bookkeeping | Stops by SPRT, accepting a +200 Elo candidate |
+| `run` against a fake recorder | Plays slots in order; halts at once on an HTTP refusal or source change; retries one setup error and halts on a second; refuses a checkout with the wrong release |
 
 The 90% Confirm power is below the nominal 95%. That shortfall comes from the
 cap and the normal approximation, and is reported as measured, not assumed away.
@@ -279,6 +296,7 @@ placements, so treat them as minimums:
 - **Time.** Dated Impossible/512 losses lasted roughly 45–175 s. A 100-match
   Screen (both arms) is about 3–6 hours including setup. A Confirm can take
   several times that. The recorder runs unattended, but one match at a time.
+  The first baseline averaged about 50 s per match, including setup.
 - **Bots, not humans.** Elo is measured against bots, so it is not a rating
   against human players.
 - **Fixed spawn.** The fixed spawn point makes conditions repeatable but

@@ -102,3 +102,75 @@ test('a simulated A/B campaign recovers a +200 Elo candidate and stops by SPRT',
   assert.ok(base.ci95Bootstrap[0] < base.ci95Bootstrap[1]);
   assert.ok(Math.abs(result.eloFor50PercentWins - m.eloForWinProbability(0.5, 64)) < 1e-9);
 });
+
+test('a headless plan accepts only headless reports; older plans stay visible', () => {
+  const headless = c.createPlan(spec({ display: 'headless' }));
+  const visibleReport = report(headless, headless.schedule[0], 30);
+  assert.throws(() => c.recordMatch(headless, [], 1, visibleReport, bytes(visibleReport), 'x'), /display mode differs/);
+  const ok = { ...visibleReport, headless: true };
+  assert.equal(c.recordMatch(headless, [], 1, ok, bytes(ok), 'x').length, 1);
+  const legacy = c.createPlan(spec());
+  assert.equal(legacy.spec.display, undefined);
+  const headlessReport = { ...report(legacy, legacy.schedule[0], 30), headless: true };
+  assert.throws(() => c.recordMatch(legacy, [], 1, headlessReport, bytes(headlessReport), 'x'), /display mode differs/);
+  assert.throws(() => c.createPlan(spec({ display: 'offscreen' })), /visible or headless/);
+});
+
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+/** A fake campaign directory and player for runCampaign; nothing launches a browser. */
+function harness(outcomes, overrides = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'elo-run-'));
+  const plan = c.createPlan(spec({ arms: [spec().arms[0]], sprt: null, matchesPerArm: 8, ...overrides }));
+  const planFile = path.join(dir, 'plan.json'); fs.writeFileSync(planFile, JSON.stringify(plan));
+  const waits = [], log = [];
+  let n = 0;
+  const play = slot => {
+    const o = outcomes[n++] ?? { placement: 40 };
+    const r = o.error ? { ...report(plan, slot, 40), matchStartedAt: undefined, outcome: 'error', error: o.error, samples: [] }
+      : report(plan, slot, o.placement);
+    const file = path.join(dir, `report-${n}.json`); fs.writeFileSync(file, JSON.stringify(r)); return file;
+  };
+  const run = () => c.runCampaign(planFile, { play, wait: async ms => { waits.push(ms); }, log: e => log.push(e),
+    releaseOf: () => BASE, defaultCheckout: dir });
+  const records = () => JSON.parse(fs.readFileSync(path.join(dir, 'plan.records.json'), 'utf8'));
+  return { run, records, waits, log, plays: () => n };
+}
+
+test('run plays every slot in order and pauses between matches', async () => {
+  const h = harness([]);
+  assert.deepEqual(await h.run(), { halted: false, reason: 'schedule-exhausted' });
+  assert.equal(h.records().length, 8);
+  assert.deepEqual(h.records().map(r => r.slot), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.equal(h.waits.length, 8);
+});
+
+test('run halts at once when the site refuses requests or the source changes', async () => {
+  for (const error of ['page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://territorial.io/',
+    "AssertionError: + 'contract-unmapped' - 'pre-exec-patched'"]) {
+    const h = harness([{ error }]);
+    assert.deepEqual(await h.run(), { halted: true, reason: 'site-or-source' });
+    assert.equal(h.plays(), 1); assert.equal(h.waits.length, 0);
+    assert.equal(h.records().length, 1); assert.equal(h.records()[0].status, 'setup-error');
+  }
+});
+
+test('run retries one setup error after a pause, and halts on the second in a row', async () => {
+  const recovered = harness([{ error: 'page.waitForFunction: Timeout' }]);
+  assert.equal((await recovered.run()).reason, 'schedule-exhausted');
+  assert.equal(recovered.waits[0], 120000);
+  const failing = harness([{ error: 'Timeout' }, { error: 'Timeout' }]);
+  assert.deepEqual(await failing.run(), { halted: true, reason: 'setup-errors' });
+  assert.equal(failing.plays(), 2);
+  assert.ok(failing.records().every(r => r.slot === 1), 'no slot is burned after the halt');
+});
+
+test('run refuses to start from a checkout that is not the arm release', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'elo-run-'));
+  const plan = c.createPlan(spec({ arms: [spec().arms[0]], sprt: null, matchesPerArm: 8 }));
+  const planFile = path.join(dir, 'plan.json'); fs.writeFileSync(planFile, JSON.stringify(plan));
+  let played = 0;
+  const result = await c.runCampaign(planFile, { play: () => { played++; return null; }, releaseOf: () => CAND,
+    log: () => {}, wait: async () => {}, defaultCheckout: dir });
+  assert.deepEqual(result, { halted: true, reason: 'release-mismatch' });
+  assert.equal(played, 0);
+});

@@ -25,6 +25,7 @@ its repository-root `manifest.json`; research and evidence have separate homes.
 | Experimental capital controller | [Capital-v1 pilot](research/CAPITAL_POLICY_PILOT.md), [proposal](research/IMPOSSIBLE_IMPROVEMENT_PROPOSAL.md) | [Live evidence](evidence/live/) |
 | Planner observation and banking | [Cycle 01](research/PLANNER_SHADOW_CYCLE_01.md), [Cycle 02](research/BANKING_ALTERNATIVES_CYCLE_02.md) | [Live evidence](evidence/live/) |
 | Frontier models | [Model](research/frontier/FRONTIER_MODEL.md), [calibration](research/frontier/FRONTIER_CALIBRATION.md), [dynamic validation](research/frontier/FRONTIER_DYNAMIC_VALIDATION.md), [protocol](research/frontier/RESEARCH_PROTOCOL.md) | [Frontier summaries](evidence/frontier/) |
+| Engine strength (Elo) | [Impossible/512 baseline, Nov 9](research/ELO_BASELINE_2026_11_09.md) | Local campaign files (ignored `test-results/`) |
 | Allocation/native arithmetic | [October 21 audit](math/MATH_AUDIT_2026_10_21.md), [November 9 implementation audit](math/MATH_IMPLEMENTATION_AUDIT_2026_11_09.md) | [Math summary](evidence/math/2026-10-21-summary.json) |
 
 The [archive](archive/README.md) contains corrected historical manuscripts and
