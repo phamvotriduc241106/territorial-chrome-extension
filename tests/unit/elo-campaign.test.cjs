@@ -24,7 +24,8 @@ function report(plan, slot, placement, extra = {}) {
   return { evidenceKind: 'live-official-installed-extension-diagnostic', difficultyLabel: plan.spec.difficultyLabel,
     players: N, scenario: { playerCount: N }, mapLabel: slot.map, release: { releaseSha256: arm.releaseSha256 },
     assignedPolicy: arm.policy, manualCombatCommands: 0, accelerated: false, sourceSha256: SOURCE,
-    matchStartedAt: '2026-11-09T20:00:00.000Z', outcome, samples, nonce: Math.random(), ...extra };
+    matchStartedAt: '2026-11-09T20:00:00.000Z', outcome, samples, nonce: Math.random(),
+    headless: (plan.spec.display || 'visible') === 'headless', ...extra };
 }
 const bytes = r => Buffer.from(JSON.stringify(r));
 
@@ -103,17 +104,29 @@ test('a simulated A/B campaign recovers a +200 Elo candidate and stops by SPRT',
   assert.ok(Math.abs(result.eloFor50PercentWins - m.eloForWinProbability(0.5, 64)) < 1e-9);
 });
 
-test('a headless plan accepts only headless reports; older plans stay visible', () => {
-  const headless = c.createPlan(spec({ display: 'headless' }));
-  const visibleReport = report(headless, headless.schedule[0], 30);
-  assert.throws(() => c.recordMatch(headless, [], 1, visibleReport, bytes(visibleReport), 'x'), /display mode differs/);
-  const ok = { ...visibleReport, headless: true };
-  assert.equal(c.recordMatch(headless, [], 1, ok, bytes(ok), 'x').length, 1);
-  const legacy = c.createPlan(spec());
-  assert.equal(legacy.spec.display, undefined);
-  const headlessReport = { ...report(legacy, legacy.schedule[0], 30), headless: true };
-  assert.throws(() => c.recordMatch(legacy, [], 1, headlessReport, bytes(headlessReport), 'x'), /display mode differs/);
+test('new plans run headless by default and accept only matching reports', () => {
+  const plan = c.createPlan(spec());
+  assert.equal(plan.spec.display, 'headless', 'the default is written into the hashed plan');
+  const ok = report(plan, plan.schedule[0], 30);
+  assert.equal(ok.headless, true);
+  assert.equal(c.recordMatch(plan, [], 1, ok, bytes(ok), 'x').length, 1);
+  const windowed = { ...ok, headless: false };
+  assert.throws(() => c.recordMatch(plan, [], 1, windowed, bytes(windowed), 'x'), /display mode differs/);
+  const visible = c.createPlan(spec({ display: 'visible' }));
+  const vr = report(visible, visible.schedule[0], 30);
+  assert.equal(c.recordMatch(visible, [], 1, vr, bytes(vr), 'x').length, 1);
   assert.throws(() => c.createPlan(spec({ display: 'offscreen' })), /visible or headless/);
+});
+
+test('a plan sealed before the display field existed still validates and stays visible', () => {
+  const fresh = c.createPlan(spec({ display: 'visible' }));
+  const { planSha256, ...body } = fresh; const legacySpec = { ...body.spec }; delete legacySpec.display;
+  const legacy = c.seal({ ...body, spec: legacySpec });
+  c.validatePlan(legacy);
+  const visibleReport = { ...report(legacy, legacy.schedule[0], 30), headless: false };
+  assert.equal(c.recordMatch(legacy, [], 1, visibleReport, bytes(visibleReport), 'x').length, 1);
+  const headlessReport = { ...visibleReport, headless: true, nonce: 2 };
+  assert.throws(() => c.recordMatch(legacy, [], 1, headlessReport, bytes(headlessReport), 'x'), /display mode differs/);
 });
 
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
@@ -135,6 +148,17 @@ function harness(outcomes, overrides = {}) {
   const records = () => JSON.parse(fs.readFileSync(path.join(dir, 'plan.records.json'), 'utf8'));
   return { run, records, waits, log, plays: () => n };
 }
+
+test('the runner asks the recorder for the plan display mode', () => {
+  const { isHeadless, cliDisplay } = require('../../tools/live/live-chrome-audit.cjs');
+  assert.equal(isHeadless({}), true, 'recorder default opens no window');
+  assert.equal(isHeadless({ headless: true }), true);
+  assert.equal(isHeadless({ headless: false }), false);
+  assert.deepEqual(cliDisplay(['900', 'Impossible']), { headless: true });
+  assert.deepEqual(cliDisplay(['--headless']), { headless: true });
+  assert.deepEqual(cliDisplay(['--visible']), { headless: false });
+  assert.throws(() => cliDisplay(['--visible', '--headless']), /not both/);
+});
 
 test('run plays every slot in order and pauses between matches', async () => {
   const h = harness([]);

@@ -65,10 +65,15 @@ function schedule(spec) {
 }
 
 function createPlan(spec, createdAt = new Date().toISOString()) {
+  // New plans run windowless unless the spec asks for a visible window. The
+  // default is written into the plan, so its hash records the display mode.
+  if (spec.display == null) spec = { ...spec, display: 'headless' };
   validateSpec(spec);
-  const body = { schema: SCHEMA, kind: KIND, model: MODEL, createdAt, spec, schedule: schedule(spec) };
-  return { ...body, planSha256: sha256(canonical(body)) };
+  return seal({ schema: SCHEMA, kind: KIND, model: MODEL, createdAt, spec, schedule: schedule(spec) });
 }
+
+/** Attach the hash that locks a plan body (spec + schedule). */
+function seal(body) { return { ...body, planSha256: sha256(canonical(body)) }; }
 
 function validatePlan(plan) {
   assert.equal(plan.schema, SCHEMA); assert.equal(plan.kind, KIND); assert.equal(plan.model, MODEL);
@@ -245,7 +250,7 @@ function releaseOf(checkout) {
 function playWithRecorder(plan, slot, checkout) {
   const arm = plan.spec.arms.find(a => a.name === slot.arm), spec = plan.spec;
   const args = ['tools/live/live-chrome-audit.cjs', String(spec.seconds), spec.difficultyLabel, String(spec.players), slot.map];
-  if (displayOf(spec) === 'headless') args.push('--headless');
+  args.push(displayOf(spec) === 'headless' ? '--headless' : '--visible');
   if (arm.policy !== 'baseline') args.push('--policy=' + arm.policy);
   const run = spawnSync(process.execPath, args, { cwd: checkout, encoding: 'utf8',
     timeout: (spec.seconds + 300) * 1000, maxBuffer: 64 << 20 });
@@ -369,4 +374,4 @@ if (require.main === module) {
     .then(code => { process.exitCode = code; })
     .catch(error => { console.error(String(error.message || error)); process.exitCode = 1; });
 }
-module.exports = { createPlan, validatePlan, schedule, derivePlacement, recordMatch, report, nextSlot, runCampaign, MAX_SETUP_RETRIES };
+module.exports = { createPlan, seal, validatePlan, schedule, derivePlacement, recordMatch, report, nextSlot, runCampaign, MAX_SETUP_RETRIES };

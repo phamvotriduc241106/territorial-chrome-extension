@@ -103,7 +103,7 @@ at Very Hard/64. Use one configuration throughout.
 | Spawn | The recorder's fixed point for each map; never reroll for a nicer start |
 | Time limit | 900 s (the recorder's maximum); survivors become censored observations |
 | Browser | Recorder-owned temporary Chrome profile, 1280×900, one match at a time |
-| Display | `"display": "headless"` (no window on screen) for new campaigns. The display mode is fixed per plan, and the tool rejects a report from the other mode. Plans without the field are visible-window plans (the first baseline was one) |
+| Display | Headless: no window opens on screen. `init` writes `"display": "headless"` into new plans unless the spec asks for `"visible"`. The mode is fixed per plan, and the tool rejects a report from the other mode. Plans sealed before the field existed are visible-window plans (the first baseline was one). Headless runs at the same game speed as a visible window (17.86 ticks/s in both), but its screenshots are black, so the recorder's native state is the evidence |
 | Machine | Same computer, plugged in, no other heavy load, for the whole campaign |
 | Source | Pin the official source hash in the plan. A changed source stops the campaign |
 | Input | No manual commands, slider changes, pauses or restarts |
@@ -202,7 +202,8 @@ source changed, the campaign is over: repair source support first, then
 preregister a new plan.
 
 **Manual alternative.** Play one slot with `npm run audit:live -- 900
-Impossible 512 Europe --headless` (add `--policy=capital-v1` for that arm),
+Impossible 512 Europe` (headless by default; add `--visible` only for a
+visible-window plan, and `--policy=capital-v1` for that arm),
 then record it with
 `npm run elo -- record test-results/elo/plan.json <slot> <report.json>`.
 
