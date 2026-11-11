@@ -35,6 +35,17 @@ regression first:
 The V2 command path, spend policy and the 80 frozen fingerprints are unchanged,
 and no match was played.
 
+## v10.3.16 current-source integration, 2026-11-10 EST
+
+The [November 10 ENG-01 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_10.md)
+records verified `live-modern-v8` support on source `dbf736fa53c9d7bf0e18688a000ce5170f340c97dabe3194af62de181333b16f`.
+The bundle renamed the v7 recipe again; the only other changes were in UI code.
+All three fresh-source gates pass.
+
+One installed headless Impossible/512 match lost after 66.7 s, with 29
+commands and no failures, at the same game speed as visible-window runs.
+Policy V2.8.2 is unchanged.
+
 ## v10.3.13 current-source integration, 2026-11-09 EST
 
 The [November 9 ENG-01 report](../research/ENG01_CURRENT_SOURCE_REPAIR_2026_11_09.md)

@@ -13,13 +13,20 @@
   // original routines; v7 also adds a native spectating guard (see buildExportSnippet).
   const V7_GLOBALS = Object.freeze({"y":"ah","c":"aE","q":"bO","nl":"aS","ss":"bB","ep":"bm","aa":"bD","gW":"bV","ij":"bR","a0f":"bv","a0n":"ae","o9":"ap","j1":"ad","ay":"af","bc":"bi","aAZ":"aG","aJ":"am","aIw":"b5","aJR":"cd","aPX":"aRs","aPY":"aNo","aTz":"k2","sf":"nC","abQ":"gi","a0e":"gq","a0c":"gV","a0o":"gR","a0p":"gQ","a0q":"gS","a16":"gT","a0r":"gW","abM":"ga","abL":"gZ","a18":"gY","aUr":"aLX","aUn":"aLT","aUu":"aLa","aVH":"aM0","aYb":"a76","pz":"bg","a14":"gU","abU":"gs","a0a":"hB"});
   const V7_MEMBERS = Object.freeze({"ax":"hc","aO":"hO","an":"nY","t":"fK","bW":"h2","c2":"fX","aI":"kw","a1T":"i7","a1X":"iA","a1W":"fT","q5":"kH","pv":"hd","q7":"gh","az":"kc","ql":"kt","bb":"aF6","aP":"kg","bY":"gw","o2":"kJ","aXJ":"a7w","aXL":"a72","qI":"a73","xa":"a70","zY":"hA","zZ":"fS","zb":"fR","gX":"fl","gY":"fm","a0x":"gu","kY":"fG","q8":"gm","q9":"gn","qD":"go","aH":"lG","a1D":"hm","bZ":"hn","a1M":"i1","xn":"i8","a1R":"i5","eq":"qy","er":"qz","b":"dk","a1g":"fc","b8":"ef","iu":"ej","q4":"h1","zw":"gx","aTe":"n6","a5f":"r1","py":"gz","a19":"h5","aT5":"a14","aU1":"k8","aTJ":"a1Q","aVI":"aM1","aED":"m8","aGr":"jh","aHD":"k4","zr":"g7","aN":"g1","aYY":"a6z","aTU":"n4","aNK":"a77","aNL":"a7D","a2p":"dr","aK":"lS","bX":"lX","aUC":"g6","qH":"nU","yR":"a3Y","sU":"agH","xR":"a6r","d":"lE","yd":"k3","a0":"il","pw":"hb","q0":"h0","qr":"a81","acY":"a8V","qs":"a8S","qu":"a85"});
+  // November 10 family: the v7 recipe under new minified names (same guard).
+  const V8_GLOBALS = Object.freeze({"y":"ah","c":"aE","q":"bO","nl":"aS","ss":"bB","ep":"bm","aa":"bD","gW":"bV","ij":"bR","a0f":"bw","a0n":"ae","o9":"ap","j1":"ad","ay":"af","bc":"bi","aAZ":"aG","aJ":"am","aIw":"b5","aJR":"ce","aPX":"aS7","aPY":"aO3","aTz":"k4","sf":"nE","abQ":"gk","a0e":"gs","a0c":"gX","a0o":"gT","a0p":"gS","a0q":"gU","a16":"gV","a0r":"gY","abM":"gc","abL":"gb","a18":"ga","aUr":"aLm","aUn":"aLi","aUu":"aLp","aVH":"aMF","aYb":"a7M","pz":"bg","a14":"gW","abU":"gu","a0a":"hD"});
+  const V8_MEMBERS = Object.freeze({"ax":"he","aO":"hQ","an":"na","t":"fM","bW":"h4","c2":"fZ","aI":"ky","a1T":"i9","a1X":"iC","a1W":"fV","q5":"kJ","pv":"hf","q7":"gj","az":"ke","ql":"kv","bb":"aFN","aP":"ki","bY":"gy","o2":"kL","aXJ":"a8C","aXL":"a7I","qI":"a7J","xa":"a7G","zY":"hC","zZ":"fU","zb":"fT","gX":"fn","gY":"fo","a0x":"gw","kY":"fI","q8":"go","q9":"gp","qD":"gq","aH":"lI","a1D":"ho","bZ":"hp","a1M":"i3","xn":"iA","a1R":"i7","eq":"r0","er":"r1","b":"dm","a1g":"fe","b8":"eh","iu":"el","q4":"h3","zw":"gz","aTe":"n8","a5f":"r3","py":"h1","a19":"h7","aT5":"a1L","aU1":"kA","aTJ":"a1h","aVI":"aMG","aED":"mA","aGr":"jj","aHD":"k6","zr":"g9","aN":"g3","aYY":"a7F","aTU":"n6","aNK":"a7N","aNL":"a7T","a2p":"dt","aK":"lU","bX":"lZ","aUC":"g8","qH":"nW","yR":"a3p","sU":"agh","xR":"a77","d":"lG","yd":"k5","a0":"io","pw":"hd","q0":"h2","qr":"a8H","acY":"a8l","qs":"a8i","qu":"a8L"});
   const reverseMap = map => Object.freeze(Object.fromEntries(Object.entries(map).map(([a,b])=>[b,a])));
   const FAMILY_BINDINGS = Object.freeze({
     'live-modern-v6': Object.freeze({ globals: V6_GLOBALS, members: V6_MEMBERS,
       reverseGlobals: reverseMap(V6_GLOBALS), reverseMembers: reverseMap(V6_MEMBERS) }),
     'live-modern-v7': Object.freeze({ globals: V7_GLOBALS, members: V7_MEMBERS,
-      reverseGlobals: reverseMap(V7_GLOBALS), reverseMembers: reverseMap(V7_MEMBERS) })
+      reverseGlobals: reverseMap(V7_GLOBALS), reverseMembers: reverseMap(V7_MEMBERS) }),
+    'live-modern-v8': Object.freeze({ globals: V8_GLOBALS, members: V8_MEMBERS,
+      reverseGlobals: reverseMap(V8_GLOBALS), reverseMembers: reverseMap(V8_MEMBERS) })
   });
+  // Native spectating-guard field per guarded family (not part of the v4 recipe).
+  const SPECTATING_GUARD = Object.freeze({ 'live-modern-v7': 'hk', 'live-modern-v8': 'hm' });
   const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
   /** Alpha-rename our verified recipe/arithmetic fragments, preserving operators.
@@ -157,6 +164,21 @@
  'this.i8=function(jE,k5){if(aE.hk){return;}if(this.qv){this.qv=0;bm.qy.qz(182,jE);}if(aE.lG){bB.qq.i8(aE.fK,jE,k5);}',
  'this.hk=this.data.a86'];
     if (modernV7.every(token => code.includes(compact(token)))) return 'live-modern-v7';
+    // November 10 family: every v7 fragment under the bundle's new names,
+    // including the spectating guard. Inspected on source dbf736fa...
+    const modernV8 = [
+ 'var k8=bO.g3(12*ah.he[player],1024)', 'bB.i3.iA(aS.i7(),aE.fZ)',
+ 'this.kJ=function(player,aNx)', 'this.n8=function(player){var iM=bR.g9[0];ah.he[player]-=iM+bR.g9[1]',
+ 'this.i7=function(){return bO.io(Math.floor(jG*1024+0.5)-1,0,1023)',
+ 'this.ke=function(player){return Math.min(100*ah.hQ[player],aE.a8C)',
+ 'this.gj=function(player){return size[player]',
+ 'gX=ae.go(gT,gS);gU=ae.gp(gT,gS);gV=ae.gq(gT,gS)',
+ 'this.hp=function(player){return ah.na[player]!==0&&ah.a77[player]!==2',
+ '13440-6*bi.kv()', 'this.g3=function(fv,fw){return Math.floor((fv+0.5)/fw)',
+ 'af=new ce()', 'this.aFN=function(player){return aO4(player)',
+ 'this.iA=function(jG,k7){if(aE.hm){return;}if(this.qx){this.qx=0;bm.r0.r1(182,jG);}if(aE.lI){bB.qs.iA(aE.fM,jG,k7);}',
+ 'this.hm=this.data.a8M'];
+    if (modernV8.every(token => code.includes(compact(token)))) return 'live-modern-v8';
     return 'unknown';
   }
 
@@ -747,15 +769,16 @@
 
   /** Build the only code injected into a recognized game closure. */
   function buildExportSnippet(hookVersion, sourceKind) {
-    if (sourceKind === 'live-modern-v7') {
-      // v7 native human commands return silently while aE.hk (spectating) is set.
-      // Make that disabled state explicit instead of trusting a void native return.
-      const base = 'canAttack:function(p){return !!bD.gw.hm(1)&&!!bD.gw.hn(p)},';
+    if (hasOwn(SPECTATING_GUARD, sourceKind)) {
+      // v7+ native human commands return silently while the spectating flag is
+      // set. Make that disabled state explicit instead of trusting a void return.
+      const v4Base = 'canAttack:function(p){return !!aa.bY.a1D(1)&&!!aa.bY.bZ(p)},';
+      const base = mapNativeSnippet(v4Base, sourceKind), flag = mapNativeSnippet('c', sourceKind) + '.' + SPECTATING_GUARD[sourceKind];
       const mapped = mapNativeSnippet(buildV4ExportSnippet(String(hookVersion || 'unknown')), sourceKind)
-        .replace(/live-modern-v4/g, 'live-modern-v7');
-      if (mapped.split(base).length !== 2) throw Error('Unverified v7 command guard recipe');
-      return mapped.replace(base, 'canAttack:function(p){return !aE.hk&&!!bD.gw.hm(1)&&!!bD.gw.hn(p)},' +
-        'spectating:function(){return !!aE.hk},');
+        .replace(/live-modern-v4/g, sourceKind);
+      if (mapped.split(base).length !== 2) throw Error('Unverified ' + sourceKind + ' command guard recipe');
+      return mapped.replace(base, base.replace('return ', 'return !' + flag + '&&') +
+        'spectating:function(){return !!' + flag + '},');
     }
     if (sourceKind === 'live-modern-v6') return mapNativeSnippet(buildV4ExportSnippet(String(hookVersion || 'unknown')), sourceKind)
       .replace(/live-modern-v4/g, 'live-modern-v6');
@@ -844,7 +867,7 @@
     if (typeof text !== 'string' || text.length < 80000) return 'not-game';
     const contract = detectContract(text);
     if (contract === 'readable-legacy' || contract === 'live-modern' ||
-        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6' || contract === 'live-modern-v7') return contract;
+        contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6' || contract === 'live-modern-v7' || contract === 'live-modern-v8') return contract;
     if (text.indexOf('canvasA') >= 0 ||
         (text.indexOf('territorial.io') >= 0 && text.length > 100000) ||
         (text.indexOf('Uint32Array') >= 0 && text.indexOf('fillText') >= 0 && text.length > 200000)) {

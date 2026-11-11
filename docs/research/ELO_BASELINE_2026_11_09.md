@@ -105,9 +105,10 @@ visible regardless.
 
 ## Next
 
-1. **Repair source support** for the new official bundle (an ENG-01-style
-   repair). No further matches are possible until it passes the fresh-source
-   gates.
+1. **Repair source support** for the new official bundle. Done in release
+   10.3.16 (`live-modern-v8`, see the
+   [November 10 report](ENG01_CURRENT_SOURCE_REPAIR_2026_11_10.md)), including one
+   headless installed match at the same game speed as visible runs.
 2. **Re-measure the baseline headless** on the new source. A rating belongs to
    one source and one display mode, so this result is not directly comparable
    with later campaigns.
