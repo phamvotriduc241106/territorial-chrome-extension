@@ -120,6 +120,12 @@ explicitly live and starts a single-player game on the official website:
 npm run audit:live -- 300
 ```
 
+Since 2026-11-10 the recorder runs **headless by default**: no Chrome window
+opens on screen. Add `--visible` to watch a run. The game simulates at the same
+speed either way (17.86 ticks/s measured in both modes), but headless
+screenshots are black because the canvas is not drawn without a window, so the
+recorded native state is the evidence. Each report stores `headless: true|false`.
+
 Default spawn coordinates are suitable for the observed Island viewport but
 are not a general spawn optimizer. Unsupported UI/source or invalid spawn
 fails with an error record rather than inventing a result. Limit is 5–900 s;

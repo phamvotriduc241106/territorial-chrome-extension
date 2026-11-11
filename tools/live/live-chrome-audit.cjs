@@ -49,6 +49,15 @@ function summarize(samples) {
     statisticalWinRate: null };
 }
 
+/** Test runs open no window unless asked: a visible window is opt-in. */
+const isHeadless = options => options.headless !== false;
+
+/** CLI flags: --visible shows the Chrome window; --headless is the default. */
+function cliDisplay(argv) {
+  if (argv.includes('--visible') && argv.includes('--headless')) throw Error('Choose --visible or --headless, not both');
+  return { headless: !argv.includes('--visible') };
+}
+
 async function run(options = {}) {
   const policy=options.policy??'baseline';
   assert.ok(['baseline','capital-v1'].includes(policy));
@@ -78,7 +87,7 @@ async function run(options = {}) {
     policyInfluence: policy==='baseline'?'existing-production-autoplay-only':'opt-in-capital-v1-commands',
     assignedPolicy:policy, performanceMicrobenchmark: false,
     // Headless runs open no window; campaigns must not mix display modes.
-    headless: options.headless === true };
+    headless: isHeadless(options) };
   report.treatment={decisionFrames:0,cappedFrames:0,heldFrames:0,decisionChanges:0,
     taggedSubmissions:0,validatedReceipts:0,reserveViolations:0,debitCeilingViolations:0};
   const researchFreeze = Object.fromEntries(['planner-observer.cjs','contact-risk-candidate.cjs','planner-shadow-analysis.cjs','banking-alternatives.cjs']
@@ -88,7 +97,7 @@ async function run(options = {}) {
   try {
     context = await chromium.launchPersistentContext(profile, {
       executablePath: options.chrome ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      headless: options.headless === true, chromiumSandbox: true,
+      headless: isHeadless(options), chromiumSandbox: true,
       viewport: { width: 1280, height: 900 },
       ignoreDefaultArgs: ['--disable-extensions'],
       args: ['--enable-unsafe-extension-debugging'],
@@ -277,15 +286,15 @@ async function run(options = {}) {
 }
 
 if (require.main === module) {
-  const args = process.argv.slice(2).filter(arg => !['--shadow','--banking-shadow','--headless'].includes(arg) && !arg.startsWith('--policy='));
+  const args = process.argv.slice(2).filter(arg => !['--shadow','--banking-shadow','--headless','--visible'].includes(arg) && !arg.startsWith('--policy='));
   const seconds = Number(args[0] ?? 300);
   const difficultyLabel = args[1] ?? 'Very Hard';
   const players = Number(args[2] ?? 64);
   const mapLabel = args[3] ?? null;
   const shadow = process.argv.includes('--shadow');
   const bankingAlternatives = process.argv.includes('--banking-shadow');
-  const headless = process.argv.includes('--headless');
+  const { headless } = cliDisplay(process.argv);
   const policy=process.argv.find(arg=>arg.startsWith('--policy='))?.slice('--policy='.length)??'baseline';
   run({ seconds, difficultyLabel, players, mapLabel, shadow, bankingAlternatives,policy, headless }).catch(error => { console.error(String(error)); process.exitCode = 1; });
 }
-module.exports = { run, terminal, summarize, mapSelectionPattern };
+module.exports = { run, terminal, summarize, mapSelectionPattern, isHeadless, cliDisplay };
