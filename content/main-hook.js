@@ -269,7 +269,7 @@
   function trustedContract(g) {
     var contract = g && g.contract;
     return contract === 'legacy-v1' || contract === 'live-modern-v1' ||
-      contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6' || contract === 'live-modern-v7' || contract === 'test-fixture';
+      contract === 'live-modern-v2' || contract === 'live-modern-v3' || contract === 'live-modern-v4' || contract === 'live-modern-v6' || contract === 'live-modern-v7' || contract === 'live-modern-v8' || contract === 'test-fixture';
   }
 
   /**
@@ -1626,7 +1626,7 @@
   }
   function captureFrontier(state) {
     var g = G(), model = window.TIOFrontier;
-    if (!model || !g || !['live-modern-v3', 'live-modern-v4', 'live-modern-v6', 'live-modern-v7'].includes(g.contract) || !g.modern ||
+    if (!model || !g || !['live-modern-v3', 'live-modern-v4', 'live-modern-v6', 'live-modern-v7', 'live-modern-v8'].includes(g.contract) || !g.modern ||
         typeof g.modern.ownership !== 'function') throw Error('frontier-source-unavailable');
     var start = performance.now();
     try {
@@ -1697,7 +1697,7 @@
         // Initialize match provenance before hooks, but do not create pair-only
         // aliases for fronts that will receive native IDs in the first sample.
         _frontierRecorder.match(initial, { engineVersion: CFG.ENGINE_VERSION, updatedAt: CFG.ENGINE_UPDATED_AT });
-        if (game && ['live-modern-v3', 'live-modern-v4', 'live-modern-v6', 'live-modern-v7'].includes(game.contract) && game.shadow) {
+        if (game && ['live-modern-v3', 'live-modern-v4', 'live-modern-v6', 'live-modern-v7', 'live-modern-v8'].includes(game.contract) && game.shadow) {
           _shadowNative = game.shadow;
           var installed = _shadowNative.install(function (event) {
             if (!_frontierStatus.enabled) return;
@@ -1895,7 +1895,7 @@
       hasDJ: hasDJ,
       paths: (hasHg ? (contract === 'live-modern-v1' ? 'hy' : 'hg') : '') +
         (hasCE ? '+cE' : '') + (hasDF ? '+dF' : '') + (hasDJ ? '+dJ' : ''),
-      spectating: g && g.contract === 'live-modern-v7' ? !!(g.modern && g.modern.spectating()) : !!(g && g.aE && g.aE.hI),
+      spectating: g && (g.contract === 'live-modern-v7' || g.contract === 'live-modern-v8') ? !!(g.modern && g.modern.spectating()) : !!(g && g.aE && g.aE.hI),
       difficulty: DIFF,
       pressure: dT[Math.min(DIFF, dT.length - 1)],
       activeFronts: activeFronts,
@@ -1978,7 +1978,7 @@
       } else if(data.type==='set-experiment'){
         var expState=getState();
         if(data.mode==='off' || data.mode==='capital-v1' && expState.singlePlayer &&
-            ['live-modern-v3','live-modern-v4', 'live-modern-v6', 'live-modern-v7'].includes(expState.contract) && window.TIOCapitalPolicy){
+            ['live-modern-v3','live-modern-v4', 'live-modern-v6', 'live-modern-v7', 'live-modern-v8'].includes(expState.contract) && window.TIOCapitalPolicy){
           _experimentalPolicy=data.mode;_experimentalMatchId=data.mode==='off'?null:expState.matchId;
           result={ok:true,mode:_experimentalPolicy,state:getState()};
         }else result={ok:false,err:'experimental-single-player-only'};
